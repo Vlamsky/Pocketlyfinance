@@ -1,0 +1,2310 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+
+    <title>Pocketly — Cloud Finance & Smart Wealth Tracker</title>
+    <meta name="description"
+        content="Minimalist smart wealth and expense manager, debt tracker, and personal finance analytics.">
+
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#f8fafc" id="themeColorMeta">
+
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Pocketly">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com">
+    <link rel="stylesheet" href="https://fonts.cdnfonts.com/css/sf-pro-display">
+    <link
+        href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Outfit:wght@400;500;600;700;800;900&family=Plus+Jakarta+Sans:ital,wght@0,300..800;1,300..800&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="style.css?v=9.8">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+
+<body>
+
+    <!-- Minimalist Initial Loader -->
+    <div id="initialLoader"
+        style="position: fixed; inset: 0; background: var(--bg-color, #f8fafc); z-index: 99999; display: flex; justify-content: center; align-items: center; flex-direction: column; transition: opacity 0.3s ease;">
+        <div
+            style="position: relative; width: 64px; height: 64px; display: flex; align-items: center; justify-content: center; margin-bottom: 18px;">
+            <img src="logo-new.png" alt="Pocketly" style="width: 44px; height: 44px; object-fit: contain;">
+        </div>
+        <p
+            style="color: #64748b; font-family: 'SF Pro Display', -apple-system, sans-serif; font-size: 0.95rem; font-weight: 600; letter-spacing: -0.01em;">
+            Loading Pocketly...</p>
+    </div>
+
+    <script>
+        // Startup watchdog
+        window.__pocketlyAppReady = false;
+        window.__pocketlyStartupError = null;
+
+        function pocketlyShowStartupFallback(message) {
+            window.__pocketlyStartupError = message || window.__pocketlyStartupError;
+            var loader = document.getElementById('initialLoader');
+            var authScreen = document.getElementById('authScreen');
+            var appScreen = document.getElementById('appScreen');
+            if (window.__pocketlyAppReady) return;
+            if (loader) loader.style.display = 'none';
+            if (appScreen && appScreen.style.display !== 'block') {
+                if (authScreen) authScreen.style.display = 'flex';
+            }
+            console.warn('[Pocketly Startup]', window.__pocketlyStartupError || 'Startup fallback triggered.');
+        }
+
+        window.addEventListener('error', function (event) {
+            var target = event && event.target;
+            if (target && target.tagName === 'SCRIPT') {
+                pocketlyShowStartupFallback('Failed to load script: ' + (target.src || 'inline script'));
+            }
+        }, true);
+
+        window.setTimeout(function () {
+            if (!window.__pocketlyAppReady) {
+                pocketlyShowStartupFallback('Startup timeout.');
+            }
+        }, 8000);
+    </script>
+
+    <!-- Custom Alert Notification Modal -->
+    <div id="customAlert" class="custom-modal">
+        <div class="modal-body center-text text-center" style="text-align: center;">
+            <i class="fa-solid fa-circle-exclamation text-blue" id="alertIcon"
+                style="font-size: 2.6rem; margin: 0 auto 14px auto; display: block; text-align: center;"></i>
+            <h3 id="alertTitle" style="font-size: 1.3rem; margin-bottom: 8px; text-align: center;">Notice</h3>
+            <p id="alertMessage"
+                style="color: var(--text-grey); font-size: 0.92rem; margin-bottom: 22px; line-height: 1.5; text-align: center;">Message...
+            </p>
+            <button class="btn-primary full-width" onclick="closeAlert()">Got it</button>
+        </div>
+    </div>
+
+    <!-- Custom Confirmation Modal -->
+    <div id="customConfirm" class="custom-modal">
+        <div class="modal-body center-text text-center" style="text-align: center;">
+            <i id="confirmIcon" class="fa-solid fa-triangle-exclamation text-red"
+                style="font-size: 2.6rem; margin: 0 auto 14px auto; display: block; text-align: center;"></i>
+            <h3 id="confirmTitle" style="font-size: 1.3rem; margin-bottom: 8px; text-align: center;">Are you sure?</h3>
+            <p id="confirmMessage"
+                style="color: var(--text-grey); font-size: 0.92rem; margin-bottom: 22px; line-height: 1.5; text-align: center;">This action
+                cannot be undone.</p>
+            <div class="confirm-actions" style="display: flex; gap: 10px;">
+                <button class="btn-secondary" style="flex: 1;" onclick="closeConfirm()">Cancel</button>
+                <button id="confirmYesBtn" class="btn-danger" style="flex: 1;">Proceed</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 1. AUTH SCREEN (MINIMAL LUXE) -->
+    <div id="authScreen" class="auth-container">
+        <div class="auth-glass-card">
+            <div class="auth-header">
+                <div class="auth-brand-badge">
+                    <img src="logo-new.png" alt="Pocketly Logo">
+                </div>
+                <h2 id="authTitle">Welcome Back</h2>
+                <p id="authSubtitle" class="auth-sub-text">Track wealth and expenses with clarity.</p>
+            </div>
+
+            <!-- Segmented Mode Control -->
+            <div class="auth-segmented-tabs">
+                <button type="button" class="auth-tab-btn active" id="tabAuthLogin"
+                    onclick="window.setAuthMode('login')">Sign In</button>
+                <button type="button" class="auth-tab-btn" id="tabAuthRegister"
+                    onclick="window.setAuthMode('register')">Register</button>
+            </div>
+
+            <form id="authForm" class="auth-form-layout">
+                <div class="form-group" id="nameField" style="display:none;">
+                    <label>Full Name</label>
+                    <div class="input-glass-wrapper">
+                        <i class="fa-regular fa-user input-icon"></i>
+                        <input type="text" id="fullName" placeholder="e.g. Alexander Ray">
+                    </div>
+                </div>
+
+                <div class="form-group" id="usernameField" style="display:none;">
+                    <label>Unique Username</label>
+                    <div class="input-glass-wrapper">
+                        <i class="fa-solid fa-at input-icon"></i>
+                        <input type="text" id="regUsername" placeholder="alexander123">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Email Address</label>
+                    <div class="input-glass-wrapper">
+                        <i class="fa-regular fa-envelope input-icon"></i>
+                        <input type="email" id="email" required placeholder="name@email.com">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Password</label>
+                    <div class="input-glass-wrapper">
+                        <i class="fa-solid fa-lock input-icon"></i>
+                        <input type="password" id="password" required placeholder="••••••••">
+                        <i class="fa-solid fa-eye toggle-pass-icon" id="toggleLoginPass"></i>
+                    </div>
+                    <div class="forgot-pass-wrapper" id="forgotPassRow">
+                        <a href="#" id="forgotPasswordLink">Forgot Password?</a>
+                    </div>
+                </div>
+
+                <div class="form-group" id="confirmPasswordField" style="display:none;">
+                    <label>Confirm Password</label>
+                    <div class="input-glass-wrapper">
+                        <i class="fa-solid fa-lock input-icon"></i>
+                        <input type="password" id="confirmPassword" placeholder="••••••••">
+                        <i class="fa-solid fa-eye toggle-pass-icon" id="toggleConfirmPass"></i>
+                    </div>
+                </div>
+
+                <div class="form-group" id="captchaField" style="display:none;">
+                    <label>Security Check</label>
+                    <div style="display: flex; gap: 10px; align-items: center; margin-bottom: 8px;">
+                        <canvas id="captchaCanvas" width="130" height="42"
+                            style="border-radius: 10px; background: rgba(0,0,0,0.04); border: 1px solid var(--border-color);"></canvas>
+                        <button type="button" id="refreshCaptchaBtn" class="btn-round-small" title="Refresh Code">
+                            <i class="fa-solid fa-arrows-rotate"></i>
+                        </button>
+                    </div>
+                    <div class="input-glass-wrapper">
+                        <i class="fa-solid fa-shield-halved input-icon"></i>
+                        <input type="text" id="captchaInput" placeholder="Enter code above">
+                    </div>
+                </div>
+
+                <button type="submit" class="btn-auth-primary" id="authBtn">
+                    Sign In to Pocketly <i class="fa-solid fa-arrow-right"
+                        style="margin-left: 8px; font-size: 0.85rem;"></i>
+                </button>
+
+                <!-- Guest / Demo Exploration Button -->
+                <button type="button" class="btn-demo-mode" id="btnExploreDemo" onclick="window.startDemoMode()">
+                    <i class="fa-solid fa-wand-magic-sparkles text-blue"></i> Try Demo Mode (Quick Preview)
+                </button>
+            </form>
+
+            <div class="auth-footer">
+                <p class="switch-auth">
+                    <span id="switchText">Don't have an account? </span>
+                    <a href="#" id="switchBtn">Sign up</a>
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- 2. MAIN APP SCREEN -->
+    <div id="appScreen" style="display: none;">
+        <div class="container">
+            <div class="mobile-overlay" id="mobileOverlay"></div>
+
+            <!-- Floating Detached Sidebar (Desktop) -->
+            <aside class="sidebar glass-effect" id="sidebar">
+                <div>
+                    <div class="sidebar-header">
+                        <div class="brand-wrapper">
+                            <img src="logo-new.png" alt="Pocketly">
+                            <span class="brand-text">Pocketly</span>
+                        </div>
+                        <button id="closeSidebarBtn" class="close-sidebar-btn" type="button">
+                            <i class="fa-solid fa-xmark"></i>
+                        </button>
+                    </div>
+
+                    <nav class="menu-list">
+                        <a href="#" class="nav-link active" data-target="dashboard">
+                            <span class="nav-icon"><i class="fa-solid fa-house"></i></span>
+                            <span class="nav-text">Dashboard</span>
+                        </a>
+                        <a href="#" class="nav-link" data-target="transactions">
+                            <span class="nav-icon"><i class="fa-solid fa-receipt"></i></span>
+                            <span class="nav-text">Transactions</span>
+                        </a>
+                        <a href="#" class="nav-link" data-target="debts">
+                            <span class="nav-icon"><i class="fa-solid fa-hand-holding-dollar"></i></span>
+                            <span class="nav-text">Debts & Loans</span>
+                        </a>
+                        <a href="#" class="nav-link" data-target="budget">
+                            <span class="nav-icon"><i class="fa-solid fa-bullseye"></i></span>
+                            <span class="nav-text">Budgets & Goals</span>
+                        </a>
+                        <a href="#" class="nav-link" data-target="reports">
+                            <span class="nav-icon"><i class="fa-solid fa-chart-pie"></i></span>
+                            <span class="nav-text">Analytics</span>
+                        </a>
+                        <a href="#" class="nav-link" data-target="connections">
+                            <span class="nav-icon"><i class="fa-solid fa-user-group"></i></span>
+                            <span class="nav-text">Connections</span>
+                        </a>
+                    </nav>
+                </div>
+
+                <div class="sidebar-footer">
+                    <div class="user-profile-card" id="userProfileTrigger" onclick="switchPage('account')">
+                        <div class="user-avatar-premium" id="sidebarAvatar">
+                            <i class="fa-solid fa-user"></i>
+                        </div>
+                        <div class="user-info-premium">
+                            <span class="u-name" id="sidebarUserName">User</span>
+                            <span class="u-role" id="sidebarUserEmail">user@email.com</span>
+                        </div>
+                    </div>
+                </div>
+            </aside>
+
+            <!-- Main Scrollable Content -->
+            <main class="main-content">
+                <!-- Top App Header -->
+                <header>
+                    <div class="header-left">
+                        <button class="mobile-menu-btn" id="menuToggle" type="button" aria-label="Menu">
+                            <i class="fa-solid fa-bars"></i>
+                        </button>
+
+                        <!-- Header User Avatar Trigger (Sebelah Kiri Dashboard) -->
+                        <div class="header-profile-wrapper" id="headerProfileTrigger" title="My Account">
+                            <div class="profile-pic-ring-small">
+                                <div class="profile-pic" id="headerAvatar">US</div>
+                            </div>
+                        </div>
+
+                        <!-- User Popup Menu Dropdown -->
+                        <div class="user-popup-menu glass-popup" id="userPopupMenu">
+                            <div class="popup-header">My Account</div>
+                            <a href="#" class="popup-item" id="btnGoToConnections"
+                                onclick="switchPage('connections'); return false;">
+                                <i class="fa-solid fa-user-group text-purple"></i> Connections
+                            </a>
+                            <a href="#" class="popup-item" id="btnGoToSettings"
+                                onclick="switchPage('account'); return false;">
+                                <i class="fa-solid fa-gear text-blue"></i> Settings
+                            </a>
+                            <div class="popup-divider"></div>
+                            <a href="#" class="popup-item text-red-muted" id="btnPopupLogout">
+                                <i class="fa-solid fa-right-from-bracket"></i> Sign Out
+                            </a>
+                        </div>
+
+                        <div>
+                            <h1 id="pageTitle">Dashboard</h1>
+                        </div>
+                    </div>
+
+                    <div class="controls-area">
+                        <!-- Quick Shared Filters (Year & Month) - Sebelah Kanan -->
+                        <div id="sharedControls" class="shared-controls-bar">
+                            <div class="filter-group" id="dashboardFilters">
+                                <select id="yearFilter" class="date-select clean-select"></select>
+                                <select id="monthFilter" class="date-select clean-select">
+                                    <option value="All">All Months</option>
+                                    <option value="01">Jan</option>
+                                    <option value="02">Feb</option>
+                                    <option value="03">Mar</option>
+                                    <option value="04">Apr</option>
+                                    <option value="05">May</option>
+                                    <option value="06">Jun</option>
+                                    <option value="07">Jul</option>
+                                    <option value="08">Aug</option>
+                                    <option value="09">Sep</option>
+                                    <option value="10">Oct</option>
+                                    <option value="11">Nov</option>
+                                    <option value="12">Dec</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Quick Analytics Filters (Period & Account) - Sebelah Kanan Sejajar Judul Analytics -->
+                        <div id="analyticsControls" class="shared-controls-bar analytics-controls-bar"
+                            style="display: none;">
+                            <div class="filter-group analytics-filter-group" id="analyticsFilters">
+                                <select id="reportPeriod" class="clean-select analytics-select">
+                                    <option value="this_month">This Month</option>
+                                    <option value="last_month">Last Month</option>
+                                    <option value="last_3_months">Last 3 Months</option>
+                                    <option value="this_year">This Year</option>
+                                </select>
+                                <select id="reportAccount" class="clean-select analytics-select">
+                                    <option value="All">All Accounts</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Notification bell for goal invitations -->
+                        <button class="btn-glass-icon" id="btnOpenGoalInvites" onclick="openGoalInvitesModal()"
+                            style="display: none;" title="Goal Invitations">
+                            <i class="fa-regular fa-bell"></i>
+                            <span id="goalInviteBadge" class="notif-badge-dot" style="display: none;"></span>
+                        </button>
+                    </div>
+                </header>
+
+                <!-- SECTION 1: DASHBOARD -->
+                <section id="dashboard" class="content-section active">
+                    <!-- Unified Hero Financial Overview Card -->
+                    <div class="card premium-hero glass-effect-card dashboard-unified-hero">
+                        <div class="hero-unified-main">
+                            <div class="hero-header-row">
+                                <span class="hero-label">Net Worth</span>
+                                <button type="button" id="togglePrivacyBtn" class="btn-round-small"
+                                    title="Toggle Balance Privacy" aria-label="Toggle Balance Privacy">
+                                    <i class="fa-solid fa-eye" id="togglePrivacyIcon"></i>
+                                </button>
+                            </div>
+                            <h2 id="displayTotalBalance" class="hero-balance">Rp0</h2>
+                            <div id="growthBadge" class="growth-badge neutral">
+                                <i id="growthIcon" class="fa-solid fa-minus"></i>
+                                <span id="growthText">0% vs Last Month</span>
+                            </div>
+                        </div>
+
+                        <div class="hero-unified-divider"></div>
+
+                        <div class="hero-unified-stats">
+                            <div class="stat-box green">
+                                <div class="stat-icon-circle green">
+                                    <i class="fa-solid fa-arrow-down"></i>
+                                </div>
+                                <div class="stat-text-group">
+                                    <span class="stat-label">Monthly Income</span>
+                                    <h3 id="displayIncome" class="text-green">Rp0</h3>
+                                </div>
+                            </div>
+                            <div class="stat-box red">
+                                <div class="stat-icon-circle red">
+                                    <i class="fa-solid fa-arrow-up"></i>
+                                </div>
+                                <div class="stat-text-group">
+                                    <span class="stat-label">Monthly Spending</span>
+                                    <h3 id="displaySpending">Rp0</h3>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Dashboard Layout: Accounts & Wallets (Horizontal Carousel Row) + Lower Grid (Debts & Recent Activity) -->
+                    <div class="dashboard-grid-layout">
+                        <!-- Row 1: Accounts & Wallets (Full-Width Horizontal Carousel) -->
+                        <div class="dashboard-grid-col accounts-col full-width-dash-col">
+                            <div class="section-header">
+                                <div class="section-title-with-desc">
+                                    <h3>Accounts & Wallets</h3>
+                                </div>
+                                <button class="btn-primary btn-round" id="openAccountModalBtn" title="Add Account">
+                                    <i class="fa-solid fa-plus"></i>
+                                </button>
+                            </div>
+                            <div id="accountList" class="account-card-grid"></div>
+                        </div>
+
+                        <!-- Row 2: Lower Grid for Debts & Loans and Recent Transactions -->
+                        <div class="dashboard-lower-grid">
+                            <!-- Column 1: Debts & Loans Summary -->
+                            <div class="dashboard-grid-col debts-col">
+                                <div class="section-header">
+                                    <div class="section-title-with-desc">
+                                        <h3>Debts & Loans</h3>
+                                    </div>
+                                    <button class="btn-secondary btn-round-small" onclick="switchPage('debts')"
+                                        title="Open Debt Tracker">
+                                        <i class="fa-solid fa-arrow-right"></i>
+                                    </button>
+                                </div>
+
+                                <div class="debt-summary-widget glass-effect-card" onclick="switchPage('debts')"
+                                    style="cursor: pointer;">
+                                    <div class="widget-row">
+                                        <div class="widget-item receivable">
+                                            <span class="widget-label"><i class="fa-solid fa-arrow-down"></i> Lent
+                                                (Receivable)</span>
+                                            <h4 id="dashDebtReceivable">Rp0</h4>
+                                        </div>
+                                        <div class="widget-item payable">
+                                            <span class="widget-label"><i class="fa-solid fa-arrow-up"></i> Borrowed
+                                                (Payable)</span>
+                                            <h4 id="dashDebtPayable">Rp0</h4>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div id="dashActiveDebtsList" class="dash-debts-list" style="display: none;"></div>
+                            </div>
+
+                            <!-- Column 2: Recent Activity -->
+                            <div class="dashboard-grid-col transactions-col">
+                                <div class="section-header">
+                                    <div class="section-title-with-desc">
+                                        <h3>Recent Transactions</h3>
+                                    </div>
+                                    <button class="btn-secondary btn-round-small" onclick="switchPage('transactions')"
+                                        title="View All History">
+                                        <i class="fa-solid fa-arrow-right"></i>
+                                    </button>
+                                </div>
+                                <div class="recent-transactions-widget glass-effect-card">
+                                    <div id="dashRecentTransactionsList" class="dash-transactions-list"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- SECTION 2: TRANSACTIONS (LIST & CALENDAR) -->
+                <section id="transactions" class="content-section">
+                    <div class="transaction-container-glass">
+                        <!-- Segmented Switch: List View vs Calendar View (Placed ABOVE Search) -->
+                        <div class="transaction-view-switch glass-effect-card" id="transViewSwitch" data-active="list">
+                            <div class="trans-switch-glider"></div>
+                            <button type="button" class="trans-view-tab active" id="transactionListTab"
+                                data-trans-view="list">
+                                <i class="fa-solid fa-list-check"></i> <span>Transaction List</span>
+                            </button>
+                            <button type="button" class="trans-view-tab" id="transactionCalendarTab"
+                                data-trans-view="calendar">
+                                <i class="fa-solid fa-calendar-days"></i> <span>Financial Calendar</span>
+                            </button>
+                        </div>
+
+                        <!-- Header Row: Search + Action Buttons with generous spacing -->
+                        <div class="trans-header-row">
+                            <div class="pill-search-trans">
+                                <i class="fa-solid fa-magnifying-glass"></i>
+                                <input type="text" id="searchTransaction" placeholder="Search transactions...">
+                            </div>
+
+                            <div class="action-group">
+                                <button type="button" id="btnExportPDF_Header"
+                                    class="btn-circle-glass btn-action-export" title="Export PDF Statement"
+                                    aria-label="Export PDF Statement" onclick="openExportPdfModal()">
+                                    <i class="fa-solid fa-file-pdf"></i>
+                                </button>
+                                <button type="button" id="transFilterToggleBtn"
+                                    class="btn-circle-glass btn-action-filter" title="Filter & Sort"
+                                    aria-label="Filter & Sort">
+                                    <i class="fa-solid fa-sliders"></i>
+                                </button>
+                                <button type="button" class="btn-primary btn-action-add" id="openTransModalBtn"
+                                    title="New Transaction" aria-label="New Transaction">
+                                    <i class="fa-solid fa-plus"></i>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Subview A: List -->
+                        <div id="transactionListView" class="transaction-subview active">
+                            <div id="transactionListContainer" class="trans-list-wrapper"></div>
+                            <div class="pagination-wrapper" id="paginationControls" style="display:none;">
+                                <div class="pagination-capsule" role="navigation" aria-label="Transaction pagination">
+                                    <button type="button" class="pagination-btn pagination-nav-btn" id="btnPrevPage" onclick="changePage(-1)" aria-label="Previous page" title="Previous page">
+                                        <i class="fa-solid fa-chevron-left"></i>
+                                    </button>
+                                    <div class="pagination-pages" id="paginationPagesList"></div>
+                                    <button type="button" class="pagination-btn pagination-nav-btn" id="btnNextPage" onclick="changePage(1)" aria-label="Next page" title="Next page">
+                                        <i class="fa-solid fa-chevron-right"></i>
+                                    </button>
+                                </div>
+                                <div class="pagination-summary" id="pageInfoSummary">
+                                    <span id="pageInfo" class="page-info-pill">Page 1 of 1</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Subview B: Calendar -->
+                        <div id="transactionCalendarView" class="transaction-subview">
+                            <div class="calendar-page-wrapper">
+                                <div class="calendar-toolbar glass-effect-card">
+                                    <div>
+                                        <h3 style="margin-bottom: 4px;">Financial Calendar</h3>
+                                    </div>
+                                    <div class="calendar-controls">
+                                        <button class="btn-circle-small" id="calendarPrevMonth" title="Previous Month">
+                                            <i class="fa-solid fa-chevron-left"></i>
+                                        </button>
+                                        <select id="calendarMonth" class="date-select clean-select"></select>
+                                        <select id="calendarYear" class="date-select clean-select"></select>
+                                        <button class="btn-circle-small" id="calendarNextMonth" title="Next Month">
+                                            <i class="fa-solid fa-chevron-right"></i>
+                                        </button>
+                                        <button class="btn-secondary" id="btnCalendarToday"
+                                            style="padding: 6px 14px; font-size: 0.85rem;">Today</button>
+                                    </div>
+                                </div>
+
+                                <div class="calendar-layout-grid">
+                                    <div class="glass-effect-card calendar-card">
+                                        <div class="calendar-weekdays">
+                                            <span>Sun</span><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span>
+                                        </div>
+                                        <div id="calendarGrid" class="calendar-grid"></div>
+                                    </div>
+                                    <div id="calendarDaySummary" class="glass-effect-card calendar-day-summary">
+                                        <div class="empty-calendar-summary">
+                                            <i class="fa-solid fa-calendar-day"></i>
+                                            <p>Select a date to view daily details.</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- SECTION 3: DEBTS & LOANS -->
+                <section id="debts" class="content-section">
+                    <div class="settings-page-container wide">
+                        <div class="debt-header-banner glass-effect-card">
+                            <div class="debt-header-left">
+                                <button class="btn-back-settings" type="button" onclick="switchPage('dashboard')" title="Back to Dashboard" aria-label="Back">
+                                    <i class="fa-solid fa-arrow-left"></i>
+                                </button>
+                                <div>
+                                    <h2>Debts & Loans</h2>
+                                    <span class="debt-header-subtitle">Receivables & Payables</span>
+                                </div>
+                            </div>
+                            <button class="btn-primary btn-round debt-header-add" onclick="openDebtModal()" title="Add Debt or Loan" aria-label="Add Record">
+                                <i class="fa-solid fa-plus"></i>
+                            </button>
+                        </div>
+
+                        <!-- 4 Stat Summary Metric Grid -->
+                        <div class="debt-summary-grid">
+                            <div class="glass-effect-card debt-summary-card receivable">
+                                <div>
+                                    <small>Total Lent</small>
+                                    <h3 id="debtTotalReceivable">Rp0</h3>
+                                </div>
+                                <div class="debt-summary-icon">
+                                    <i class="fa-solid fa-arrow-down"></i>
+                                </div>
+                            </div>
+                            <div class="glass-effect-card debt-summary-card payable">
+                                <div>
+                                    <small>Total Borrowed</small>
+                                    <h3 id="debtTotalPayable">Rp0</h3>
+                                </div>
+                                <div class="debt-summary-icon">
+                                    <i class="fa-solid fa-arrow-up"></i>
+                                </div>
+                            </div>
+                            <div class="glass-effect-card debt-summary-card net">
+                                <div>
+                                    <small>Net Position</small>
+                                    <h3 id="debtNetPosition">Rp0</h3>
+                                </div>
+                                <div class="debt-summary-icon">
+                                    <i class="fa-solid fa-scale-balanced"></i>
+                                </div>
+                            </div>
+                            <div class="glass-effect-card debt-summary-card due">
+                                <div>
+                                    <small>Due Soon</small>
+                                    <h3 id="debtDueSoonCount">0</h3>
+                                </div>
+                                <div class="debt-summary-icon">
+                                    <i class="fa-solid fa-bell"></i>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Toolbar Search & Filter -->
+                        <div class="glass-toolbar debt-toolbar">
+                            <div class="pill-search-wrapper debt-search-pill">
+                                <i class="fa-solid fa-magnifying-glass"></i>
+                                <input type="text" id="debtSearch" placeholder="Search records...">
+                            </div>
+                            <div class="debt-toolbar-actions">
+                                <div class="debt-filter-select-wrap">
+                                    <select id="debtKindFilter" class="clean-select">
+                                        <option value="all">All Types</option>
+                                        <option value="lent">Lent</option>
+                                        <option value="borrowed">Borrowed</option>
+                                    </select>
+                                </div>
+                                <div class="debt-filter-select-wrap">
+                                    <select id="debtStatusFilter" class="clean-select">
+                                        <option value="active">Active</option>
+                                        <option value="paid">Settled</option>
+                                        <option value="all">All</option>
+                                    </select>
+                                </div>
+                                <button class="btn-primary debt-add-btn" id="openDebtModalBtn">
+                                    <i class="fa-solid fa-plus"></i> <span>Add</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        <div id="debtList" class="debt-grid"></div>
+                    </div>
+                </section>
+
+                <!-- SECTION 4: BUDGET & GOALS -->
+                <section id="budget" class="content-section">
+                    <div class="savings-goals-section" style="margin-bottom: 30px;">
+                        <div class="section-header" style="margin-bottom: 20px;">
+                            <div>
+                                <h3>🎯 Savings Goal</h3>
+                            </div>
+                            <button class="btn-primary btn-round" onclick="openCreateBudgetModal('goal')" title="New Goal" aria-label="New Goal">
+                                <i class="fa-solid fa-plus"></i>
+                            </button>
+                        </div>
+                        <div id="goalsList" class="goal-containers-list"></div>
+                    </div>
+
+                    <div class="category-budgets-section">
+                        <div class="section-header" style="margin-bottom: 20px;">
+                            <div>
+                                <h3>📉 Category Budget </h3>
+                            </div>
+                            <button class="btn-primary btn-round" onclick="openCreateBudgetModal('budget')" title="Set Budget Limit" aria-label="Set Budget Limit">
+                                <i class="fa-solid fa-plus"></i>
+                            </button>
+                        </div>
+                        <div id="budgetsList" class="category-containers-list"></div>
+                    </div>
+                </section>
+
+                <!-- SECTION 5: ANALYTICS & REPORTS -->
+                <section id="reports" class="content-section">
+                    <div class="analytics-summary-grid">
+                        <div class="glass-effect-card summary-glass">
+                            <div class="sum-info">
+                                <small>Total Income</small>
+                                <h3 class="text-green" id="rptTotalIncome">Rp0</h3>
+                            </div>
+                            <i class="fa-solid fa-sack-dollar card-watermark text-green"></i>
+                        </div>
+
+                        <div class="glass-effect-card summary-glass">
+                            <div class="sum-info">
+                                <small>Total Expenses</small>
+                                <h3 class="text-red" id="rptTotalExpense">Rp0</h3>
+                            </div>
+                            <i class="fa-solid fa-cart-shopping card-watermark text-red"></i>
+                        </div>
+
+                        <div class="glass-effect-card summary-glass">
+                            <div class="sum-info">
+                                <small>Net Savings</small>
+                                <h3 class="text-blue" id="rptNetSavings">Rp0</h3>
+                            </div>
+                            <i class="fa-solid fa-piggy-bank card-watermark text-blue"></i>
+                        </div>
+
+                        <div class="glass-effect-card summary-glass">
+                            <div class="sum-info">
+                                <small>Savings Rate</small>
+                                <h3 id="rptSavingsRateText">0%</h3>
+                                <span style="font-size:0.75rem; color:var(--text-grey);">of total income</span>
+                            </div>
+                            <i class="fa-solid fa-chart-line card-watermark"></i>
+                        </div>
+                    </div>
+
+                    <div class="charts-row">
+                        <div class="glass-effect-card chart-card-wide">
+                            <div class="section-header">
+                                <h3>Cash Flow Trends</h3>
+                            </div>
+                            <div class="chart-container-wide">
+                                <canvas id="cashFlowChart"></canvas>
+                            </div>
+                        </div>
+
+                        <div class="glass-effect-card chart-card-narrow">
+                            <div class="section-header">
+                                <h3>Spending Breakdown</h3>
+                            </div>
+                            <div class="chart-container-narrow" style="position: relative;">
+                                <canvas id="spendingBreakdownChart"></canvas>
+                                <div id="donutCenterLabel" class="donut-center-text">
+                                    <span id="topCategoryName">Top Category</span>
+                                    <small id="topCategoryValue">-</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card glass-effect-card">
+                        <div class="section-header">
+                            <h3>Top 5 Expenses</h3>
+                        </div>
+                        <div id="topSpendingList" class="spending-list-wrapper"></div>
+                    </div>
+                </section>
+
+                <!-- SECTION 6: CONNECTIONS (SOCIAL) -->
+                <section id="connections" class="content-section">
+                    <div class="settings-page-container wide">
+                        <div class="connections-header-banner glass-effect-card">
+                            <div class="connections-header-left">
+                                <button class="btn-back-settings" type="button" onclick="switchPage('account')" title="Back to Settings" aria-label="Back">
+                                    <i class="fa-solid fa-arrow-left"></i>
+                                </button>
+                                <div>
+                                    <h2>Connections</h2>
+                                    <span class="connections-header-subtitle">Friends & Requests</span>
+                                </div>
+                            </div>
+                            <button class="btn-primary btn-round con-header-add" onclick="openAddFriendModal()" title="Add Friend" aria-label="Add Friend">
+                                <i class="fa-solid fa-user-plus"></i>
+                            </button>
+                        </div>
+
+                        <div class="glass-toolbar connections-toolbar">
+                            <div class="connection-segmented-tabs">
+                                <button class="con-tab active" id="tabBtnFriends" onclick="switchConnectionTab('friends')" type="button">
+                                    <i class="fa-solid fa-user-group"></i> Friends
+                                </button>
+                                <button class="con-tab" id="tabBtnRequests" onclick="switchConnectionTab('requests')" type="button">
+                                    <i class="fa-solid fa-bell"></i> Requests
+                                    <span id="tabRequestBadge" class="tab-badge" style="display:none;">0</span>
+                                </button>
+                            </div>
+
+                            <div class="connections-search-group">
+                                <div class="pill-search-wrapper con-search-pill">
+                                    <i class="fa-solid fa-magnifying-glass"></i>
+                                    <input type="text" id="searchFriend" placeholder="Search friends...">
+                                </div>
+                                <button class="btn-primary con-add-btn" onclick="openAddFriendModal()" type="button">
+                                    <i class="fa-solid fa-plus"></i> <span>Add</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- TAB 1: FRIENDS LIST -->
+                        <div id="tab-friends" class="con-tab-content active">
+                            <div id="friendsList" class="friends-premium-grid"></div>
+                        </div>
+
+                        <!-- TAB 2: REQUESTS LIST -->
+                        <div id="tab-requests" class="con-tab-content">
+                            <div id="requestsListTab" class="friends-premium-grid"></div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- SECTION 7: USER SETTINGS -->
+                <section id="account" class="content-section">
+                    <div class="settings-page-container">
+                        <div class="settings-header-banner glass-effect-card">
+                            <div class="settings-header-left">
+                                <button class="btn-back-settings" type="button" onclick="switchPage('dashboard')" title="Back to Dashboard" aria-label="Back">
+                                    <i class="fa-solid fa-arrow-left"></i>
+                                </button>
+                                <div>
+                                    <h2>Settings</h2>
+                                    <span class="settings-header-subtitle">Preferences & Account</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Profile Header Card (Horizontal Modern Inset) -->
+                        <div class="premium-profile-header glass-effect-card">
+                            <div class="avatar-container">
+                                <div id="settingsProfileInitials"
+                                    style="position: absolute; inset: 0; display:flex; justify-content:center; align-items:center; background: var(--primary-color); color:white; font-size: 1.6rem; font-weight: 800; border-radius: 50%;">
+                                    US
+                                </div>
+                                <img src="default-avatar.png" alt="User Avatar" id="settingsUserAvatar"
+                                    style="position: relative; z-index: 2; width: 100%; height: 100%; object-fit: cover; border-radius: 50%; display: none;">
+                            </div>
+                            <div class="profile-header-info">
+                                <h2 id="settingsUserName">Loading Profile...</h2>
+                                <p id="settingsUserEmail">email@example.com</p>
+                            </div>
+                            <button class="btn-secondary btn-action-pill edit-profile-badge-btn" onclick="openEditProfileModal()" type="button" title="Edit Profile">
+                                <i class="fa-solid fa-pen"></i> <span>Edit</span>
+                            </button>
+                        </div>
+
+                        <!-- Settings: General & Appearance -->
+                        <div class="settings-group-label">Preferences</div>
+                        <div class="settings-list">
+                            <div class="settings-row" onclick="switchPage('connections')">
+                                <div class="set-icon bg-purple"><i class="fa-solid fa-user-group"></i></div>
+                                <div class="set-text">
+                                    <h4>Connections</h4>
+                                </div>
+                                <div class="set-action">
+                                    <span class="tab-badge" id="settingReqBadge" style="display:none">0</span>
+                                    <i class="fa-solid fa-chevron-right"></i>
+                                </div>
+                            </div>
+
+                            <div class="settings-row" id="btnSettingsCategories"
+                                onclick="switchPage('categorySettings')">
+                                <div class="set-icon bg-pink"><i class="fa-solid fa-layer-group"></i></div>
+                                <div class="set-text">
+                                    <h4>Categories</h4>
+                                </div>
+                                <div class="set-action"><i class="fa-solid fa-chevron-right"></i></div>
+                            </div>
+
+                            <div class="settings-row" id="btnSettingsCurrency" onclick="switchPage('currencySettings')">
+                                <div class="set-icon bg-yellow"><i class="fa-solid fa-coins"></i></div>
+                                <div class="set-text">
+                                    <h4>Currency</h4>
+                                </div>
+                                <div class="set-action">
+                                    <span class="value-text" id="currentCurrencyText">IDR (Rp)</span>
+                                    <i class="fa-solid fa-chevron-right"></i>
+                                </div>
+                            </div>
+
+                            <div class="settings-row" id="btnSettingsTheme" onclick="switchPage('themeSettings')">
+                                <div class="set-icon bg-blue" id="settingsThemeIconBox"><i
+                                        class="fa-solid fa-palette"></i></div>
+                                <div class="set-text">
+                                    <h4>Theme Color</h4>
+                                </div>
+                                <div class="set-action">
+                                    <span class="value-text" id="currentThemeText">Sapphire Blue</span>
+                                    <i class="fa-solid fa-chevron-right"></i>
+                                </div>
+                            </div>
+
+                            <div class="settings-row">
+                                <div class="set-icon bg-dark"><i class="fa-solid fa-moon"></i></div>
+                                <div class="set-text">
+                                    <h4>Dark Mode</h4>
+                                </div>
+                                <div class="set-action">
+                                    <label class="switch">
+                                        <input type="checkbox" id="darkModeToggle">
+                                        <span class="slider round"></span>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Settings: Security -->
+                        <div class="settings-group-label">Security</div>
+                        <div class="settings-list">
+                            <div class="settings-row" id="btnChangePass">
+                                <div class="set-icon bg-orange"><i class="fa-solid fa-key"></i></div>
+                                <div class="set-text">
+                                    <h4>Change Password</h4>
+                                </div>
+                                <div class="set-action"><i class="fa-solid fa-chevron-right"></i></div>
+                            </div>
+                        </div>
+
+                        <!-- Settings: Data Management & Backup -->
+                        <div class="settings-group-label">Data & Backup</div>
+                        <div class="settings-list">
+                            <div class="settings-row" id="btnExportJSON_Settings">
+                                <div class="set-icon bg-blue"><i class="fa-solid fa-file-arrow-down"></i></div>
+                                <div class="set-text">
+                                    <h4>Backup Data (JSON)</h4>
+                                </div>
+                                <div class="set-action"><i class="fa-solid fa-download"></i></div>
+                            </div>
+
+                            <div class="settings-row" id="btnImportJSON_Settings">
+                                <div class="set-icon bg-purple"><i class="fa-solid fa-file-arrow-up"></i></div>
+                                <div class="set-text">
+                                    <h4>Restore Backup</h4>
+                                </div>
+                                <div class="set-action"><i class="fa-solid fa-upload"></i></div>
+                            </div>
+                        </div>
+
+                        <!-- Danger Zone -->
+                        <div class="settings-group-label">Account</div>
+                        <div class="settings-list danger-zone">
+                            <div class="settings-row text-red" id="btnSettingsLogout">
+                                <div class="set-icon bg-red-light"><i class="fa-solid fa-right-from-bracket"></i></div>
+                                <div class="set-text">
+                                    <h4 class="text-red">Sign Out</h4>
+                                </div>
+                                <div class="set-action"><i class="fa-solid fa-chevron-right text-red"></i></div>
+                            </div>
+
+                            <div class="settings-row text-red" id="btnResetData">
+                                <div class="set-icon bg-red-light"><i class="fa-solid fa-trash-can"></i></div>
+                                <div class="set-text">
+                                    <h4 class="text-red">Reset All Data</h4>
+                                </div>
+                                <div class="set-action"><i class="fa-solid fa-chevron-right text-red"></i></div>
+                            </div>
+                        </div>
+
+                        <div class="settings-footer-info">
+                            <p>Pocketly Finance & Wealth — Version 4.0 Pro</p>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- SECTION 8: CURRENCY SETTINGS SUBPAGE -->
+                <section id="currencySettings" class="content-section settings-subpage">
+                    <div class="settings-page-container">
+                        <div class="subpage-header-banner glass-effect-card">
+                            <button class="btn-back-settings" type="button" onclick="switchPage('account')" title="Back" aria-label="Back">
+                                <i class="fa-solid fa-arrow-left"></i>
+                            </button>
+                            <div>
+                                <h2>Currency</h2>
+                                <span class="subpage-subtitle">Live Exchange Rates</span>
+                            </div>
+                        </div>
+
+                        <!-- RATE STATUS TOOLBAR -->
+                        <div class="currency-sync-toolbar glass-effect-card">
+                            <div class="sync-status-left">
+                                <span class="live-pulse-dot"></span>
+                                <div>
+                                    <span id="currencyRateStatus" class="sync-status-text">Live rates connected</span>
+                                    <span id="convRateTime" class="sync-status-time"></span>
+                                </div>
+                            </div>
+                            <button class="btn-refresh-rates" id="btnRefreshRates" type="button" title="Refresh Live Rates">
+                                <i class="fa-solid fa-rotate"></i> <span>Sync</span>
+                            </button>
+                        </div>
+
+                        <!-- LIVE CURRENCY CONVERTER WIDGET -->
+                        <div class="converter-widget glass-effect-card">
+                            <div class="converter-header-info">
+                                <span class="rate-badge"><i class="fa-solid fa-chart-line"></i> Mid-Market Rate</span>
+                                <h3 id="convRateText" class="rate-highlight">1 USD = 16,000 IDR</h3>
+                            </div>
+                            <div class="converter-inputs">
+                                <div class="converter-group">
+                                    <span class="conv-field-label">From</span>
+                                    <div class="converter-field">
+                                        <input type="number" id="convInputFrom" value="100" step="any" min="0" class="conv-amount-input" placeholder="0">
+                                        <button type="button" class="conv-currency-pill-btn" id="convBtnFrom" onclick="openCurrencyPicker('from')" title="Change Currency">
+                                            <span class="conv-flag-box" id="convFlagFrom">
+                                                <img src="https://flagcdn.com/w40/us.png" alt="USD" class="currency-flag-img">
+                                            </span>
+                                            <span class="conv-code-text" id="convCodeFrom">USD</span>
+                                            <i class="fa-solid fa-chevron-down conv-chevron"></i>
+                                        </button>
+                                        <input type="hidden" id="convSelectFrom" value="USD">
+                                    </div>
+                                </div>
+
+                                <div class="converter-swap-row">
+                                    <button class="btn-swap-currency" id="btnSwapCurrency" type="button" title="Swap Currencies" aria-label="Swap">
+                                        <i class="fa-solid fa-arrows-up-down"></i>
+                                    </button>
+                                </div>
+
+                                <div class="converter-group">
+                                    <span class="conv-field-label">Converted</span>
+                                    <div class="converter-field">
+                                        <input type="number" id="convInputTo" value="1600000" step="any" min="0" class="conv-amount-input" readonly placeholder="0">
+                                        <button type="button" class="conv-currency-pill-btn" id="convBtnTo" onclick="openCurrencyPicker('to')" title="Change Currency">
+                                            <span class="conv-flag-box" id="convFlagTo">
+                                                <img src="https://flagcdn.com/w40/id.png" alt="IDR" class="currency-flag-img">
+                                            </span>
+                                            <span class="conv-code-text" id="convCodeTo">IDR</span>
+                                            <i class="fa-solid fa-chevron-down conv-chevron"></i>
+                                        </button>
+                                        <input type="hidden" id="convSelectTo" value="IDR">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- CURRENCY CATALOG -->
+                        <div class="currency-catalog-wrapper">
+                            <div class="currency-catalog-header">
+                                <h3>Currencies</h3>
+                                <span class="currency-count-badge" id="currencyCountText">Available</span>
+                            </div>
+                            <div class="pill-search-wrapper currency-search-box">
+                                <i class="fa-solid fa-magnifying-glass"></i>
+                                <input type="text" id="currencySearchInput" placeholder="Search currency or country...">
+                            </div>
+                            <div id="currencyPageList" class="currency-grid-premium"></div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- SECTION 9: THEME SETTINGS SUBPAGE -->
+                <section id="themeSettings" class="content-section settings-subpage">
+                    <div class="settings-page-container">
+                        <div class="subpage-header-banner glass-effect-card">
+                            <button class="btn-back-settings" type="button" onclick="switchPage('account')" title="Back" aria-label="Back">
+                                <i class="fa-solid fa-arrow-left"></i>
+                            </button>
+                            <div>
+                                <h2>Theme Accent</h2>
+                                <span class="subpage-subtitle">System-Wide Color Palette</span>
+                            </div>
+                        </div>
+
+                        <!-- LIVE SYSTEM THEME PREVIEW CARD -->
+                        <div class="theme-live-preview-card glass-effect-card">
+                            <div class="theme-live-header">
+                                <div class="theme-live-title-wrap">
+                                    <span class="theme-live-kicker"><i class="fa-solid fa-wand-magic-sparkles"></i> Live UI Preview</span>
+                                    <p class="theme-live-desc">Simulate dynamic theme colors applied across buttons, icons, docks, and cards</p>
+                                </div>
+                                <div class="theme-live-badge" id="themeLivePreviewBadge">
+                                    <span class="preview-badge-dot"></span>
+                                    <span class="preview-badge-name">Sapphire Blue</span>
+                                    <span class="preview-badge-hex">#2563EB</span>
+                                </div>
+                            </div>
+
+                            <div class="theme-live-components-grid">
+                                <div class="theme-live-comp-item">
+                                    <div class="theme-preview-icon-box">
+                                        <i class="fa-solid fa-wallet"></i>
+                                    </div>
+                                    <span class="theme-comp-label">Icon Box</span>
+                                </div>
+                                <div class="theme-live-comp-item">
+                                    <button type="button" class="btn-primary theme-preview-action-btn">
+                                        <i class="fa-solid fa-bolt"></i> Action
+                                    </button>
+                                    <span class="theme-comp-label">Primary Button</span>
+                                </div>
+                                <div class="theme-live-comp-item">
+                                    <span class="theme-preview-chip">
+                                        <i class="fa-solid fa-circle-check"></i> Active Chip
+                                    </span>
+                                    <span class="theme-comp-label">Filter & Tag</span>
+                                </div>
+                                <div class="theme-live-comp-item theme-live-progress-box">
+                                    <div class="theme-preview-progress-track">
+                                        <div class="theme-preview-progress-bar"></div>
+                                    </div>
+                                    <span class="theme-comp-label">Glow & Progress</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- PALETTE SELECTION GRID -->
+                        <div class="theme-section-subheader">
+                            <h3>Curated Palettes</h3>
+                            <span class="theme-count-badge">10 Themes</span>
+                        </div>
+
+                        <div id="themePageList" class="theme-grid-premium"></div>
+                    </div>
+                </section>
+
+                <!-- SECTION 10: CATEGORY SETTINGS SUBPAGE -->
+                <section id="categorySettings" class="content-section settings-subpage">
+                    <div class="settings-page-container wide">
+                        <div class="subpage-header-banner glass-effect-card">
+                            <button class="btn-back-settings" type="button" onclick="switchPage('account')" title="Back" aria-label="Back">
+                                <i class="fa-solid fa-arrow-left"></i>
+                            </button>
+                            <div>
+                                <h2>Categories</h2>
+                                <span class="subpage-subtitle">Category Studio & Catalog</span>
+                            </div>
+                        </div>
+
+                        <!-- CATEGORY STUDIO: ADD NEW -->
+                        <div class="cat-studio-card glass-effect-card">
+                            <div class="cat-studio-header">
+                                <div>
+                                    <h3>New Category</h3>
+                                </div>
+                                <div class="cat-live-preview-chip" id="catStudioPreview">
+                                    <span class="cat-preview-dot" id="catStudioDot" style="background:#2563eb;">
+                                        <i class="fa-solid fa-box" id="catStudioIcon"></i>
+                                    </span>
+                                    <span class="cat-preview-label" id="catStudioLabel">Preview</span>
+                                </div>
+                            </div>
+
+                            <div class="cat-studio-form">
+                                <div class="cat-input-pill">
+                                    <i class="fa-solid fa-tag"></i>
+                                    <input type="text" id="newCatName" placeholder="Category name..." oninput="window.updateCatStudioPreview && window.updateCatStudioPreview()">
+                                </div>
+                                <div class="cat-studio-pickers-grid">
+                                    <div class="cat-studio-field-wrap">
+                                        <button type="button" class="cat-icon-select-trigger" id="newCatIconBtn" onclick="openCategoryIconPicker('newCat')" title="Choose Icon">
+                                            <span class="icon-trigger-badge" id="newCatIconBadge"><i class="fa-solid fa-box" id="newCatIconDisplay"></i></span>
+                                            <span class="icon-trigger-label" id="newCatIconLabel">Box</span>
+                                            <i class="fa-solid fa-chevron-down icon-trigger-chevron"></i>
+                                        </button>
+                                        <input type="hidden" id="newCatIcon" value="fa-box">
+                                    </div>
+                                    <div class="cat-studio-field-wrap">
+                                        <button type="button" class="cat-color-select-trigger" id="newCatColorBtn" onclick="openCategoryColorPicker('newCat')" title="Choose Color">
+                                            <span class="color-trigger-swatch" id="newCatColorSwatch" style="background:#2563eb;"></span>
+                                            <span class="color-trigger-label" id="newCatColorLabel">Blue</span>
+                                            <i class="fa-solid fa-chevron-down color-trigger-chevron"></i>
+                                        </button>
+                                        <input type="hidden" id="newCatColor" value="#2563eb">
+                                    </div>
+                                </div>
+                                <button class="btn-primary cat-add-btn-full" onclick="addNewCategory()" type="button">
+                                    <i class="fa-solid fa-plus"></i> <span>Add Category</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- SAVED CATEGORIES CATALOG -->
+                        <div class="cat-catalog-wrapper">
+                            <div class="cat-catalog-header">
+                                <h3>Saved Categories</h3>
+                                <span class="cat-catalog-badge" id="categoryCountText">0 categories</span>
+                            </div>
+                            <div id="manageCategoryList" class="category-grid-catalog"></div>
+                        </div>
+                    </div>
+                </section>
+
+            </main>
+        </div>
+
+        <!-- 3. MOBILE FLOATING GLASS DOCK (BOTTOM NAV) - Inside appScreen -->
+        <nav class="bottom-glass-dock" id="mobileBottomNav">
+            <a href="#" class="b-nav-item active" data-target="dashboard"
+                onclick="event.preventDefault(); switchPage('dashboard')">
+                <i class="fa-solid fa-house"></i>
+            </a>
+            <a href="#" class="b-nav-item" data-target="transactions"
+                onclick="event.preventDefault(); switchPage('transactions')">
+                <i class="fa-solid fa-receipt"></i>
+            </a>
+            <div class="b-nav-fab-wrapper">
+                <button class="btn-hero-fab" id="mobileAddFab"
+                    onclick="document.getElementById('openTransModalBtn').click()" title="Add Transaction">
+                    <i class="fa-solid fa-plus"></i>
+                </button>
+            </div>
+            <a href="#" class="b-nav-item" data-target="budget" onclick="event.preventDefault(); switchPage('budget')">
+                <i class="fa-solid fa-bullseye"></i>
+            </a>
+            <a href="#" class="b-nav-item" data-target="reports"
+                onclick="event.preventDefault(); switchPage('reports')">
+                <i class="fa-solid fa-chart-pie"></i>
+            </a>
+        </nav>
+    </div>
+
+    <!-- 4. MODALS (LUXE GLASS POPUPS) -->
+
+    <!-- Modal A: Add / Edit Transaction -->
+    <div id="transactionModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header-actions-row"
+                style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <h2 id="transModalTitle" style="font-size: 1.3rem; margin: 0;">New Transaction</h2>
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <button type="button" id="btnVoiceRecord" class="btn-circle-glass"
+                        style="width: 36px; height: 36px;" title="Voice Input">
+                        <i class="fa-solid fa-microphone"></i>
+                    </button>
+                    <div style="position: relative;">
+                        <button type="button" id="btnScanReceipt" class="btn-circle-glass"
+                            style="width: 36px; height: 36px;" title="Scan Receipt (OCR)">
+                            <i class="fa-solid fa-camera"></i>
+                        </button>
+                        <div id="imageOptionsPopup" class="glass-popup"
+                            style="position: absolute; right: 0; left: auto; top: calc(100% + 8px); z-index: 99999; width: 175px; min-width: 175px; padding: 6px; box-shadow: var(--shadow-lg);">
+                            <button type="button" id="btnUploadGallery" class="popup-item full-width"
+                                style="border:none; background:transparent; cursor:pointer;">
+                                <i class="fa-solid fa-image"></i> Open Gallery
+                            </button>
+                            <button type="button" id="btnOpenCamera" class="popup-item full-width"
+                                style="border:none; background:transparent; cursor:pointer;">
+                                <i class="fa-solid fa-camera"></i> Open Camera
+                            </button>
+                        </div>
+                    </div>
+                    <button type="button" class="close-btn t-close"
+                        style="position: static; width: 36px; height: 36px; margin: 0; display: inline-flex; align-items: center; justify-content: center;"
+                        aria-label="Close modal">
+                        <i class="fa-solid fa-xmark"></i>
+                    </button>
+                    <input type="file" id="inputReceiptImage" accept="image/*" style="display: none;">
+                    <input type="file" id="inputCameraImage" accept="image/*" capture="environment"
+                        style="display: none;">
+                </div>
+            </div>
+
+            <form id="transactionForm">
+                <input type="hidden" id="editTransId">
+                <input type="hidden" id="originalAmount">
+                <input type="hidden" id="originalType">
+
+                <div class="form-group">
+                    <label>Transaction Type</label>
+                    <select id="inputType" class="clean-select">
+                        <option value="expense">Expense</option>
+                        <option value="income">Income</option>
+                        <option value="transfer">Account Transfer</option>
+                    </select>
+                </div>
+
+                <div class="form-group" id="categoryGroup">
+                    <label>Category</label>
+                    <select id="inputCategory" class="clean-select">
+                        <option value="" disabled selected>Select Category</option>
+                        <option value="Food & Drink">🍔 Food & Drink</option>
+                        <option value="Transportation">🚗 Transportation</option>
+                        <option value="Shopping">🛍️ Shopping</option>
+                        <option value="Beauty">💄 Beauty & Personal Care</option>
+                        <option value="Bills & Utilities">💡 Bills & Utilities</option>
+                        <option value="Entertainment">🎬 Entertainment</option>
+                        <option value="Health">💊 Health & Medical</option>
+                        <option value="Education">🎓 Education</option>
+                        <option value="Salary">💰 Salary</option>
+                        <option value="Investment">📈 Investment</option>
+                        <option value="Adjustment">🔧 Balance Adjustment</option>
+                        <option value="Transfer">⇄ Transfer</option>
+                        <option value="Others">📦 Others</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label id="accountLabel">Source Account</label>
+                    <select id="inputAccount" required class="clean-select"></select>
+                </div>
+
+                <div class="form-group" id="targetAccountGroup" style="display:none;">
+                    <label>Destination Account</label>
+                    <select id="inputToAccount" class="clean-select"></select>
+                </div>
+
+                <div class="form-group">
+                    <label>Note / Description</label>
+                    <input type="text" id="inputDesc" required placeholder="e.g. Lunch, Coffee, Groceries">
+                </div>
+
+                <div class="form-group">
+                    <label>Amount</label>
+                    <input type="number" id="inputAmount" required placeholder="0" min="1">
+                </div>
+
+                <div class="form-group">
+                    <label>Date</label>
+                    <input type="date" id="inputDate" required>
+                </div>
+
+                <button type="submit" class="btn-primary full-width" id="btnSaveTrans" style="margin-top: 10px;">Save
+                    Transaction</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal B: Add / Edit Account -->
+    <div id="accountModal" class="modal">
+        <div class="modal-content">
+            <button type="button" class="close-btn a-close" aria-label="Close modal"><i
+                    class="fa-solid fa-xmark"></i></button>
+            <h2 id="accModalTitle" style="font-size: 1.3rem; margin-bottom: 18px; padding-right: 38px;">New Account</h2>
+            <form id="accountForm">
+                <input type="hidden" id="editAccId">
+
+                <div class="form-group">
+                    <label>Account / Bank / Wallet Name</label>
+                    <input type="text" id="accName" placeholder="e.g. Checking, Savings, Cash Wallet" required>
+                </div>
+
+                <div class="form-group" id="balanceGroup">
+                    <label>Initial Balance</label>
+                    <input type="number" id="accBalance" required placeholder="0">
+                    <small
+                        style="color: var(--text-grey); font-size: 0.8rem; margin-top: 8px; display: block; line-height: 1.4;">
+                        <i class="fa-solid fa-circle-info text-blue"></i> Automatically recorded as opening balance.
+                    </small>
+                </div>
+
+                <button type="submit" class="btn-primary full-width" id="btnSaveAcc" style="margin-top: 10px;">Save
+                    Account</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal: Account Quick Actions Sheet -->
+    <div id="accountActionSheet" class="modal" onclick="if(event.target === this) closeAccountActionSheet()">
+        <div class="modal-content action-sheet-modal-content">
+            <button type="button" class="close-btn" onclick="closeAccountActionSheet()" aria-label="Close modal">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+            <div class="action-sheet-header">
+                <div class="action-sheet-icon" id="actionSheetIconBox">
+                    <i id="actionSheetIcon" class="fa-solid fa-wallet"></i>
+                </div>
+                <div class="action-sheet-info">
+                    <h3 id="actionSheetName">Account Name</h3>
+                    <p id="actionSheetBalance">Rp 0</p>
+                </div>
+            </div>
+
+            <div class="action-sheet-menu">
+                <button type="button" class="action-sheet-btn" onclick="onActionSheetEdit()">
+                    <div class="as-btn-left">
+                        <div class="as-icon-circle bg-blue-subtle">
+                            <i class="fa-solid fa-pen"></i>
+                        </div>
+                        <div class="as-btn-text">
+                            <strong>Edit Account</strong>
+                            <span>Update account name or details</span>
+                        </div>
+                    </div>
+                    <i class="fa-solid fa-chevron-right as-chevron"></i>
+                </button>
+
+                <button type="button" class="action-sheet-btn danger" onclick="onActionSheetDelete()">
+                    <div class="as-btn-left">
+                        <div class="as-icon-circle bg-red-subtle">
+                            <i class="fa-solid fa-trash-can"></i>
+                        </div>
+                        <div class="as-btn-text">
+                            <strong>Delete Account</strong>
+                            <span>Permanently remove this account & transfers</span>
+                        </div>
+                    </div>
+                    <i class="fa-solid fa-chevron-right as-chevron"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal C: Add / Edit Budget & Goal -->
+    <div id="budgetModal" class="modal">
+        <div class="modal-content">
+            <button type="button" class="close-btn b-close" aria-label="Close modal"><i
+                    class="fa-solid fa-xmark"></i></button>
+            <h2 id="budgetModalTitle" style="font-size: 1.3rem; margin-bottom: 18px; padding-right: 38px;">New Budget
+                Plan</h2>
+            <form id="budgetForm">
+                <input type="hidden" id="editBudgetId">
+
+                <div class="form-group" id="planTypeGroup">
+                    <label>Plan Type</label>
+                    <select id="budgetType" required onchange="toggleBudgetType()" class="clean-select">
+                        <option value="goal">🎯 Savings Goal</option>
+                        <option value="budget">📉 Category Spending Limit</option>
+                    </select>
+                </div>
+
+                <div class="form-group" id="goalNameGroup">
+                    <label>Goal Name</label>
+                    <input type="text" id="budgetName" placeholder="e.g. Japan Trip, Emergency Fund">
+                </div>
+
+                <div class="form-group" id="budgetCategoryGroup" style="display:none;">
+                    <label>Budget Category</label>
+                    <select id="budgetCategorySelect" class="clean-select">
+                        <option value="" disabled selected>Select Category</option>
+                        <option value="Food & Drink">Food & Drink</option>
+                        <option value="Transportation">Transportation</option>
+                        <option value="Shopping">Shopping</option>
+                        <option value="Beauty">Beauty</option>
+                        <option value="Bills & Utilities">Bills & Utilities</option>
+                        <option value="Entertainment">Entertainment</option>
+                        <option value="Health">Health</option>
+                        <option value="Education">Education</option>
+                        <option value="Others">Others</option>
+                    </select>
+                </div>
+
+                <div class="form-group" id="goalTypeToggleGroup" style="display:none;">
+                    <label>Visibility</label>
+                    <select id="goalVisibility" class="clean-select" onchange="togglePartnerSelection()">
+                        <option value="personal">Personal (Only Me)</option>
+                        <option value="shared">Shared (Collaborative)</option>
+                    </select>
+                </div>
+
+                <div class="form-group" id="partnerSelectionGroup" style="display:none;">
+                    <label>Select Partners</label>
+                    <div id="partnerChecklist" class="partner-checklist" style="max-height: 180px; overflow-y: auto;">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Target Amount</label>
+                    <input type="number" id="budgetTarget" required placeholder="0" min="1">
+                </div>
+
+                <button type="submit" class="btn-primary full-width" id="btnSaveBudget" style="margin-top: 10px;">Save
+                    Plan</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal D: Top Up / Withdraw Budget Funds -->
+    <div id="topupBudgetModal" class="modal">
+        <div class="modal-content">
+            <button type="button" class="close-btn t-close"
+                onclick="document.getElementById('topupBudgetModal').classList.remove('show')"
+                aria-label="Close modal"><i class="fa-solid fa-xmark"></i></button>
+            <h2 id="topupModalTitle" style="font-size: 1.3rem; margin-bottom: 18px; padding-right: 38px;">Deposit /
+                Withdraw Goal Funds</h2>
+            <form id="topupBudgetForm">
+                <input type="hidden" id="topupBudgetId">
+                <input type="hidden" id="topupCurrentVal">
+                <input type="hidden" id="topupType">
+                <input type="hidden" id="topupActionType" value="deposit">
+
+                <div class="form-group" id="sourceAccountGroup">
+                    <label id="lblTopupAccount">Source Account (Deduct from)</label>
+                    <select id="topupAccount" class="clean-select"></select>
+                </div>
+
+                <div class="form-group">
+                    <label>Amount</label>
+                    <input type="number" id="topupAmount" required placeholder="0" min="1">
+                </div>
+
+                <button type="submit" class="btn-primary full-width" id="btnTopupAction"
+                    style="margin-top: 10px;">Confirm Transaction</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal E: Refund Goal on Delete -->
+    <div id="refundModal" class="modal">
+        <div class="modal-content">
+            <button type="button" class="close-btn refund-close" aria-label="Close modal"><i
+                    class="fa-solid fa-xmark"></i></button>
+            <h2 class="text-red" style="font-size: 1.3rem; margin-bottom: 10px; padding-right: 38px;">Refund Funds &
+                Delete Goal</h2>
+            <p style="color: var(--text-grey); font-size: 0.9rem; margin-bottom: 18px;">
+                This goal has a saved balance of <b id="refundAmountDisplay" style="color: var(--text-dark);"></b>.
+                Where should the funds be returned?
+            </p>
+            <form id="refundForm">
+                <input type="hidden" id="refundBudgetId">
+                <input type="hidden" id="refundAmountValue">
+                <input type="hidden" id="refundGoalName">
+
+                <div class="form-group">
+                    <label>Refund Destination Account</label>
+                    <select id="refundAccountSelect" required class="clean-select"></select>
+                </div>
+
+                <button type="submit" class="btn-danger full-width" style="margin-top: 10px;">Refund Funds & Delete
+                    Goal</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal F: Reset Password -->
+    <div id="resetPasswordModal" class="modal">
+        <div class="modal-content">
+            <button type="button" class="close-btn r-close" aria-label="Close modal"><i
+                    class="fa-solid fa-xmark"></i></button>
+            <h2 style="font-size: 1.3rem; margin-bottom: 14px; padding-right: 38px;">Reset Password</h2>
+            <p style="color: var(--text-grey); font-size: 0.9rem; margin-bottom: 18px;">Enter your email address to
+                receive password reset instructions.</p>
+            <form id="resetPasswordForm">
+                <div class="form-group">
+                    <label>Email Address</label>
+                    <input type="email" id="resetEmail" required placeholder="you@domain.com">
+                </div>
+                <button type="submit" class="btn-primary full-width" style="margin-top: 10px;">Send Reset Link</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal G: Friend Requests -->
+    <div id="requestsModal" class="modal">
+        <div class="modal-content">
+            <button type="button" class="close-btn req-close" aria-label="Close modal"><i
+                    class="fa-solid fa-xmark"></i></button>
+            <h2 style="font-size: 1.3rem; margin-bottom: 16px; padding-right: 38px;">Friend Requests</h2>
+            <div id="modalRequestList" class="friend-grid-list"
+                style="display: flex; flex-direction: column; gap: 10px;"></div>
+        </div>
+    </div>
+
+    <!-- Modal H: Add Friend -->
+    <div id="friendModal" class="modal">
+        <div class="modal-content">
+            <button type="button" class="close-btn f-close" aria-label="Close modal"><i
+                    class="fa-solid fa-xmark"></i></button>
+            <h2 style="font-size: 1.3rem; margin-bottom: 14px; padding-right: 38px;">Add New Friend</h2>
+            <form id="friendForm">
+                <div class="form-group">
+                    <label>Friend User ID (@username)</label>
+                    <div class="input-with-icon">
+                        <span class="input-prefix">@</span>
+                        <input type="text" id="searchFriendID" placeholder="username123" required>
+                    </div>
+                </div>
+
+                <div id="searchResultArea"
+                    style="display:none; margin-bottom: 16px; background: var(--input-bg); padding: 14px; border-radius: var(--radius-lg); border: 1px solid var(--border-color);">
+                    <div style="display: flex; align-items: center; gap: 12px;">
+                        <div id="foundAvatar"
+                            style="width: 44px; height: 44px; border-radius: 50%; background: var(--primary-color); display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; overflow: hidden;">
+                        </div>
+                        <div>
+                            <h4 id="foundName" style="margin: 0; font-size: 0.95rem; color: var(--text-dark);">User Name
+                            </h4>
+                            <small id="foundID" style="color: var(--text-grey);">@userid</small>
+                        </div>
+                    </div>
+                </div>
+
+                <button type="button" id="btnCheckUser" class="btn-secondary full-width"
+                    style="margin-bottom: 10px;">Find User</button>
+                <button type="submit" id="btnSendInvite" class="btn-primary full-width" style="display:none;">Send
+                    Invitation</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal I: Goal Invitations -->
+    <div id="goalInvitesModal" class="modal">
+        <div class="modal-content">
+            <button type="button" class="close-btn gi-close" aria-label="Close modal"><i
+                    class="fa-solid fa-xmark"></i></button>
+            <h2 style="font-size: 1.3rem; margin-bottom: 8px; padding-right: 38px;">Shared Goal Invites</h2>
+            <p style="color: var(--text-grey); font-size: 0.88rem; margin-bottom: 18px;">Friends inviting you to save
+                together.</p>
+            <div id="modalGoalInviteList" class="friend-grid-list"
+                style="display: flex; flex-direction: column; gap: 10px;">
+                <p style="text-align: center; color: var(--text-muted); padding: 20px;">No pending invitations.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal J: Goal Participants -->
+    <div id="participantsModal" class="modal">
+        <div class="modal-content" style="max-width: 460px;">
+            <button type="button" class="close-btn p-close"
+                onclick="document.getElementById('participantsModal').classList.remove('show')"
+                aria-label="Close modal"><i class="fa-solid fa-xmark"></i></button>
+            <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 6px;">
+                <div style="width: 40px; height: 40px; border-radius: 12px; background: rgba(37,99,235,0.12); color: var(--primary-color); display: flex; align-items: center; justify-content: center; font-size: 1.15rem; flex-shrink: 0;">
+                    <i class="fa-solid fa-user-group"></i>
+                </div>
+                <div style="min-width: 0;">
+                    <h2 id="participantsModalGoalName" style="font-size: 1.25rem; margin: 0; line-height: 1.25; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">Goal Members</h2>
+                    <p id="participantsModalSubtitle" style="color: var(--text-grey); font-size: 0.8rem; margin: 3px 0 0 0;">Shared savings group & contributors</p>
+                </div>
+            </div>
+
+            <div id="participantsOverview" style="margin-top: 14px; margin-bottom: 14px; background: var(--input-bg); border: 1px solid var(--border-color); border-radius: var(--radius-lg); padding: 12px 16px; display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                    <small style="color: var(--text-grey); font-size: 0.72rem; text-transform: uppercase; font-weight: 700; letter-spacing: 0.5px;">Total Saved</small>
+                    <div id="participantsModalTotalSaved" style="font-size: 1.1rem; font-weight: 800; color: #10b981;">Rp 0</div>
+                </div>
+                <div style="text-align: right;">
+                    <small style="color: var(--text-grey); font-size: 0.72rem; text-transform: uppercase; font-weight: 700; letter-spacing: 0.5px;">Goal Target</small>
+                    <div id="participantsModalTarget" style="font-size: 1.1rem; font-weight: 800; color: var(--text-dark);">Rp 0</div>
+                </div>
+            </div>
+
+            <div style="margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center;">
+                <span style="font-size: 0.8rem; font-weight: 700; color: var(--text-grey); text-transform: uppercase; letter-spacing: 0.5px;">Members List</span>
+                <span id="participantsCountBadge" class="cat-status-badge safe" style="font-size: 0.75rem;">0 Members</span>
+            </div>
+
+            <div id="participantsList" class="friend-grid-list"
+                style="display: flex; flex-direction: column; gap: 10px; max-height: 290px; overflow-y: auto; padding-right: 2px;"></div>
+
+            <div id="participantsFooterActions" style="margin-top: 16px; padding-top: 14px; border-top: 1px solid var(--border-color); display: none;"></div>
+        </div>
+    </div>
+
+    <!-- Modal K: Transaction Detail (Receipt Style) -->
+    <div id="transactionDetailModal" class="modal">
+        <div class="modal-content" style="max-width: 420px;">
+            <button type="button" class="close-btn detail-close" aria-label="Close modal"><i
+                    class="fa-solid fa-xmark"></i></button>
+            <h3
+                style="margin-bottom: 20px; text-align: center; border-bottom: 1px solid var(--border-color); padding-bottom: 14px;">
+                Transaction Details</h3>
+
+            <div style="text-align: center; margin-bottom: 24px;">
+                <div id="detailIconWrapper"
+                    style="width: 64px; height: 64px; border-radius: 20px; display: flex; align-items: center; justify-content: center; font-size: 1.8rem; margin: 0 auto 14px auto; background: var(--blue-accent-light); color: var(--primary-color);">
+                    <i id="detailIcon" class="fa-solid fa-receipt"></i>
+                </div>
+                <h2 id="detailAmount"
+                    style="font-family: var(--font-display); font-size: 2.2rem; margin: 0; font-weight: 800;">$0</h2>
+                <span id="detailTypeBadge"
+                    style="font-size: 0.8rem; font-weight: 700; text-transform: uppercase; padding: 4px 14px; border-radius: var(--radius-pill); margin-top: 8px; display: inline-block;">Expense</span>
+            </div>
+
+            <div style="display: flex; flex-direction: column; gap: 12px; margin-bottom: 24px; font-size: 0.92rem;">
+                <div
+                    style="display: flex; justify-content: space-between; border-bottom: 1px dashed var(--border-color); padding-bottom: 8px;">
+                    <span style="color: var(--text-grey);">Note</span>
+                    <span id="detailDesc"
+                        style="font-weight: 700; color: var(--text-dark); max-width: 60%; text-align: right;">-</span>
+                </div>
+                <div
+                    style="display: flex; justify-content: space-between; border-bottom: 1px dashed var(--border-color); padding-bottom: 8px;">
+                    <span style="color: var(--text-grey);">Category</span>
+                    <span id="detailCategory" style="font-weight: 700; color: var(--text-dark);">-</span>
+                </div>
+                <div
+                    style="display: flex; justify-content: space-between; border-bottom: 1px dashed var(--border-color); padding-bottom: 8px;">
+                    <span id="labelDetailAccount" style="color: var(--text-grey);">Account</span>
+                    <span id="detailAccount" style="font-weight: 700; color: var(--text-dark);">-</span>
+                </div>
+                <div id="detailTargetRow"
+                    style="display: none; justify-content: space-between; border-bottom: 1px dashed var(--border-color); padding-bottom: 8px;">
+                    <span style="color: var(--text-grey);">Destination Account</span>
+                    <span id="detailTargetAccount" style="font-weight: 700; color: var(--text-dark);">-</span>
+                </div>
+                <div
+                    style="display: flex; justify-content: space-between; border-bottom: 1px dashed var(--border-color); padding-bottom: 8px;">
+                    <span style="color: var(--text-grey);">Date</span>
+                    <span id="detailDate" style="font-weight: 700; color: var(--text-dark);">-</span>
+                </div>
+            </div>
+
+            <div id="detailActionButtons" style="display: flex; gap: 10px;">
+                <button id="btnDetailEdit" class="btn-secondary full-width">
+                    <i class="fa-solid fa-pen"></i> Edit
+                </button>
+                <button id="btnDetailDelete" class="btn-danger full-width">
+                    <i class="fa-solid fa-trash"></i> Delete
+                </button>
+            </div>
+
+            <div id="detailLockedMsg"
+                style="text-align: center; color: var(--text-grey); font-size: 0.85rem; display: none; background: var(--input-bg); padding: 10px; border-radius: var(--radius-md); border: 1px solid var(--border-color);">
+                <i class="fa-solid fa-lock"></i> System record (locked from editing).
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal L: Transaction Filter Popover -->
+    <div id="transFilterPopup" class="filter-popup">
+        <div class="filter-header">
+            <h4 style="font-size: 1rem; margin: 0;">Filter & Sort</h4>
+            <button type="button" class="close-filter" id="closeTransFilterBtn" aria-label="Close filter"><i
+                    class="fa-solid fa-xmark"></i></button>
+        </div>
+        <div class="filter-body">
+            <div class="filter-group-item">
+                <label>Sort By</label>
+                <select id="transSort" class="clean-select">
+                    <option value="newest">Newest First</option>
+                    <option value="oldest">Oldest First</option>
+                    <option value="highest">Highest Amount</option>
+                    <option value="lowest">Lowest Amount</option>
+                </select>
+            </div>
+            <div class="filter-group-item">
+                <label>Transaction Type</label>
+                <select id="transFilterType" class="clean-select">
+                    <option value="all">All Types</option>
+                    <option value="income">Income</option>
+                    <option value="expense">Expense</option>
+                    <option value="transfer">Transfer</option>
+                </select>
+            </div>
+            <div class="filter-group-item">
+                <label>Account</label>
+                <select id="transFilterAccount" class="clean-select">
+                    <option value="all">All Accounts</option>
+                </select>
+            </div>
+            <div class="filter-group-item">
+                <label>Category</label>
+                <select id="transFilterCategory" class="clean-select">
+                    <option value="all">All Categories</option>
+                    <option value="Food & Drink">Food & Drink</option>
+                    <option value="Transportation">Transportation</option>
+                    <option value="Shopping">Shopping</option>
+                    <option value="Beauty">Beauty</option>
+                    <option value="Bills & Utilities">Bills & Utilities</option>
+                    <option value="Entertainment">Entertainment</option>
+                    <option value="Health">Health</option>
+                    <option value="Education">Education</option>
+                    <option value="Salary">Salary</option>
+                    <option value="Investment">Investment</option>
+                    <option value="Adjustment">Adjustment</option>
+                    <option value="Transfer">Transfer</option>
+                    <option value="Others">Others</option>
+                </select>
+            </div>
+            <button id="resetTransFilter" class="btn-secondary full-width" style="margin-top: 10px;">Reset
+                Filters</button>
+        </div>
+    </div>
+
+    <!-- Modal M: Add / Edit Debt & Loan -->
+    <div id="debtModal" class="modal">
+        <div class="modal-content modal-wide">
+            <button type="button" class="close-btn"
+                onclick="document.getElementById('debtModal').classList.remove('show')" aria-label="Close modal"><i
+                    class="fa-solid fa-xmark"></i></button>
+            <h2 id="debtModalTitle" style="font-size: 1.3rem; margin-bottom: 18px; padding-right: 38px;">New Debt / Loan
+            </h2>
+            <form id="debtForm">
+                <input type="hidden" id="editDebtId">
+
+                <div class="form-grid-2">
+                    <div class="form-group">
+                        <label>Record Type</label>
+                        <select id="debtKind" required class="clean-select">
+                            <option value="lent">Lent (Money I lent out)</option>
+                            <option value="borrowed">Borrowed (Money I owe)</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Party / Person / Entity</label>
+                        <input type="text" id="debtPartyName" placeholder="e.g. John, Bank, Friend" required>
+                    </div>
+                </div>
+
+                <div class="form-grid-2">
+                    <div class="form-group">
+                        <label>Principal Amount</label>
+                        <input type="number" id="debtPrincipal" min="1" required placeholder="0">
+                    </div>
+                    <div class="form-group">
+                        <label>Associated Account</label>
+                        <select id="debtAccount" class="clean-select"></select>
+                    </div>
+                </div>
+
+                <div class="form-grid-2">
+                    <div class="form-group">
+                        <label>Start / Loan Date</label>
+                        <input type="date" id="debtStartDate" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Due Date (Optional)</label>
+                        <input type="date" id="debtDueDate">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Notes</label>
+                    <input type="text" id="debtNotes" placeholder="Payment terms, interest, or reminders">
+                </div>
+
+                <label class="checkbox-row" id="debtAffectBalanceRow">
+                    <input type="checkbox" id="debtAffectBalance" checked>
+                    <span>Update account balance & auto-record transaction</span>
+                </label>
+
+                <button type="submit" class="btn-primary full-width" id="btnSaveDebt" style="margin-top: 10px;">Save
+                    Record</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal N: Record Debt Payment -->
+    <div id="debtPaymentModal" class="modal">
+        <div class="modal-content">
+            <button type="button" class="close-btn"
+                onclick="document.getElementById('debtPaymentModal').classList.remove('show')"
+                aria-label="Close modal"><i class="fa-solid fa-xmark"></i></button>
+            <h2 id="debtPaymentTitle" style="font-size: 1.3rem; margin-bottom: 14px; padding-right: 38px;">Record
+                Payment</h2>
+            <form id="debtPaymentForm">
+                <input type="hidden" id="paymentDebtId">
+                <div class="debt-payment-context" id="debtPaymentContext"
+                    style="background: var(--input-bg); padding: 12px; border-radius: var(--radius-md); border: 1px solid var(--border-color); margin-bottom: 16px;">
+                </div>
+
+                <div class="form-group">
+                    <label>Payment Account</label>
+                    <select id="debtPaymentAccount" class="clean-select" required></select>
+                </div>
+
+                <div class="form-group">
+                    <label>Payment Amount</label>
+                    <input type="number" id="debtPaymentAmount" min="1" required placeholder="0">
+                </div>
+
+                <div class="form-group">
+                    <label>Payment Date</label>
+                    <input type="date" id="debtPaymentDate" required>
+                </div>
+
+                <div class="form-group">
+                    <label>Payment Note</label>
+                    <input type="text" id="debtPaymentNote" placeholder="e.g. Installment #1, Full payoff">
+                </div>
+
+                <button type="submit" class="btn-primary full-width" id="btnSaveDebtPayment"
+                    style="margin-top: 10px;">Save Payment</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal O: Import JSON Backup -->
+    <div id="backupImportModal" class="modal">
+        <div class="modal-content" style="max-width: 440px;">
+            <button type="button" class="close-btn"
+                onclick="document.getElementById('backupImportModal').classList.remove('show')"
+                aria-label="Close modal"><i class="fa-solid fa-xmark"></i></button>
+            
+            <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 6px;">
+                <div style="width: 42px; height: 42px; border-radius: 12px; background: rgba(37,99,235,0.12); color: var(--primary-color); display: flex; align-items: center; justify-content: center; font-size: 1.25rem; flex-shrink: 0;">
+                    <i class="fa-solid fa-cloud-arrow-up"></i>
+                </div>
+                <div style="min-width: 0;">
+                    <h2 style="font-size: 1.25rem; margin: 0; line-height: 1.25;">Restore Backup</h2>
+                    <p style="color: var(--text-grey); font-size: 0.82rem; margin: 3px 0 0 0;">Import transactions & data from JSON</p>
+                </div>
+            </div>
+
+            <p style="color: var(--text-grey); font-size: 0.88rem; line-height: 1.5; margin: 12px 0 16px 0;">
+                Select a previously exported Pocketly backup file to restore or merge your financial records.
+            </p>
+
+            <form id="backupImportForm">
+                <input type="file" id="backupJsonFile" accept="application/json,.json" required style="display: none;">
+                
+                <div class="backup-dropzone-card" id="backupDropzone" onclick="document.getElementById('backupJsonFile').click()">
+                    <div style="width: 48px; height: 48px; border-radius: 50%; background: var(--blue-accent-light); color: var(--primary-color); display: flex; align-items: center; justify-content: center; font-size: 1.3rem; margin-bottom: 10px;">
+                        <i class="fa-solid fa-file-arrow-up" id="dropzoneIcon"></i>
+                    </div>
+                    <span id="dropzoneTextMain" style="font-weight: 700; font-size: 0.95rem; color: var(--text-dark);">Choose Backup File</span>
+                    <span id="dropzoneTextSub" style="font-size: 0.8rem; color: var(--text-grey); margin-top: 3px;">Click to browse or drop .json file</span>
+                    <span id="dropzoneFileBadge" class="cat-status-badge safe" style="display: none; margin-top: 10px; font-size: 0.76rem;">Ready to Restore ✓</span>
+                </div>
+
+                <div class="backup-option-box" style="margin-top: 16px; background: var(--input-bg); border: 1px solid var(--border-color); border-radius: var(--radius-lg); padding: 12px 14px;">
+                    <label class="checkbox-row" style="margin: 0; display: flex; align-items: flex-start; gap: 10px; cursor: pointer;">
+                        <input type="checkbox" id="backupReplaceExisting" style="margin-top: 3px; accent-color: var(--primary-color);">
+                        <div style="flex: 1;">
+                            <div style="display: flex; align-items: center; gap: 6px;">
+                                <span style="font-size: 0.86rem; font-weight: 700; color: var(--text-dark);">Replace Existing Data</span>
+                                <span style="font-size: 0.65rem; font-weight: 700; background: rgba(239, 68, 68, 0.12); color: var(--red); padding: 1px 6px; border-radius: 6px;">Caution</span>
+                            </div>
+                            <p style="margin: 2px 0 0 0; font-size: 0.76rem; color: var(--text-grey); line-height: 1.35;">
+                                Wipe current records before import. If unchecked, backup data will safely merge.
+                            </p>
+                        </div>
+                    </label>
+                </div>
+
+                <div style="display: flex; gap: 10px; margin-top: 18px;">
+                    <button type="button" class="btn-secondary" onclick="document.getElementById('backupImportModal').classList.remove('show')" style="flex: 1; border-radius: var(--radius-pill); font-weight: 700;">Cancel</button>
+                    <button type="submit" class="btn-primary" id="btnRunBackupImport" style="flex: 1.5; border-radius: var(--radius-pill); font-weight: 700; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                        <i class="fa-solid fa-rotate-right"></i> <span>Restore Data</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal P: Smart Voice Input -->
+    <div id="voiceRecordModal" class="modal">
+        <div class="modal-content" style="text-align: center; padding: 36px 24px; max-width: 340px;">
+            <button type="button" class="close-btn v-close"
+                onclick="document.getElementById('voiceRecordModal').classList.remove('show')"
+                aria-label="Close modal"><i class="fa-solid fa-xmark"></i></button>
+            <h2 style="font-size: 1.3rem; margin-bottom: 6px;">Voice Input</h2>
+            <p style="color: var(--text-grey); font-size: 0.88rem; margin-bottom: 24px;">Speak your entry, e.g.
+                <i>"Lunch 25 dollars from Cash"</i>
+            </p>
+            <button type="button" id="btnStartListening" class="btn-circle-glass"
+                style="width: 80px; height: 80px; font-size: 2.2rem; margin: 0 auto; border: 2px solid var(--primary-color); color: var(--primary-color);">
+                <i class="fa-solid fa-microphone"></i>
+            </button>
+            <p id="voiceStatusText"
+                style="margin-top: 18px; font-weight: 600; min-height: 24px; font-size: 0.92rem; color: var(--text-dark);">
+            </p>
+        </div>
+    </div>
+
+    <!-- Modal Q: Edit User Profile -->
+    <div id="editProfileModal" class="modal">
+        <div class="modal-content">
+            <button type="button" class="close-btn"
+                onclick="document.getElementById('editProfileModal').classList.remove('show')"
+                aria-label="Close modal"><i class="fa-solid fa-xmark"></i></button>
+            <h2 style="font-size: 1.3rem; margin-bottom: 18px; padding-right: 38px;">Edit User Profile</h2>
+
+            <div style="display: flex; flex-direction: column; align-items: center; margin-bottom: 20px;">
+                <div
+                    style="width: 80px; height: 80px; border-radius: 50%; overflow: hidden; margin-bottom: 12px; border: 2px solid var(--border-color); background: var(--input-bg); display:flex; align-items:center; justify-content:center;">
+                    <img id="previewAvatarImg" src="default-avatar.png" alt="Preview"
+                        style="width: 100%; height: 100%; object-fit: cover;">
+                </div>
+                <label for="fileInputProfile" class="btn-secondary"
+                    style="font-size: 0.85rem; padding: 6px 16px; cursor: pointer;">
+                    <i class="fa-solid fa-camera"></i> Upload Photo
+                </label>
+                <input type="file" id="fileInputProfile" accept="image/png, image/jpeg, image/jpg" hidden>
+            </div>
+
+            <form id="editProfileForm">
+                <div class="form-group">
+                    <label>Account Email</label>
+                    <input type="email" id="updateEmailInput" disabled style="opacity: 0.7; cursor: not-allowed;">
+                </div>
+                <div class="form-group">
+                    <label>Display Name</label>
+                    <input type="text" id="updateNameInput" placeholder="e.g. Alex Ray">
+                </div>
+                <div class="form-group">
+                    <label>User ID</label>
+                    <div class="input-with-icon">
+                        <span class="input-prefix">@</span>
+                        <input type="text" id="updateUserID" placeholder="alex123">
+                    </div>
+                </div>
+                <button type="button" class="btn-primary full-width" id="saveProfileBtn" style="margin-top: 10px;">Save
+                    Profile</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal R: Change Password -->
+    <div id="changePasswordModal" class="modal">
+        <div class="modal-content">
+            <button type="button" class="close-btn" id="closeChangePasswordBtn" aria-label="Close modal"><i
+                    class="fa-solid fa-xmark"></i></button>
+            <h2 style="font-size: 1.3rem; margin-bottom: 18px; padding-right: 38px;">Change Password</h2>
+            <div class="form-group">
+                <label>Current Password</label>
+                <div class="input-glass-wrapper">
+                    <i class="fa-solid fa-lock input-icon"></i>
+                    <input type="password" id="oldPasswordInput" placeholder="Enter current password" required>
+                </div>
+            </div>
+            <div class="form-group">
+                <label>New Password</label>
+                <div class="input-glass-wrapper">
+                    <i class="fa-solid fa-key input-icon"></i>
+                    <input type="password" id="newPasswordInput" placeholder="Minimum 6 characters" required>
+                </div>
+            </div>
+            <div class="form-group" style="margin-bottom: 6px;">
+                <label>Confirm New Password</label>
+                <div class="input-glass-wrapper">
+                    <i class="fa-solid fa-key input-icon"></i>
+                    <input type="password" id="confirmNewPasswordInput" placeholder="Re-enter new password" required>
+                </div>
+            </div>
+            <div class="forgot-pass-wrapper" style="margin-top: 4px; margin-bottom: 16px;">
+                <a href="#" id="inAppForgotPasswordLink" style="font-size: 0.8rem; font-weight: 600; color: var(--primary-color); text-decoration: none; transition: opacity var(--transition-fast);">Forgot password?</a>
+            </div>
+            <button id="saveNewPasswordBtn" class="btn-primary full-width">Update Password</button>
+        </div>
+    </div>
+
+    <!-- Modal S: Confirmation Action Modal -->
+    <div id="confirmationModal" class="modal">
+        <div class="modal-content center-text" style="max-width: 380px;">
+            <i class="fa-solid fa-trash-can text-red"
+                style="font-size: 2.5rem; margin-bottom: 14px; display: inline-block;"></i>
+            <h3 id="confirmActionTitle" style="font-size: 1.25rem; margin-bottom: 8px;">Are you sure?</h3>
+            <p id="confirmActionMessage" style="color: var(--text-grey); font-size: 0.92rem; margin-bottom: 22px;">This
+                action cannot be undone.</p>
+            <div style="display: flex; gap: 10px;">
+                <button class="btn-secondary" onclick="closeConfirmModal()" style="flex: 1;">Cancel</button>
+                <button id="btnConfirmAction" class="btn-danger" style="flex: 1;">Delete</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal T: Category Icon Picker Popup -->
+    <div id="categoryIconPickerModal" class="modal">
+        <div class="modal-content icon-picker-modal-content">
+            <div class="icon-picker-modal-header">
+                <div class="icon-picker-title-group">
+                    <div class="icon-picker-header-badge">
+                        <i class="fa-solid fa-icons"></i>
+                    </div>
+                    <div>
+                        <h3 class="icon-picker-title">Choose Category Icon</h3>
+                        <span class="icon-picker-subtitle">Select an icon from the catalog</span>
+                    </div>
+                </div>
+                <button type="button" class="close-btn" onclick="closeCategoryIconPicker()" aria-label="Close modal">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <!-- Search Bar -->
+            <div class="icon-picker-search-bar">
+                <i class="fa-solid fa-magnifying-glass"></i>
+                <input type="text" id="iconPickerSearchInput" placeholder="Search icons (e.g. food, car, coffee, shopping)..." oninput="filterIconPickerGrid()" autocomplete="off">
+                <button type="button" class="icon-picker-search-clear" id="iconPickerSearchClear" onclick="clearIconPickerSearch()" style="display: none;">
+                    <i class="fa-solid fa-circle-xmark"></i>
+                </button>
+            </div>
+
+            <!-- Category Filter Tabs -->
+            <div class="icon-picker-categories" id="iconPickerCategoryTabs">
+                <!-- Dynamically populated -->
+            </div>
+
+            <!-- Icon Grid Container -->
+            <div class="icon-picker-grid-container" id="iconPickerGrid">
+                <!-- Dynamically populated -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal V: Category Color Picker Popup -->
+    <div id="categoryColorPickerModal" class="modal">
+        <div class="modal-content color-picker-modal-content">
+            <div class="color-picker-modal-header">
+                <div class="color-picker-title-group">
+                    <div class="color-picker-header-badge">
+                        <i class="fa-solid fa-palette"></i>
+                    </div>
+                    <div>
+                        <h3 class="color-picker-title">Choose Category Color</h3>
+                        <span class="color-picker-subtitle">Select a curated palette or customize</span>
+                    </div>
+                </div>
+                <button type="button" class="close-btn" onclick="closeCategoryColorPicker()" aria-label="Close modal">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <!-- Live Preview Chip -->
+            <div class="color-picker-preview-banner">
+                <div class="color-preview-pill">
+                    <span class="color-preview-swatch-dot" id="colorPickerPreviewDot" style="background:#2563eb;">
+                        <i class="fa-solid fa-box" id="colorPickerPreviewIcon"></i>
+                    </span>
+                    <div class="color-preview-text">
+                        <strong id="colorPickerPreviewName">Sapphire Blue</strong>
+                        <span id="colorPickerPreviewHex">#2563eb</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Curated Palettes Grid -->
+            <div class="color-swatches-section-label">Curated Palettes</div>
+            <div class="color-picker-grid-container" id="colorPickerSwatchesGrid">
+                <!-- Dynamically populated curated swatches -->
+            </div>
+
+            <!-- Custom Color Picker Row -->
+            <div class="color-picker-custom-row">
+                <div class="custom-color-input-wrap">
+                    <input type="color" id="customColorNativePicker" class="custom-color-native-input" value="#2563eb" oninput="handleCustomColorNative(this.value)" onchange="handleCustomColorCommit(this.value)">
+                    <span class="custom-color-label">Custom Color</span>
+                </div>
+                <div class="custom-hex-input-wrap">
+                    <span class="custom-hex-prefix">#</span>
+                    <input type="text" id="customColorHexInput" class="custom-hex-input" placeholder="2563eb" maxlength="6" oninput="handleCustomColorHex(this.value)" onchange="handleCustomColorCommit('#' + this.value)">
+                </div>
+            </div>
+
+            <button type="button" class="btn-primary full-width color-picker-done-btn" onclick="commitAndCloseCategoryColorPicker()">
+                <i class="fa-solid fa-check"></i> <span>Done</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Modal U: Currency Picker Popup Modal -->
+    <div id="currencyPickerModal" class="modal">
+        <div class="modal-content currency-picker-modal-content">
+            <div class="currency-picker-modal-header">
+                <div class="currency-picker-title-group">
+                    <div class="currency-picker-header-badge">
+                        <i class="fa-solid fa-coins"></i>
+                    </div>
+                    <div>
+                        <h3 class="currency-picker-title">Select Currency</h3>
+                        <span class="currency-picker-subtitle">Choose currency for live conversion</span>
+                    </div>
+                </div>
+                <button type="button" class="close-btn" onclick="closeCurrencyPicker()" aria-label="Close modal">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <!-- Search input -->
+            <div class="currency-picker-search-bar">
+                <i class="fa-solid fa-magnifying-glass"></i>
+                <input type="text" id="currencyPickerSearchInput" placeholder="Search by name, country or code (e.g. IDR, USD, Yen)..." oninput="filterCurrencyPickerList()" autocomplete="off">
+                <button type="button" class="currency-picker-search-clear" id="currencyPickerSearchClear" onclick="clearCurrencyPickerSearch()" style="display: none;">
+                    <i class="fa-solid fa-circle-xmark"></i>
+                </button>
+            </div>
+
+            <!-- Popular Quick Picks -->
+            <div class="currency-picker-quick-picks">
+                <span class="quick-picks-label">Popular:</span>
+                <button type="button" class="quick-pick-pill" onclick="selectPickerCurrency('IDR')"><img src="https://flagcdn.com/w40/id.png" alt="IDR" class="quick-pick-flag"> IDR</button>
+                <button type="button" class="quick-pick-pill" onclick="selectPickerCurrency('USD')"><img src="https://flagcdn.com/w40/us.png" alt="USD" class="quick-pick-flag"> USD</button>
+                <button type="button" class="quick-pick-pill" onclick="selectPickerCurrency('EUR')"><img src="https://flagcdn.com/w40/eu.png" alt="EUR" class="quick-pick-flag"> EUR</button>
+                <button type="button" class="quick-pick-pill" onclick="selectPickerCurrency('SGD')"><img src="https://flagcdn.com/w40/sg.png" alt="SGD" class="quick-pick-flag"> SGD</button>
+                <button type="button" class="quick-pick-pill" onclick="selectPickerCurrency('JPY')"><img src="https://flagcdn.com/w40/jp.png" alt="JPY" class="quick-pick-flag"> JPY</button>
+                <button type="button" class="quick-pick-pill" onclick="selectPickerCurrency('MYR')"><img src="https://flagcdn.com/w40/my.png" alt="MYR" class="quick-pick-flag"> MYR</button>
+            </div>
+
+            <!-- List Container -->
+            <div class="currency-picker-list-container" id="currencyPickerList">
+                <!-- Dynamically populated -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal W: Export PDF Statement & Period Selector Modal -->
+    <div id="exportPdfModal" class="modal">
+        <div class="modal-content export-pdf-modal-content">
+            <!-- Modal Header -->
+            <div class="export-pdf-modal-header">
+                <div class="export-pdf-title-group">
+                    <div class="export-pdf-header-badge">
+                        <i class="fa-solid fa-file-pdf"></i>
+                    </div>
+                    <div>
+                        <h3 class="export-pdf-title">Export PDF Statement</h3>
+                        <span class="export-pdf-subtitle">Select period & download detailed financial statement</span>
+                    </div>
+                </div>
+                <button type="button" class="close-btn" onclick="closeExportPdfModal()" aria-label="Close modal">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <!-- Segmented Period Mode Switch -->
+            <div class="export-pdf-mode-tabs" role="tablist">
+                <button type="button" class="export-mode-tab active" id="tabExportMonth" onclick="setExportPdfMode('month')">
+                    <i class="fa-solid fa-calendar"></i> <span>Specific Month</span>
+                </button>
+                <button type="button" class="export-mode-tab" id="tabExportRange" onclick="setExportPdfMode('range')">
+                    <i class="fa-solid fa-calendar-week"></i> <span>Month Range</span>
+                </button>
+                <button type="button" class="export-mode-tab" id="tabExportAll" onclick="setExportPdfMode('all')">
+                    <i class="fa-solid fa-infinity"></i> <span>All Time</span>
+                </button>
+            </div>
+
+            <!-- Mode 1: Single Month View -->
+            <div id="exportPdfMonthView" class="export-mode-view active">
+                <div class="export-field-group">
+                    <label class="export-field-label">SELECT MONTH & YEAR</label>
+                    <div class="export-input-pill-wrap" onclick="triggerMonthPicker('exportPdfSingleMonth')">
+                        <div class="export-input-icon-badge">
+                            <i class="fa-solid fa-calendar-day"></i>
+                        </div>
+                        <input type="month" id="exportPdfSingleMonth" class="export-month-native-input" onchange="updateExportPdfScope()">
+                        <div class="export-input-trigger-hint" title="Open Calendar">
+                            <i class="fa-solid fa-chevron-down"></i>
+                        </div>
+                    </div>
+                </div>
+                <!-- Quick Preset Pills -->
+                <div class="export-quick-presets">
+                    <span class="export-preset-label">Quick Presets:</span>
+                    <button type="button" class="export-preset-btn" onclick="setExportPdfPreset('thisMonth')">This Month</button>
+                    <button type="button" class="export-preset-btn" onclick="setExportPdfPreset('lastMonth')">Last Month</button>
+                </div>
+            </div>
+
+            <!-- Mode 2: Month Range View -->
+            <div id="exportPdfRangeView" class="export-mode-view" style="display: none;">
+                <div class="export-range-inputs-grid">
+                    <div class="export-field-group">
+                        <label class="export-field-label">FROM MONTH</label>
+                        <div class="export-input-pill-wrap" onclick="triggerMonthPicker('exportPdfStartMonth')">
+                            <div class="export-input-icon-badge">
+                                <i class="fa-solid fa-calendar-plus"></i>
+                            </div>
+                            <input type="month" id="exportPdfStartMonth" class="export-month-native-input" onchange="updateExportPdfScope()">
+                            <div class="export-input-trigger-hint" title="Open Calendar">
+                                <i class="fa-solid fa-chevron-down"></i>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="export-field-group">
+                        <label class="export-field-label">TO MONTH</label>
+                        <div class="export-input-pill-wrap" onclick="triggerMonthPicker('exportPdfEndMonth')">
+                            <div class="export-input-icon-badge">
+                                <i class="fa-solid fa-calendar-check"></i>
+                            </div>
+                            <input type="month" id="exportPdfEndMonth" class="export-month-native-input" onchange="updateExportPdfScope()">
+                            <div class="export-input-trigger-hint" title="Open Calendar">
+                                <i class="fa-solid fa-chevron-down"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- Quick Range Presets -->
+                <div class="export-quick-presets">
+                    <span class="export-preset-label">Quick Presets:</span>
+                    <button type="button" class="export-preset-btn" onclick="setExportPdfPreset('last3Months')">Last 3 Months</button>
+                    <button type="button" class="export-preset-btn" onclick="setExportPdfPreset('last6Months')">Last 6 Months</button>
+                    <button type="button" class="export-preset-btn" onclick="setExportPdfPreset('thisYear')">This Year (YTD)</button>
+                </div>
+            </div>
+
+            <!-- Mode 3: All Time View -->
+            <div id="exportPdfAllView" class="export-mode-view" style="display: none;">
+                <div class="export-all-time-notice">
+                    <div class="all-time-icon-circle">
+                        <i class="fa-solid fa-clock-rotate-left"></i>
+                    </div>
+                    <div>
+                        <strong>All Historical Transactions</strong>
+                        <p>Cumulative statement across all recorded transactions.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Dynamic Period Scope Card (Live Preview Summary) -->
+            <div class="export-scope-preview-card" id="exportScopeCard">
+                <div class="export-scope-header">
+                    <div class="export-scope-tag-wrap">
+                        <i class="fa-solid fa-calendar-check"></i>
+                        <span class="export-scope-tag" id="exportScopePeriodTag">October 2026</span>
+                    </div>
+                    <span class="export-scope-count" id="exportScopeCount">0 Transactions</span>
+                </div>
+                <div class="export-scope-stats-row">
+                    <div class="export-stat-item green">
+                        <span class="stat-meta">Income</span>
+                        <strong id="exportScopeIncome">Rp0</strong>
+                    </div>
+                    <div class="export-stat-divider"></div>
+                    <div class="export-stat-item red">
+                        <span class="stat-meta">Expense</span>
+                        <strong id="exportScopeExpense">Rp0</strong>
+                    </div>
+                    <div class="export-stat-divider"></div>
+                    <div class="export-stat-item blue">
+                        <span class="stat-meta">Net Cash Flow</span>
+                        <strong id="exportScopeNet">Rp0</strong>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sleek Feature Pill (Clean & Concise) -->
+            <div class="export-advisory-pill">
+                <i class="fa-solid fa-wand-magic-sparkles"></i>
+                <span>Includes Cash Health Score, 50/30/20 Benchmark & Action Plan</span>
+            </div>
+
+            <!-- Modal Action Buttons -->
+            <div class="export-modal-actions-row">
+                <button type="button" class="btn-secondary export-cancel-btn" onclick="closeExportPdfModal()">
+                    Cancel
+                </button>
+                <button type="button" class="btn-primary export-generate-btn" id="btnConfirmGeneratePdf" onclick="generateExportPdf()">
+                    <i class="fa-solid fa-file-arrow-down"></i> <span>Download Statement PDF</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="poppins-font.js"></script>
+    <script type="module" src="script.js?v=10.9"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+    <script defer src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script defer
+        src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.29/jspdf.plugin.autotable.min.js"></script>
+</body>
+
+</html>

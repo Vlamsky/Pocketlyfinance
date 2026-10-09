@@ -1,0 +1,21 @@
+{
+  "name": "Pocketly Finance",
+  "short_name": "Pocketly",
+  "start_url": "index.html",
+  "display": "standalone",
+  "background_color": "#f8f9fd",
+  "theme_color": "#f8f9fd",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "logo-new.png", 
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "logo-new.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
