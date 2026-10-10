@@ -1336,26 +1336,26 @@
         <div class="modal-content">
             <div class="modal-header-actions-row"
                 style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-                <h2 id="transModalTitle" style="font-size: 1.3rem; margin: 0;">New Transaction</h2>
+                <h2 id="transModalTitle" style="font-size: 1.3rem; margin: 0;" data-i18n="btn_new_transaction">New Transaction</h2>
                 <div style="display: flex; align-items: center; gap: 8px;">
                     <button type="button" id="btnVoiceRecord" class="btn-circle-glass"
-                        style="width: 36px; height: 36px;" title="Voice Input">
+                        style="width: 36px; height: 36px;" title="Voice Input" data-i18n-title="voice_input_title">
                         <i class="fa-solid fa-microphone"></i>
                     </button>
                     <div style="position: relative;">
                         <button type="button" id="btnScanReceipt" class="btn-circle-glass"
-                            style="width: 36px; height: 36px;" title="Scan Receipt (OCR)">
+                            style="width: 36px; height: 36px;" title="Scan Receipt (OCR)" data-i18n-title="scan_receipt_title">
                             <i class="fa-solid fa-camera"></i>
                         </button>
                         <div id="imageOptionsPopup" class="glass-popup"
                             style="position: absolute; right: 0; left: auto; top: calc(100% + 8px); z-index: 99999; width: 175px; min-width: 175px; padding: 6px; box-shadow: var(--shadow-lg);">
                             <button type="button" id="btnUploadGallery" class="popup-item full-width"
                                 style="border:none; background:transparent; cursor:pointer;">
-                                <i class="fa-solid fa-image"></i> Open Gallery
+                                <i class="fa-solid fa-image"></i> <span data-i18n="btn_open_gallery">Open Gallery</span>
                             </button>
                             <button type="button" id="btnOpenCamera" class="popup-item full-width"
                                 style="border:none; background:transparent; cursor:pointer;">
-                                <i class="fa-solid fa-camera"></i> Open Camera
+                                <i class="fa-solid fa-camera"></i> <span data-i18n="btn_open_camera">Open Camera</span>
                             </button>
                         </div>
                     </div>
@@ -1376,61 +1376,60 @@
                 <input type="hidden" id="originalType">
 
                 <div class="form-group">
-                    <label>Transaction Type</label>
+                    <label data-i18n="trans_lbl_type">Transaction Type</label>
                     <select id="inputType" class="clean-select">
-                        <option value="expense">Expense</option>
-                        <option value="income">Income</option>
-                        <option value="transfer">Account Transfer</option>
+                        <option value="expense" data-i18n="trans_opt_expense">Expense</option>
+                        <option value="income" data-i18n="trans_opt_income">Income</option>
+                        <option value="transfer" data-i18n="trans_opt_transfer">Account Transfer</option>
                     </select>
                 </div>
 
                 <div class="form-group" id="categoryGroup">
-                    <label>Category</label>
+                    <label data-i18n="trans_lbl_category">Category</label>
                     <select id="inputCategory" class="clean-select">
-                        <option value="" disabled selected>Select Category</option>
-                        <option value="Food & Drink">🍔 Food & Drink</option>
-                        <option value="Transportation">🚗 Transportation</option>
-                        <option value="Shopping">🛍️ Shopping</option>
-                        <option value="Beauty">💄 Beauty & Personal Care</option>
-                        <option value="Bills & Utilities">💡 Bills & Utilities</option>
-                        <option value="Entertainment">🎬 Entertainment</option>
-                        <option value="Health">💊 Health & Medical</option>
-                        <option value="Education">🎓 Education</option>
-                        <option value="Salary">💰 Salary</option>
-                        <option value="Investment">📈 Investment</option>
-                        <option value="Adjustment">🔧 Balance Adjustment</option>
-                        <option value="Transfer">⇄ Transfer</option>
-                        <option value="Others">📦 Others</option>
+                        <option value="" disabled selected data-i18n="trans_select_category_placeholder">Select Category</option>
+                        <option value="Food & Drink" data-i18n="cat_food_drink">🍔 Food & Drink</option>
+                        <option value="Transportation" data-i18n="cat_transportation">🚗 Transportation</option>
+                        <option value="Shopping" data-i18n="cat_shopping">🛍️ Shopping</option>
+                        <option value="Beauty" data-i18n="cat_beauty">💄 Beauty & Personal Care</option>
+                        <option value="Bills & Utilities" data-i18n="cat_bills_utilities">💡 Bills & Utilities</option>
+                        <option value="Entertainment" data-i18n="cat_entertainment">🎬 Entertainment</option>
+                        <option value="Health" data-i18n="cat_health">💊 Health & Medical</option>
+                        <option value="Education" data-i18n="cat_education">🎓 Education</option>
+                        <option value="Salary" data-i18n="cat_salary">💰 Salary</option>
+                        <option value="Investment" data-i18n="cat_investment">📈 Investment</option>
+                        <option value="Adjustment" data-i18n="cat_adjustment">🔧 Balance Adjustment</option>
+                        <option value="Transfer" data-i18n="cat_transfer">⇄ Transfer</option>
+                        <option value="Others" data-i18n="cat_others">📦 Others</option>
                     </select>
                 </div>
 
                 <div class="form-group">
-                    <label id="accountLabel">Source Account</label>
+                    <label id="accountLabel" data-i18n="trans_lbl_source_account">Source Account</label>
                     <select id="inputAccount" required class="clean-select"></select>
                 </div>
 
                 <div class="form-group" id="targetAccountGroup" style="display:none;">
-                    <label>Destination Account</label>
+                    <label data-i18n="trans_lbl_dest_account">Destination Account</label>
                     <select id="inputToAccount" class="clean-select"></select>
                 </div>
 
                 <div class="form-group">
-                    <label>Note / Description</label>
-                    <input type="text" id="inputDesc" required placeholder="e.g. Lunch, Coffee, Groceries">
+                    <label data-i18n="trans_lbl_desc">Note / Description</label>
+                    <input type="text" id="inputDesc" required placeholder="e.g. Lunch, Coffee, Groceries" data-i18n-placeholder="trans_desc_placeholder">
                 </div>
 
                 <div class="form-group">
-                    <label>Amount</label>
+                    <label data-i18n="trans_lbl_amount">Amount</label>
                     <input type="number" id="inputAmount" required placeholder="0" min="1">
                 </div>
 
                 <div class="form-group">
-                    <label>Date</label>
+                    <label data-i18n="trans_lbl_date">Date</label>
                     <input type="date" id="inputDate" required>
                 </div>
 
-                <button type="submit" class="btn-primary full-width" id="btnSaveTrans" style="margin-top: 10px;">Save
-                    Transaction</button>
+                <button type="submit" class="btn-primary full-width" id="btnSaveTrans" style="margin-top: 10px;" data-i18n="btn_save_transaction">Save Transaction</button>
             </form>
         </div>
     </div>
@@ -1440,26 +1439,25 @@
         <div class="modal-content">
             <button type="button" class="close-btn a-close" aria-label="Close modal"><i
                     class="fa-solid fa-xmark"></i></button>
-            <h2 id="accModalTitle" style="font-size: 1.3rem; margin-bottom: 18px; padding-right: 38px;">New Account</h2>
+            <h2 id="accModalTitle" style="font-size: 1.3rem; margin-bottom: 18px; padding-right: 38px;" data-i18n="acc_modal_title">New Account</h2>
             <form id="accountForm">
                 <input type="hidden" id="editAccId">
 
                 <div class="form-group">
-                    <label>Account / Bank / Wallet Name</label>
-                    <input type="text" id="accName" placeholder="e.g. Checking, Savings, Cash Wallet" required>
+                    <label data-i18n="acc_name_label">Account / Bank / Wallet Name</label>
+                    <input type="text" id="accName" placeholder="e.g. Checking, Savings, Cash Wallet" data-i18n-placeholder="acc_name_placeholder" required>
                 </div>
 
                 <div class="form-group" id="balanceGroup">
-                    <label>Initial Balance</label>
+                    <label data-i18n="acc_balance_label">Initial Balance</label>
                     <input type="number" id="accBalance" required placeholder="0">
                     <small
                         style="color: var(--text-grey); font-size: 0.8rem; margin-top: 8px; display: block; line-height: 1.4;">
-                        <i class="fa-solid fa-circle-info text-blue"></i> Automatically recorded as opening balance.
+                        <i class="fa-solid fa-circle-info text-blue"></i> <span data-i18n="acc_balance_help">Automatically recorded as opening balance.</span>
                     </small>
                 </div>
 
-                <button type="submit" class="btn-primary full-width" id="btnSaveAcc" style="margin-top: 10px;">Save
-                    Account</button>
+                <button type="submit" class="btn-primary full-width" id="btnSaveAcc" style="margin-top: 10px;" data-i18n="btn_save_account">Save Account</button>
             </form>
         </div>
     </div>
@@ -1487,8 +1485,8 @@
                             <i class="fa-solid fa-pen"></i>
                         </div>
                         <div class="as-btn-text">
-                            <strong>Edit Account</strong>
-                            <span>Update account name or details</span>
+                            <strong data-i18n="btn_edit_account">Edit Account</strong>
+                            <span data-i18n="edit_account_sub">Update account name or details</span>
                         </div>
                     </div>
                     <i class="fa-solid fa-chevron-right as-chevron"></i>
@@ -1500,8 +1498,8 @@
                             <i class="fa-solid fa-trash-can"></i>
                         </div>
                         <div class="as-btn-text">
-                            <strong>Delete Account</strong>
-                            <span>Permanently remove this account & transfers</span>
+                            <strong data-i18n="btn_delete_account">Delete Account</strong>
+                            <span data-i18n="delete_account_sub">Permanently remove this account & transfers</span>
                         </div>
                     </div>
                     <i class="fa-solid fa-chevron-right as-chevron"></i>
@@ -1515,61 +1513,59 @@
         <div class="modal-content">
             <button type="button" class="close-btn b-close" aria-label="Close modal"><i
                     class="fa-solid fa-xmark"></i></button>
-            <h2 id="budgetModalTitle" style="font-size: 1.3rem; margin-bottom: 18px; padding-right: 38px;">New Budget
-                Plan</h2>
+            <h2 id="budgetModalTitle" style="font-size: 1.3rem; margin-bottom: 18px; padding-right: 38px;" data-i18n="budget_modal_title">New Budget Plan</h2>
             <form id="budgetForm">
                 <input type="hidden" id="editBudgetId">
 
                 <div class="form-group" id="planTypeGroup">
-                    <label>Plan Type</label>
+                    <label data-i18n="plan_type_label">Plan Type</label>
                     <select id="budgetType" required onchange="toggleBudgetType()" class="clean-select">
-                        <option value="goal">🎯 Savings Goal</option>
-                        <option value="budget">📉 Category Spending Limit</option>
+                        <option value="goal" data-i18n="opt_savings_goal">🎯 Savings Goal</option>
+                        <option value="budget" data-i18n="opt_spending_limit">📉 Category Spending Limit</option>
                     </select>
                 </div>
 
                 <div class="form-group" id="goalNameGroup">
-                    <label>Goal Name</label>
-                    <input type="text" id="budgetName" placeholder="e.g. Japan Trip, Emergency Fund">
+                    <label data-i18n="lbl_goal_name">Goal Name</label>
+                    <input type="text" id="budgetName" placeholder="e.g. Japan Trip, Emergency Fund" data-i18n-placeholder="goal_name_placeholder">
                 </div>
 
                 <div class="form-group" id="budgetCategoryGroup" style="display:none;">
-                    <label>Budget Category</label>
+                    <label data-i18n="lbl_budget_category">Budget Category</label>
                     <select id="budgetCategorySelect" class="clean-select">
-                        <option value="" disabled selected>Select Category</option>
-                        <option value="Food & Drink">Food & Drink</option>
-                        <option value="Transportation">Transportation</option>
-                        <option value="Shopping">Shopping</option>
-                        <option value="Beauty">Beauty</option>
-                        <option value="Bills & Utilities">Bills & Utilities</option>
-                        <option value="Entertainment">Entertainment</option>
-                        <option value="Health">Health</option>
-                        <option value="Education">Education</option>
-                        <option value="Others">Others</option>
+                        <option value="" disabled selected data-i18n="trans_select_category_placeholder">Select Category</option>
+                        <option value="Food & Drink" data-i18n="cat_food_drink">Food & Drink</option>
+                        <option value="Transportation" data-i18n="cat_transportation">Transportation</option>
+                        <option value="Shopping" data-i18n="cat_shopping">Shopping</option>
+                        <option value="Beauty" data-i18n="cat_beauty">Beauty</option>
+                        <option value="Bills & Utilities" data-i18n="cat_bills_utilities">Bills & Utilities</option>
+                        <option value="Entertainment" data-i18n="cat_entertainment">Entertainment</option>
+                        <option value="Health" data-i18n="cat_health">Health</option>
+                        <option value="Education" data-i18n="cat_education">Education</option>
+                        <option value="Others" data-i18n="cat_others">Others</option>
                     </select>
                 </div>
 
                 <div class="form-group" id="goalTypeToggleGroup" style="display:none;">
-                    <label>Visibility</label>
+                    <label data-i18n="lbl_visibility">Visibility</label>
                     <select id="goalVisibility" class="clean-select" onchange="togglePartnerSelection()">
-                        <option value="personal">Personal (Only Me)</option>
-                        <option value="shared">Shared (Collaborative)</option>
+                        <option value="personal" data-i18n="opt_visibility_personal">Personal (Only Me)</option>
+                        <option value="shared" data-i18n="opt_visibility_shared">Shared (Collaborative)</option>
                     </select>
                 </div>
 
                 <div class="form-group" id="partnerSelectionGroup" style="display:none;">
-                    <label>Select Partners</label>
+                    <label data-i18n="lbl_select_partners">Select Partners</label>
                     <div id="partnerChecklist" class="partner-checklist" style="max-height: 180px; overflow-y: auto;">
                     </div>
                 </div>
 
                 <div class="form-group">
-                    <label>Target Amount</label>
+                    <label data-i18n="lbl_target_amount">Target Amount</label>
                     <input type="number" id="budgetTarget" required placeholder="0" min="1">
                 </div>
 
-                <button type="submit" class="btn-primary full-width" id="btnSaveBudget" style="margin-top: 10px;">Save
-                    Plan</button>
+                <button type="submit" class="btn-primary full-width" id="btnSaveBudget" style="margin-top: 10px;" data-i18n="btn_save_plan">Save Plan</button>
             </form>
         </div>
     </div>
@@ -1580,7 +1576,7 @@
             <button type="button" class="close-btn t-close"
                 onclick="document.getElementById('topupBudgetModal').classList.remove('show')"
                 aria-label="Close modal"><i class="fa-solid fa-xmark"></i></button>
-            <h2 id="topupModalTitle" style="font-size: 1.3rem; margin-bottom: 18px; padding-right: 38px;">Deposit /
+            <h2 id="topupModalTitle" style="font-size: 1.3rem; margin-bottom: 18px; padding-right: 38px;" data-i18n="topup_modal_title">Deposit /
                 Withdraw Goal Funds</h2>
             <form id="topupBudgetForm">
                 <input type="hidden" id="topupBudgetId">
@@ -1589,17 +1585,17 @@
                 <input type="hidden" id="topupActionType" value="deposit">
 
                 <div class="form-group" id="sourceAccountGroup">
-                    <label id="lblTopupAccount">Source Account (Deduct from)</label>
+                    <label id="lblTopupAccount" data-i18n="topup_account_label">Source Account (Deduct from)</label>
                     <select id="topupAccount" class="clean-select"></select>
                 </div>
 
                 <div class="form-group">
-                    <label>Amount</label>
+                    <label data-i18n="trans_lbl_amount">Amount</label>
                     <input type="number" id="topupAmount" required placeholder="0" min="1">
                 </div>
 
                 <button type="submit" class="btn-primary full-width" id="btnTopupAction"
-                    style="margin-top: 10px;">Confirm Transaction</button>
+                    style="margin-top: 10px;" data-i18n="btn_confirm_transaction">Confirm Transaction</button>
             </form>
         </div>
     </div>
@@ -1609,11 +1605,11 @@
         <div class="modal-content">
             <button type="button" class="close-btn refund-close" aria-label="Close modal"><i
                     class="fa-solid fa-xmark"></i></button>
-            <h2 class="text-red" style="font-size: 1.3rem; margin-bottom: 10px; padding-right: 38px;">Refund Funds &
+            <h2 class="text-red" style="font-size: 1.3rem; margin-bottom: 10px; padding-right: 38px;" data-i18n="refund_modal_title">Refund Funds &
                 Delete Goal</h2>
             <p style="color: var(--text-grey); font-size: 0.9rem; margin-bottom: 18px;">
-                This goal has a saved balance of <b id="refundAmountDisplay" style="color: var(--text-dark);"></b>.
-                Where should the funds be returned?
+                <span data-i18n="refund_modal_desc_prefix">This goal has a saved balance of</span> <b id="refundAmountDisplay" style="color: var(--text-dark);"></b>.
+                <span data-i18n="refund_modal_desc_suffix">Where should the funds be returned?</span>
             </p>
             <form id="refundForm">
                 <input type="hidden" id="refundBudgetId">
@@ -1621,12 +1617,11 @@
                 <input type="hidden" id="refundGoalName">
 
                 <div class="form-group">
-                    <label>Refund Destination Account</label>
+                    <label data-i18n="refund_dest_account">Refund Destination Account</label>
                     <select id="refundAccountSelect" required class="clean-select"></select>
                 </div>
 
-                <button type="submit" class="btn-danger full-width" style="margin-top: 10px;">Refund Funds & Delete
-                    Goal</button>
+                <button type="submit" class="btn-danger full-width" style="margin-top: 10px;" data-i18n="btn_refund_delete">Refund Funds & Delete Goal</button>
             </form>
         </div>
     </div>
@@ -1636,15 +1631,15 @@
         <div class="modal-content">
             <button type="button" class="close-btn r-close" aria-label="Close modal"><i
                     class="fa-solid fa-xmark"></i></button>
-            <h2 style="font-size: 1.3rem; margin-bottom: 14px; padding-right: 38px;">Reset Password</h2>
-            <p style="color: var(--text-grey); font-size: 0.9rem; margin-bottom: 18px;">Enter your email address to
+            <h2 style="font-size: 1.3rem; margin-bottom: 14px; padding-right: 38px;" data-i18n="reset_pwd_title">Reset Password</h2>
+            <p style="color: var(--text-grey); font-size: 0.9rem; margin-bottom: 18px;" data-i18n="reset_pwd_sub">Enter your email address to
                 receive password reset instructions.</p>
             <form id="resetPasswordForm">
                 <div class="form-group">
-                    <label>Email Address</label>
+                    <label data-i18n="lbl_email">Email Address</label>
                     <input type="email" id="resetEmail" required placeholder="you@domain.com">
                 </div>
-                <button type="submit" class="btn-primary full-width" style="margin-top: 10px;">Send Reset Link</button>
+                <button type="submit" class="btn-primary full-width" style="margin-top: 10px;" data-i18n="btn_send_reset_link">Send Reset Link</button>
             </form>
         </div>
     </div>
@@ -1654,7 +1649,7 @@
         <div class="modal-content">
             <button type="button" class="close-btn req-close" aria-label="Close modal"><i
                     class="fa-solid fa-xmark"></i></button>
-            <h2 style="font-size: 1.3rem; margin-bottom: 16px; padding-right: 38px;">Friend Requests</h2>
+            <h2 style="font-size: 1.3rem; margin-bottom: 16px; padding-right: 38px;" data-i18n="friend_requests_title">Friend Requests</h2>
             <div id="modalRequestList" class="friend-grid-list"
                 style="display: flex; flex-direction: column; gap: 10px;"></div>
         </div>
@@ -1665,10 +1660,10 @@
         <div class="modal-content">
             <button type="button" class="close-btn f-close" aria-label="Close modal"><i
                     class="fa-solid fa-xmark"></i></button>
-            <h2 style="font-size: 1.3rem; margin-bottom: 14px; padding-right: 38px;">Add New Friend</h2>
+            <h2 style="font-size: 1.3rem; margin-bottom: 14px; padding-right: 38px;" data-i18n="add_new_friend_title">Add New Friend</h2>
             <form id="friendForm">
                 <div class="form-group">
-                    <label>Friend User ID (@username)</label>
+                    <label data-i18n="lbl_friend_user_id">Friend User ID (@username)</label>
                     <div class="input-with-icon">
                         <span class="input-prefix">@</span>
                         <input type="text" id="searchFriendID" placeholder="username123" required>
@@ -1690,9 +1685,8 @@
                 </div>
 
                 <button type="button" id="btnCheckUser" class="btn-secondary full-width"
-                    style="margin-bottom: 10px;">Find User</button>
-                <button type="submit" id="btnSendInvite" class="btn-primary full-width" style="display:none;">Send
-                    Invitation</button>
+                    style="margin-bottom: 10px;" data-i18n="btn_find_user">Find User</button>
+                <button type="submit" id="btnSendInvite" class="btn-primary full-width" style="display:none;" data-i18n="btn_send_invitation">Send Invitation</button>
             </form>
         </div>
     </div>
@@ -1702,12 +1696,11 @@
         <div class="modal-content">
             <button type="button" class="close-btn gi-close" aria-label="Close modal"><i
                     class="fa-solid fa-xmark"></i></button>
-            <h2 style="font-size: 1.3rem; margin-bottom: 8px; padding-right: 38px;">Shared Goal Invites</h2>
-            <p style="color: var(--text-grey); font-size: 0.88rem; margin-bottom: 18px;">Friends inviting you to save
-                together.</p>
+            <h2 style="font-size: 1.3rem; margin-bottom: 8px; padding-right: 38px;" data-i18n="shared_goal_invites_title">Shared Goal Invites</h2>
+            <p style="color: var(--text-grey); font-size: 0.88rem; margin-bottom: 18px;" data-i18n="shared_goal_invites_sub">Friends inviting you to save together.</p>
             <div id="modalGoalInviteList" class="friend-grid-list"
                 style="display: flex; flex-direction: column; gap: 10px;">
-                <p style="text-align: center; color: var(--text-muted); padding: 20px;">No pending invitations.</p>
+                <p style="text-align: center; color: var(--text-muted); padding: 20px;" data-i18n="no_pending_invites">No pending invitations.</p>
             </div>
         </div>
     </div>
@@ -1723,24 +1716,24 @@
                     <i class="fa-solid fa-user-group"></i>
                 </div>
                 <div style="min-width: 0;">
-                    <h2 id="participantsModalGoalName" style="font-size: 1.25rem; margin: 0; line-height: 1.25; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">Goal Members</h2>
-                    <p id="participantsModalSubtitle" style="color: var(--text-grey); font-size: 0.8rem; margin: 3px 0 0 0;">Shared savings group & contributors</p>
+                    <h2 id="participantsModalGoalName" style="font-size: 1.25rem; margin: 0; line-height: 1.25; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" data-i18n="goal_members_title">Goal Members</h2>
+                    <p id="participantsModalSubtitle" style="color: var(--text-grey); font-size: 0.8rem; margin: 3px 0 0 0;" data-i18n="goal_members_sub">Shared savings group & contributors</p>
                 </div>
             </div>
 
             <div id="participantsOverview" style="margin-top: 14px; margin-bottom: 14px; background: var(--input-bg); border: 1px solid var(--border-color); border-radius: var(--radius-lg); padding: 12px 16px; display: flex; justify-content: space-between; align-items: center;">
                 <div>
-                    <small style="color: var(--text-grey); font-size: 0.72rem; text-transform: uppercase; font-weight: 700; letter-spacing: 0.5px;">Total Saved</small>
+                    <small style="color: var(--text-grey); font-size: 0.72rem; text-transform: uppercase; font-weight: 700; letter-spacing: 0.5px;" data-i18n="stat_total_saved">Total Saved</small>
                     <div id="participantsModalTotalSaved" style="font-size: 1.1rem; font-weight: 800; color: #10b981;">Rp 0</div>
                 </div>
                 <div style="text-align: right;">
-                    <small style="color: var(--text-grey); font-size: 0.72rem; text-transform: uppercase; font-weight: 700; letter-spacing: 0.5px;">Goal Target</small>
+                    <small style="color: var(--text-grey); font-size: 0.72rem; text-transform: uppercase; font-weight: 700; letter-spacing: 0.5px;" data-i18n="stat_goal_target">Goal Target</small>
                     <div id="participantsModalTarget" style="font-size: 1.1rem; font-weight: 800; color: var(--text-dark);">Rp 0</div>
                 </div>
             </div>
 
             <div style="margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center;">
-                <span style="font-size: 0.8rem; font-weight: 700; color: var(--text-grey); text-transform: uppercase; letter-spacing: 0.5px;">Members List</span>
+                <span style="font-size: 0.8rem; font-weight: 700; color: var(--text-grey); text-transform: uppercase; letter-spacing: 0.5px;" data-i18n="stat_members_list">Members List</span>
                 <span id="participantsCountBadge" class="cat-status-badge safe" style="font-size: 0.75rem;">0 Members</span>
             </div>
 
@@ -1757,7 +1750,7 @@
             <button type="button" class="close-btn detail-close" aria-label="Close modal"><i
                     class="fa-solid fa-xmark"></i></button>
             <h3
-                style="margin-bottom: 20px; text-align: center; border-bottom: 1px solid var(--border-color); padding-bottom: 14px;">
+                style="margin-bottom: 20px; text-align: center; border-bottom: 1px solid var(--border-color); padding-bottom: 14px;" data-i18n="trans_detail_title">
                 Transaction Details</h3>
 
             <div style="text-align: center; margin-bottom: 24px;">
@@ -1774,44 +1767,44 @@
             <div style="display: flex; flex-direction: column; gap: 12px; margin-bottom: 24px; font-size: 0.92rem;">
                 <div
                     style="display: flex; justify-content: space-between; border-bottom: 1px dashed var(--border-color); padding-bottom: 8px;">
-                    <span style="color: var(--text-grey);">Note</span>
+                    <span style="color: var(--text-grey);" data-i18n="detail_lbl_note">Note</span>
                     <span id="detailDesc"
                         style="font-weight: 700; color: var(--text-dark); max-width: 60%; text-align: right;">-</span>
                 </div>
                 <div
                     style="display: flex; justify-content: space-between; border-bottom: 1px dashed var(--border-color); padding-bottom: 8px;">
-                    <span style="color: var(--text-grey);">Category</span>
+                    <span style="color: var(--text-grey);" data-i18n="detail_lbl_category">Category</span>
                     <span id="detailCategory" style="font-weight: 700; color: var(--text-dark);">-</span>
                 </div>
                 <div
                     style="display: flex; justify-content: space-between; border-bottom: 1px dashed var(--border-color); padding-bottom: 8px;">
-                    <span id="labelDetailAccount" style="color: var(--text-grey);">Account</span>
+                    <span id="labelDetailAccount" style="color: var(--text-grey);" data-i18n="detail_lbl_account">Account</span>
                     <span id="detailAccount" style="font-weight: 700; color: var(--text-dark);">-</span>
                 </div>
                 <div id="detailTargetRow"
                     style="display: none; justify-content: space-between; border-bottom: 1px dashed var(--border-color); padding-bottom: 8px;">
-                    <span style="color: var(--text-grey);">Destination Account</span>
+                    <span style="color: var(--text-grey);" data-i18n="detail_lbl_dest_account">Destination Account</span>
                     <span id="detailTargetAccount" style="font-weight: 700; color: var(--text-dark);">-</span>
                 </div>
                 <div
                     style="display: flex; justify-content: space-between; border-bottom: 1px dashed var(--border-color); padding-bottom: 8px;">
-                    <span style="color: var(--text-grey);">Date</span>
+                    <span style="color: var(--text-grey);" data-i18n="detail_lbl_date">Date</span>
                     <span id="detailDate" style="font-weight: 700; color: var(--text-dark);">-</span>
                 </div>
             </div>
 
             <div id="detailActionButtons" style="display: flex; gap: 10px;">
                 <button id="btnDetailEdit" class="btn-secondary full-width">
-                    <i class="fa-solid fa-pen"></i> Edit
+                    <i class="fa-solid fa-pen"></i> <span data-i18n="btn_edit">Edit</span>
                 </button>
                 <button id="btnDetailDelete" class="btn-danger full-width">
-                    <i class="fa-solid fa-trash"></i> Delete
+                    <i class="fa-solid fa-trash"></i> <span data-i18n="btn_delete">Delete</span>
                 </button>
             </div>
 
             <div id="detailLockedMsg"
                 style="text-align: center; color: var(--text-grey); font-size: 0.85rem; display: none; background: var(--input-bg); padding: 10px; border-radius: var(--radius-md); border: 1px solid var(--border-color);">
-                <i class="fa-solid fa-lock"></i> System record (locked from editing).
+                <i class="fa-solid fa-lock"></i> <span data-i18n="detail_locked_msg">System record (locked from editing).</span>
             </div>
         </div>
     </div>
@@ -1819,56 +1812,55 @@
     <!-- Modal L: Transaction Filter Popover -->
     <div id="transFilterPopup" class="filter-popup">
         <div class="filter-header">
-            <h4 style="font-size: 1rem; margin: 0;">Filter & Sort</h4>
+            <h4 style="font-size: 1rem; margin: 0;" data-i18n="filter_sort_title">Filter & Sort</h4>
             <button type="button" class="close-filter" id="closeTransFilterBtn" aria-label="Close filter"><i
                     class="fa-solid fa-xmark"></i></button>
         </div>
         <div class="filter-body">
             <div class="filter-group-item">
-                <label>Sort By</label>
+                <label data-i18n="lbl_sort_by">Sort By</label>
                 <select id="transSort" class="clean-select">
-                    <option value="newest">Newest First</option>
-                    <option value="oldest">Oldest First</option>
-                    <option value="highest">Highest Amount</option>
-                    <option value="lowest">Lowest Amount</option>
+                    <option value="newest" data-i18n="opt_newest_first">Newest First</option>
+                    <option value="oldest" data-i18n="opt_oldest_first">Oldest First</option>
+                    <option value="highest" data-i18n="opt_highest_amount">Highest Amount</option>
+                    <option value="lowest" data-i18n="opt_lowest_amount">Lowest Amount</option>
                 </select>
             </div>
             <div class="filter-group-item">
-                <label>Transaction Type</label>
+                <label data-i18n="lbl_trans_type">Transaction Type</label>
                 <select id="transFilterType" class="clean-select">
-                    <option value="all">All Types</option>
-                    <option value="income">Income</option>
-                    <option value="expense">Expense</option>
-                    <option value="transfer">Transfer</option>
+                    <option value="all" data-i18n="opt_all_types">All Types</option>
+                    <option value="income" data-i18n="opt_income">Income</option>
+                    <option value="expense" data-i18n="opt_expense">Expense</option>
+                    <option value="transfer" data-i18n="opt_transfer">Transfer</option>
                 </select>
             </div>
             <div class="filter-group-item">
-                <label>Account</label>
+                <label data-i18n="lbl_account">Account</label>
                 <select id="transFilterAccount" class="clean-select">
-                    <option value="all">All Accounts</option>
+                    <option value="all" data-i18n="opt_all_accounts">All Accounts</option>
                 </select>
             </div>
             <div class="filter-group-item">
-                <label>Category</label>
+                <label data-i18n="lbl_category">Category</label>
                 <select id="transFilterCategory" class="clean-select">
-                    <option value="all">All Categories</option>
-                    <option value="Food & Drink">Food & Drink</option>
-                    <option value="Transportation">Transportation</option>
-                    <option value="Shopping">Shopping</option>
-                    <option value="Beauty">Beauty</option>
-                    <option value="Bills & Utilities">Bills & Utilities</option>
-                    <option value="Entertainment">Entertainment</option>
-                    <option value="Health">Health</option>
-                    <option value="Education">Education</option>
-                    <option value="Salary">Salary</option>
-                    <option value="Investment">Investment</option>
-                    <option value="Adjustment">Adjustment</option>
-                    <option value="Transfer">Transfer</option>
-                    <option value="Others">Others</option>
+                    <option value="all" data-i18n="opt_all_categories">All Categories</option>
+                    <option value="Food & Drink" data-i18n="cat_food_drink">Food & Drink</option>
+                    <option value="Transportation" data-i18n="cat_transportation">Transportation</option>
+                    <option value="Shopping" data-i18n="cat_shopping">Shopping</option>
+                    <option value="Beauty" data-i18n="cat_beauty">Beauty</option>
+                    <option value="Bills & Utilities" data-i18n="cat_bills_utilities">Bills & Utilities</option>
+                    <option value="Entertainment" data-i18n="cat_entertainment">Entertainment</option>
+                    <option value="Health" data-i18n="cat_health">Health</option>
+                    <option value="Education" data-i18n="cat_education">Education</option>
+                    <option value="Salary" data-i18n="cat_salary">Salary</option>
+                    <option value="Investment" data-i18n="cat_investment">Investment</option>
+                    <option value="Adjustment" data-i18n="cat_adjustment">Adjustment</option>
+                    <option value="Transfer" data-i18n="cat_transfer">Transfer</option>
+                    <option value="Others" data-i18n="cat_others">Others</option>
                 </select>
             </div>
-            <button id="resetTransFilter" class="btn-secondary full-width" style="margin-top: 10px;">Reset
-                Filters</button>
+            <button id="resetTransFilter" class="btn-secondary full-width" style="margin-top: 10px;" data-i18n="btn_reset_filters">Reset Filters</button>
         </div>
     </div>
 
@@ -1878,59 +1870,57 @@
             <button type="button" class="close-btn"
                 onclick="document.getElementById('debtModal').classList.remove('show')" aria-label="Close modal"><i
                     class="fa-solid fa-xmark"></i></button>
-            <h2 id="debtModalTitle" style="font-size: 1.3rem; margin-bottom: 18px; padding-right: 38px;">New Debt / Loan
-            </h2>
+            <h2 id="debtModalTitle" style="font-size: 1.3rem; margin-bottom: 18px; padding-right: 38px;" data-i18n="debt_modal_title">New Debt / Loan</h2>
             <form id="debtForm">
                 <input type="hidden" id="editDebtId">
 
                 <div class="form-grid-2">
                     <div class="form-group">
-                        <label>Record Type</label>
+                        <label data-i18n="debt_record_type">Record Type</label>
                         <select id="debtKind" required class="clean-select">
-                            <option value="lent">Lent (Money I lent out)</option>
-                            <option value="borrowed">Borrowed (Money I owe)</option>
+                            <option value="lent" data-i18n="debt_lent_opt">Lent (Money I lent out)</option>
+                            <option value="borrowed" data-i18n="debt_borrowed_opt">Borrowed (Money I owe)</option>
                         </select>
                     </div>
                     <div class="form-group">
-                        <label>Party / Person / Entity</label>
-                        <input type="text" id="debtPartyName" placeholder="e.g. John, Bank, Friend" required>
+                        <label data-i18n="debt_party_label">Party / Person / Entity</label>
+                        <input type="text" id="debtPartyName" placeholder="e.g. John, Bank, Friend" data-i18n-placeholder="debt_party_placeholder" required>
                     </div>
                 </div>
 
                 <div class="form-grid-2">
                     <div class="form-group">
-                        <label>Principal Amount</label>
+                        <label data-i18n="debt_principal_label">Principal Amount</label>
                         <input type="number" id="debtPrincipal" min="1" required placeholder="0">
                     </div>
                     <div class="form-group">
-                        <label>Associated Account</label>
+                        <label data-i18n="debt_account_label">Associated Account</label>
                         <select id="debtAccount" class="clean-select"></select>
                     </div>
                 </div>
 
                 <div class="form-grid-2">
                     <div class="form-group">
-                        <label>Start / Loan Date</label>
+                        <label data-i18n="debt_start_date_label">Start / Loan Date</label>
                         <input type="date" id="debtStartDate" required>
                     </div>
                     <div class="form-group">
-                        <label>Due Date (Optional)</label>
+                        <label data-i18n="debt_due_date_label">Due Date (Optional)</label>
                         <input type="date" id="debtDueDate">
                     </div>
                 </div>
 
                 <div class="form-group">
-                    <label>Notes</label>
-                    <input type="text" id="debtNotes" placeholder="Payment terms, interest, or reminders">
+                    <label data-i18n="debt_notes_label">Notes</label>
+                    <input type="text" id="debtNotes" placeholder="Payment terms, interest, or reminders" data-i18n-placeholder="debt_notes_placeholder">
                 </div>
 
                 <label class="checkbox-row" id="debtAffectBalanceRow">
                     <input type="checkbox" id="debtAffectBalance" checked>
-                    <span>Update account balance & auto-record transaction</span>
+                    <span data-i18n="debt_affect_balance_text">Update account balance & auto-record transaction</span>
                 </label>
 
-                <button type="submit" class="btn-primary full-width" id="btnSaveDebt" style="margin-top: 10px;">Save
-                    Record</button>
+                <button type="submit" class="btn-primary full-width" id="btnSaveDebt" style="margin-top: 10px;" data-i18n="debt_save_btn">Save Record</button>
             </form>
         </div>
     </div>
@@ -1941,8 +1931,7 @@
             <button type="button" class="close-btn"
                 onclick="document.getElementById('debtPaymentModal').classList.remove('show')"
                 aria-label="Close modal"><i class="fa-solid fa-xmark"></i></button>
-            <h2 id="debtPaymentTitle" style="font-size: 1.3rem; margin-bottom: 14px; padding-right: 38px;">Record
-                Payment</h2>
+            <h2 id="debtPaymentTitle" style="font-size: 1.3rem; margin-bottom: 14px; padding-right: 38px;" data-i18n="record_payment_title">Record Payment</h2>
             <form id="debtPaymentForm">
                 <input type="hidden" id="paymentDebtId">
                 <div class="debt-payment-context" id="debtPaymentContext"
@@ -1950,27 +1939,27 @@
                 </div>
 
                 <div class="form-group">
-                    <label>Payment Account</label>
+                    <label data-i18n="lbl_payment_account">Payment Account</label>
                     <select id="debtPaymentAccount" class="clean-select" required></select>
                 </div>
 
                 <div class="form-group">
-                    <label>Payment Amount</label>
+                    <label data-i18n="lbl_payment_amount">Payment Amount</label>
                     <input type="number" id="debtPaymentAmount" min="1" required placeholder="0">
                 </div>
 
                 <div class="form-group">
-                    <label>Payment Date</label>
+                    <label data-i18n="lbl_payment_date">Payment Date</label>
                     <input type="date" id="debtPaymentDate" required>
                 </div>
 
                 <div class="form-group">
-                    <label>Payment Note</label>
-                    <input type="text" id="debtPaymentNote" placeholder="e.g. Installment #1, Full payoff">
+                    <label data-i18n="lbl_payment_note">Payment Note</label>
+                    <input type="text" id="debtPaymentNote" placeholder="e.g. Installment #1, Full payoff" data-i18n-placeholder="payment_note_placeholder">
                 </div>
 
                 <button type="submit" class="btn-primary full-width" id="btnSaveDebtPayment"
-                    style="margin-top: 10px;">Save Payment</button>
+                    style="margin-top: 10px;" data-i18n="btn_save_payment">Save Payment</button>
             </form>
         </div>
     </div>
@@ -1987,12 +1976,12 @@
                     <i class="fa-solid fa-cloud-arrow-up"></i>
                 </div>
                 <div style="min-width: 0;">
-                    <h2 style="font-size: 1.25rem; margin: 0; line-height: 1.25;">Restore Backup</h2>
-                    <p style="color: var(--text-grey); font-size: 0.82rem; margin: 3px 0 0 0;">Import transactions & data from JSON</p>
+                    <h2 style="font-size: 1.25rem; margin: 0; line-height: 1.25;" data-i18n="restore_backup_title">Restore Backup</h2>
+                    <p style="color: var(--text-grey); font-size: 0.82rem; margin: 3px 0 0 0;" data-i18n="restore_backup_sub">Import transactions & data from JSON</p>
                 </div>
             </div>
 
-            <p style="color: var(--text-grey); font-size: 0.88rem; line-height: 1.5; margin: 12px 0 16px 0;">
+            <p style="color: var(--text-grey); font-size: 0.88rem; line-height: 1.5; margin: 12px 0 16px 0;" data-i18n="restore_backup_desc">
                 Select a previously exported Pocketly backup file to restore or merge your financial records.
             </p>
 
@@ -2003,9 +1992,9 @@
                     <div style="width: 48px; height: 48px; border-radius: 50%; background: var(--blue-accent-light); color: var(--primary-color); display: flex; align-items: center; justify-content: center; font-size: 1.3rem; margin-bottom: 10px;">
                         <i class="fa-solid fa-file-arrow-up" id="dropzoneIcon"></i>
                     </div>
-                    <span id="dropzoneTextMain" style="font-weight: 700; font-size: 0.95rem; color: var(--text-dark);">Choose Backup File</span>
-                    <span id="dropzoneTextSub" style="font-size: 0.8rem; color: var(--text-grey); margin-top: 3px;">Click to browse or drop .json file</span>
-                    <span id="dropzoneFileBadge" class="cat-status-badge safe" style="display: none; margin-top: 10px; font-size: 0.76rem;">Ready to Restore ✓</span>
+                    <span id="dropzoneTextMain" style="font-weight: 700; font-size: 0.95rem; color: var(--text-dark);" data-i18n="restore_choose_file">Choose Backup File</span>
+                    <span id="dropzoneTextSub" style="font-size: 0.8rem; color: var(--text-grey); margin-top: 3px;" data-i18n="restore_browse_sub">Click to browse or drop .json file</span>
+                    <span id="dropzoneFileBadge" class="cat-status-badge safe" style="display: none; margin-top: 10px; font-size: 0.76rem;" data-i18n="restore_ready_badge">Ready to Restore ✓</span>
                 </div>
 
                 <div class="backup-option-box" style="margin-top: 16px; background: var(--input-bg); border: 1px solid var(--border-color); border-radius: var(--radius-lg); padding: 12px 14px;">
@@ -2013,10 +2002,10 @@
                         <input type="checkbox" id="backupReplaceExisting" style="margin-top: 3px; accent-color: var(--primary-color);">
                         <div style="flex: 1;">
                             <div style="display: flex; align-items: center; gap: 6px;">
-                                <span style="font-size: 0.86rem; font-weight: 700; color: var(--text-dark);">Replace Existing Data</span>
-                                <span style="font-size: 0.65rem; font-weight: 700; background: rgba(239, 68, 68, 0.12); color: var(--red); padding: 1px 6px; border-radius: 6px;">Caution</span>
+                                <span style="font-size: 0.86rem; font-weight: 700; color: var(--text-dark);" data-i18n="restore_replace_title">Replace Existing Data</span>
+                                <span style="font-size: 0.65rem; font-weight: 700; background: rgba(239, 68, 68, 0.12); color: var(--red); padding: 1px 6px; border-radius: 6px;" data-i18n="restore_caution_tag">Caution</span>
                             </div>
-                            <p style="margin: 2px 0 0 0; font-size: 0.76rem; color: var(--text-grey); line-height: 1.35;">
+                            <p style="margin: 2px 0 0 0; font-size: 0.76rem; color: var(--text-grey); line-height: 1.35;" data-i18n="restore_replace_desc">
                                 Wipe current records before import. If unchecked, backup data will safely merge.
                             </p>
                         </div>
@@ -2024,9 +2013,9 @@
                 </div>
 
                 <div style="display: flex; gap: 10px; margin-top: 18px;">
-                    <button type="button" class="btn-secondary" onclick="document.getElementById('backupImportModal').classList.remove('show')" style="flex: 1; border-radius: var(--radius-pill); font-weight: 700;">Cancel</button>
+                    <button type="button" class="btn-secondary" onclick="document.getElementById('backupImportModal').classList.remove('show')" style="flex: 1; border-radius: var(--radius-pill); font-weight: 700;" data-i18n="btn_cancel">Cancel</button>
                     <button type="submit" class="btn-primary" id="btnRunBackupImport" style="flex: 1.5; border-radius: var(--radius-pill); font-weight: 700; display: flex; align-items: center; justify-content: center; gap: 8px;">
-                        <i class="fa-solid fa-rotate-right"></i> <span>Restore Data</span>
+                        <i class="fa-solid fa-rotate-right"></i> <span data-i18n="btn_restore_data">Restore Data</span>
                     </button>
                 </div>
             </form>
@@ -2039,8 +2028,8 @@
             <button type="button" class="close-btn v-close"
                 onclick="document.getElementById('voiceRecordModal').classList.remove('show')"
                 aria-label="Close modal"><i class="fa-solid fa-xmark"></i></button>
-            <h2 style="font-size: 1.3rem; margin-bottom: 6px;">Voice Input</h2>
-            <p style="color: var(--text-grey); font-size: 0.88rem; margin-bottom: 24px;">Speak your entry, e.g.
+            <h2 style="font-size: 1.3rem; margin-bottom: 6px;" data-i18n="voice_input_title">Voice Input</h2>
+            <p style="color: var(--text-grey); font-size: 0.88rem; margin-bottom: 24px;"><span data-i18n="voice_speak_entry">Speak your entry, e.g.</span>
                 <i>"Lunch 25 dollars from Cash"</i>
             </p>
             <button type="button" id="btnStartListening" class="btn-circle-glass"
@@ -2059,7 +2048,7 @@
             <button type="button" class="close-btn"
                 onclick="document.getElementById('editProfileModal').classList.remove('show')"
                 aria-label="Close modal"><i class="fa-solid fa-xmark"></i></button>
-            <h2 style="font-size: 1.3rem; margin-bottom: 18px; padding-right: 38px;">Edit User Profile</h2>
+            <h2 style="font-size: 1.3rem; margin-bottom: 18px; padding-right: 38px;" data-i18n="edit_profile_title">Edit User Profile</h2>
 
             <div style="display: flex; flex-direction: column; align-items: center; margin-bottom: 20px;">
                 <div
@@ -2069,29 +2058,28 @@
                 </div>
                 <label for="fileInputProfile" class="btn-secondary"
                     style="font-size: 0.85rem; padding: 6px 16px; cursor: pointer;">
-                    <i class="fa-solid fa-camera"></i> Upload Photo
+                    <i class="fa-solid fa-camera"></i> <span data-i18n="btn_upload_photo">Upload Photo</span>
                 </label>
                 <input type="file" id="fileInputProfile" accept="image/png, image/jpeg, image/jpg" hidden>
             </div>
 
             <form id="editProfileForm">
                 <div class="form-group">
-                    <label>Account Email</label>
+                    <label data-i18n="lbl_account_email">Account Email</label>
                     <input type="email" id="updateEmailInput" disabled style="opacity: 0.7; cursor: not-allowed;">
                 </div>
                 <div class="form-group">
-                    <label>Display Name</label>
-                    <input type="text" id="updateNameInput" placeholder="e.g. Alex Ray">
+                    <label data-i18n="lbl_display_name">Display Name</label>
+                    <input type="text" id="updateNameInput" placeholder="e.g. Alex Ray" data-i18n-placeholder="display_name_placeholder">
                 </div>
                 <div class="form-group">
-                    <label>User ID</label>
+                    <label data-i18n="lbl_user_id">User ID</label>
                     <div class="input-with-icon">
                         <span class="input-prefix">@</span>
                         <input type="text" id="updateUserID" placeholder="alex123">
                     </div>
                 </div>
-                <button type="button" class="btn-primary full-width" id="saveProfileBtn" style="margin-top: 10px;">Save
-                    Profile</button>
+                <button type="button" class="btn-primary full-width" id="saveProfileBtn" style="margin-top: 10px;" data-i18n="btn_save_profile">Save Profile</button>
             </form>
         </div>
     </div>
@@ -2101,32 +2089,32 @@
         <div class="modal-content">
             <button type="button" class="close-btn" id="closeChangePasswordBtn" aria-label="Close modal"><i
                     class="fa-solid fa-xmark"></i></button>
-            <h2 style="font-size: 1.3rem; margin-bottom: 18px; padding-right: 38px;">Change Password</h2>
+            <h2 style="font-size: 1.3rem; margin-bottom: 18px; padding-right: 38px;" data-i18n="change_password_title">Change Password</h2>
             <div class="form-group">
-                <label>Current Password</label>
+                <label data-i18n="lbl_current_password">Current Password</label>
                 <div class="input-glass-wrapper">
                     <i class="fa-solid fa-lock input-icon"></i>
-                    <input type="password" id="oldPasswordInput" placeholder="Enter current password" required>
+                    <input type="password" id="oldPasswordInput" placeholder="Enter current password" data-i18n-placeholder="placeholder_current_pwd" required>
                 </div>
             </div>
             <div class="form-group">
-                <label>New Password</label>
+                <label data-i18n="lbl_new_password">New Password</label>
                 <div class="input-glass-wrapper">
                     <i class="fa-solid fa-key input-icon"></i>
-                    <input type="password" id="newPasswordInput" placeholder="Minimum 6 characters" required>
+                    <input type="password" id="newPasswordInput" placeholder="Minimum 6 characters" data-i18n-placeholder="placeholder_new_pwd" required>
                 </div>
             </div>
             <div class="form-group" style="margin-bottom: 6px;">
-                <label>Confirm New Password</label>
+                <label data-i18n="lbl_confirm_new_password">Confirm New Password</label>
                 <div class="input-glass-wrapper">
                     <i class="fa-solid fa-key input-icon"></i>
-                    <input type="password" id="confirmNewPasswordInput" placeholder="Re-enter new password" required>
+                    <input type="password" id="confirmNewPasswordInput" placeholder="Re-enter new password" data-i18n-placeholder="placeholder_confirm_new_pwd" required>
                 </div>
             </div>
             <div class="forgot-pass-wrapper" style="margin-top: 4px; margin-bottom: 16px;">
-                <a href="#" id="inAppForgotPasswordLink" style="font-size: 0.8rem; font-weight: 600; color: var(--primary-color); text-decoration: none; transition: opacity var(--transition-fast);">Forgot password?</a>
+                <a href="#" id="inAppForgotPasswordLink" style="font-size: 0.8rem; font-weight: 600; color: var(--primary-color); text-decoration: none; transition: opacity var(--transition-fast);" data-i18n="link_forgot_pwd">Forgot password?</a>
             </div>
-            <button id="saveNewPasswordBtn" class="btn-primary full-width">Update Password</button>
+            <button id="saveNewPasswordBtn" class="btn-primary full-width" data-i18n="btn_update_password">Update Password</button>
         </div>
     </div>
 
@@ -2135,12 +2123,11 @@
         <div class="modal-content center-text" style="max-width: 380px;">
             <i class="fa-solid fa-trash-can text-red"
                 style="font-size: 2.5rem; margin-bottom: 14px; display: inline-block;"></i>
-            <h3 id="confirmActionTitle" style="font-size: 1.25rem; margin-bottom: 8px;">Are you sure?</h3>
-            <p id="confirmActionMessage" style="color: var(--text-grey); font-size: 0.92rem; margin-bottom: 22px;">This
-                action cannot be undone.</p>
+            <h3 id="confirmActionTitle" style="font-size: 1.25rem; margin-bottom: 8px;" data-i18n="confirm_modal_title">Are you sure?</h3>
+            <p id="confirmActionMessage" style="color: var(--text-grey); font-size: 0.92rem; margin-bottom: 22px;" data-i18n="confirm_modal_msg">This action cannot be undone.</p>
             <div style="display: flex; gap: 10px;">
-                <button class="btn-secondary" onclick="closeConfirmModal()" style="flex: 1;">Cancel</button>
-                <button id="btnConfirmAction" class="btn-danger" style="flex: 1;">Delete</button>
+                <button class="btn-secondary" onclick="closeConfirmModal()" style="flex: 1;" data-i18n="btn_cancel">Cancel</button>
+                <button id="btnConfirmAction" class="btn-danger" style="flex: 1;" data-i18n="btn_delete">Delete</button>
             </div>
         </div>
     </div>
@@ -2154,8 +2141,8 @@
                         <i class="fa-solid fa-icons"></i>
                     </div>
                     <div>
-                        <h3 class="icon-picker-title">Choose Category Icon</h3>
-                        <span class="icon-picker-subtitle">Select an icon from the catalog</span>
+                        <h3 class="icon-picker-title" data-i18n="choose_icon_title">Choose Category Icon</h3>
+                        <span class="icon-picker-subtitle" data-i18n="choose_icon_sub">Select an icon from the catalog</span>
                     </div>
                 </div>
                 <button type="button" class="close-btn" onclick="closeCategoryIconPicker()" aria-label="Close modal">
@@ -2166,7 +2153,7 @@
             <!-- Search Bar -->
             <div class="icon-picker-search-bar">
                 <i class="fa-solid fa-magnifying-glass"></i>
-                <input type="text" id="iconPickerSearchInput" placeholder="Search icons (e.g. food, car, coffee, shopping)..." oninput="filterIconPickerGrid()" autocomplete="off">
+                <input type="text" id="iconPickerSearchInput" placeholder="Search icons (e.g. food, car, coffee, shopping)..." data-i18n-placeholder="search_icons_placeholder" oninput="filterIconPickerGrid()" autocomplete="off">
                 <button type="button" class="icon-picker-search-clear" id="iconPickerSearchClear" onclick="clearIconPickerSearch()" style="display: none;">
                     <i class="fa-solid fa-circle-xmark"></i>
                 </button>
@@ -2193,8 +2180,8 @@
                         <i class="fa-solid fa-palette"></i>
                     </div>
                     <div>
-                        <h3 class="color-picker-title">Choose Category Color</h3>
-                        <span class="color-picker-subtitle">Select a curated palette or customize</span>
+                        <h3 class="color-picker-title" data-i18n="choose_color_title">Choose Category Color</h3>
+                        <span class="color-picker-subtitle" data-i18n="choose_color_sub">Select a curated palette or customize</span>
                     </div>
                 </div>
                 <button type="button" class="close-btn" onclick="closeCategoryColorPicker()" aria-label="Close modal">
@@ -2216,7 +2203,7 @@
             </div>
 
             <!-- Curated Palettes Grid -->
-            <div class="color-swatches-section-label">Curated Palettes</div>
+            <div class="color-swatches-section-label" data-i18n="curated_palettes_label">Curated Palettes</div>
             <div class="color-picker-grid-container" id="colorPickerSwatchesGrid">
                 <!-- Dynamically populated curated swatches -->
             </div>
@@ -2225,7 +2212,7 @@
             <div class="color-picker-custom-row">
                 <div class="custom-color-input-wrap">
                     <input type="color" id="customColorNativePicker" class="custom-color-native-input" value="#2563eb" oninput="handleCustomColorNative(this.value)" onchange="handleCustomColorCommit(this.value)">
-                    <span class="custom-color-label">Custom Color</span>
+                    <span class="custom-color-label" data-i18n="custom_color_label">Custom Color</span>
                 </div>
                 <div class="custom-hex-input-wrap">
                     <span class="custom-hex-prefix">#</span>
@@ -2234,7 +2221,7 @@
             </div>
 
             <button type="button" class="btn-primary full-width color-picker-done-btn" onclick="commitAndCloseCategoryColorPicker()">
-                <i class="fa-solid fa-check"></i> <span>Done</span>
+                <i class="fa-solid fa-check"></i> <span data-i18n="btn_done">Done</span>
             </button>
         </div>
     </div>
@@ -2248,8 +2235,8 @@
                         <i class="fa-solid fa-coins"></i>
                     </div>
                     <div>
-                        <h3 class="currency-picker-title">Select Currency</h3>
-                        <span class="currency-picker-subtitle">Choose currency for live conversion</span>
+                        <h3 class="currency-picker-title" data-i18n="select_currency_title">Select Currency</h3>
+                        <span class="currency-picker-subtitle" data-i18n="select_currency_sub">Choose currency for live conversion</span>
                     </div>
                 </div>
                 <button type="button" class="close-btn" onclick="closeCurrencyPicker()" aria-label="Close modal">
@@ -2260,7 +2247,7 @@
             <!-- Search input -->
             <div class="currency-picker-search-bar">
                 <i class="fa-solid fa-magnifying-glass"></i>
-                <input type="text" id="currencyPickerSearchInput" placeholder="Search by name, country or code (e.g. IDR, USD, Yen)..." oninput="filterCurrencyPickerList()" autocomplete="off">
+                <input type="text" id="currencyPickerSearchInput" placeholder="Search by name, country or code (e.g. IDR, USD, Yen)..." data-i18n-placeholder="search_currency_picker_ph" oninput="filterCurrencyPickerList()" autocomplete="off">
                 <button type="button" class="currency-picker-search-clear" id="currencyPickerSearchClear" onclick="clearCurrencyPickerSearch()" style="display: none;">
                     <i class="fa-solid fa-circle-xmark"></i>
                 </button>
@@ -2268,7 +2255,7 @@
 
             <!-- Popular Quick Picks -->
             <div class="currency-picker-quick-picks">
-                <span class="quick-picks-label">Popular:</span>
+                <span class="quick-picks-label" data-i18n="lang_popular">Popular:</span>
                 <button type="button" class="quick-pick-pill" onclick="selectPickerCurrency('IDR')"><img src="https://flagcdn.com/w40/id.png" alt="IDR" class="quick-pick-flag"> IDR</button>
                 <button type="button" class="quick-pick-pill" onclick="selectPickerCurrency('USD')"><img src="https://flagcdn.com/w40/us.png" alt="USD" class="quick-pick-flag"> USD</button>
                 <button type="button" class="quick-pick-pill" onclick="selectPickerCurrency('EUR')"><img src="https://flagcdn.com/w40/eu.png" alt="EUR" class="quick-pick-flag"> EUR</button>
@@ -2338,8 +2325,8 @@
                         <i class="fa-solid fa-file-pdf"></i>
                     </div>
                     <div>
-                        <h3 class="export-pdf-title">Export PDF Statement</h3>
-                        <span class="export-pdf-subtitle">Select period & download detailed financial statement</span>
+                        <h3 class="export-pdf-title" data-i18n="export_pdf_title">Export PDF Statement</h3>
+                        <span class="export-pdf-subtitle" data-i18n="export_pdf_subtitle">Select period & download detailed financial statement</span>
                     </div>
                 </div>
                 <button type="button" class="close-btn" onclick="closeExportPdfModal()" aria-label="Close modal">
@@ -2350,20 +2337,20 @@
             <!-- Segmented Period Mode Switch -->
             <div class="export-pdf-mode-tabs" role="tablist">
                 <button type="button" class="export-mode-tab active" id="tabExportMonth" onclick="setExportPdfMode('month')">
-                    <i class="fa-solid fa-calendar"></i> <span>Specific Month</span>
+                    <i class="fa-solid fa-calendar"></i> <span data-i18n="export_tab_month">Specific Month</span>
                 </button>
                 <button type="button" class="export-mode-tab" id="tabExportRange" onclick="setExportPdfMode('range')">
-                    <i class="fa-solid fa-calendar-week"></i> <span>Month Range</span>
+                    <i class="fa-solid fa-calendar-week"></i> <span data-i18n="export_tab_range">Month Range</span>
                 </button>
                 <button type="button" class="export-mode-tab" id="tabExportAll" onclick="setExportPdfMode('all')">
-                    <i class="fa-solid fa-infinity"></i> <span>All Time</span>
+                    <i class="fa-solid fa-infinity"></i> <span data-i18n="export_tab_all">All Time</span>
                 </button>
             </div>
 
             <!-- Mode 1: Single Month View -->
             <div id="exportPdfMonthView" class="export-mode-view active">
                 <div class="export-field-group">
-                    <label class="export-field-label">SELECT MONTH & YEAR</label>
+                    <label class="export-field-label" data-i18n="export_lbl_select_month">SELECT MONTH & YEAR</label>
                     <div class="export-input-pill-wrap" onclick="triggerMonthPicker('exportPdfSingleMonth')">
                         <div class="export-input-icon-badge">
                             <i class="fa-solid fa-calendar-day"></i>
@@ -2376,9 +2363,9 @@
                 </div>
                 <!-- Quick Preset Pills -->
                 <div class="export-quick-presets">
-                    <span class="export-preset-label">Quick Presets:</span>
-                    <button type="button" class="export-preset-btn" onclick="setExportPdfPreset('thisMonth')">This Month</button>
-                    <button type="button" class="export-preset-btn" onclick="setExportPdfPreset('lastMonth')">Last Month</button>
+                    <span class="export-preset-label" data-i18n="export_quick_presets_label">Quick Presets:</span>
+                    <button type="button" class="export-preset-btn" onclick="setExportPdfPreset('thisMonth')" data-i18n="export_preset_this_month">This Month</button>
+                    <button type="button" class="export-preset-btn" onclick="setExportPdfPreset('lastMonth')" data-i18n="export_preset_last_month">Last Month</button>
                 </div>
             </div>
 
@@ -2386,7 +2373,7 @@
             <div id="exportPdfRangeView" class="export-mode-view" style="display: none;">
                 <div class="export-range-inputs-grid">
                     <div class="export-field-group">
-                        <label class="export-field-label">FROM MONTH</label>
+                        <label class="export-field-label" data-i18n="export_lbl_from_month">FROM MONTH</label>
                         <div class="export-input-pill-wrap" onclick="triggerMonthPicker('exportPdfStartMonth')">
                             <div class="export-input-icon-badge">
                                 <i class="fa-solid fa-calendar-plus"></i>
@@ -2398,7 +2385,7 @@
                         </div>
                     </div>
                     <div class="export-field-group">
-                        <label class="export-field-label">TO MONTH</label>
+                        <label class="export-field-label" data-i18n="export_lbl_to_month">TO MONTH</label>
                         <div class="export-input-pill-wrap" onclick="triggerMonthPicker('exportPdfEndMonth')">
                             <div class="export-input-icon-badge">
                                 <i class="fa-solid fa-calendar-check"></i>
@@ -2412,10 +2399,10 @@
                 </div>
                 <!-- Quick Range Presets -->
                 <div class="export-quick-presets">
-                    <span class="export-preset-label">Quick Presets:</span>
-                    <button type="button" class="export-preset-btn" onclick="setExportPdfPreset('last3Months')">Last 3 Months</button>
-                    <button type="button" class="export-preset-btn" onclick="setExportPdfPreset('last6Months')">Last 6 Months</button>
-                    <button type="button" class="export-preset-btn" onclick="setExportPdfPreset('thisYear')">This Year (YTD)</button>
+                    <span class="export-preset-label" data-i18n="export_quick_presets_label">Quick Presets:</span>
+                    <button type="button" class="export-preset-btn" onclick="setExportPdfPreset('last3Months')" data-i18n="export_preset_last_3">Last 3 Months</button>
+                    <button type="button" class="export-preset-btn" onclick="setExportPdfPreset('last6Months')" data-i18n="export_preset_last_6">Last 6 Months</button>
+                    <button type="button" class="export-preset-btn" onclick="setExportPdfPreset('thisYear')" data-i18n="export_preset_this_year">This Year (YTD)</button>
                 </div>
             </div>
 
@@ -2426,8 +2413,8 @@
                         <i class="fa-solid fa-clock-rotate-left"></i>
                     </div>
                     <div>
-                        <strong>All Historical Transactions</strong>
-                        <p>Cumulative statement across all recorded transactions.</p>
+                        <strong data-i18n="export_all_time_title">All Historical Transactions</strong>
+                        <p data-i18n="export_all_time_desc">Cumulative statement across all recorded transactions.</p>
                     </div>
                 </div>
             </div>
@@ -2443,17 +2430,17 @@
                 </div>
                 <div class="export-scope-stats-row">
                     <div class="export-stat-item green">
-                        <span class="stat-meta">Income</span>
+                        <span class="stat-meta" data-i18n="total_income">Income</span>
                         <strong id="exportScopeIncome">Rp0</strong>
                     </div>
                     <div class="export-stat-divider"></div>
                     <div class="export-stat-item red">
-                        <span class="stat-meta">Expense</span>
+                        <span class="stat-meta" data-i18n="total_expenses">Expense</span>
                         <strong id="exportScopeExpense">Rp0</strong>
                     </div>
                     <div class="export-stat-divider"></div>
                     <div class="export-stat-item blue">
-                        <span class="stat-meta">Net Cash Flow</span>
+                        <span class="stat-meta" data-i18n="export_stat_net">Net Cash Flow</span>
                         <strong id="exportScopeNet">Rp0</strong>
                     </div>
                 </div>
@@ -2462,16 +2449,16 @@
             <!-- Sleek Feature Pill (Clean & Concise) -->
             <div class="export-advisory-pill">
                 <i class="fa-solid fa-wand-magic-sparkles"></i>
-                <span>Includes Cash Health Score, 50/30/20 Benchmark & Action Plan</span>
+                <span data-i18n="export_advisory_text">Includes Cash Health Score, 50/30/20 Benchmark & Action Plan</span>
             </div>
 
             <!-- Modal Action Buttons -->
             <div class="export-modal-actions-row">
-                <button type="button" class="btn-secondary export-cancel-btn" onclick="closeExportPdfModal()">
+                <button type="button" class="btn-secondary export-cancel-btn" onclick="closeExportPdfModal()" data-i18n="btn_cancel">
                     Cancel
                 </button>
                 <button type="button" class="btn-primary export-generate-btn" id="btnConfirmGeneratePdf" onclick="generateExportPdf()">
-                    <i class="fa-solid fa-file-arrow-down"></i> <span>Download Statement PDF</span>
+                    <i class="fa-solid fa-file-arrow-down"></i> <span data-i18n="btn_download_pdf">Download Statement PDF</span>
                 </button>
             </div>
         </div>
@@ -2484,8 +2471,8 @@
             <div style="width: 48px; height: 48px; border-radius: 50%; background: var(--blue-accent-light); color: var(--primary-color); display: flex; align-items: center; justify-content: center; margin: 0 auto 14px auto; font-size: 1.3rem;">
                 <i class="fa-solid fa-shield-halved"></i>
             </div>
-            <h2 id="pinSetupTitle" style="font-size: 1.25rem; font-weight: 700; margin-bottom: 6px;">Set 4-Digit PIN</h2>
-            <p id="pinSetupDesc" style="color: var(--text-grey); font-size: 0.86rem; margin-bottom: 18px;">Enter 4 digits for your security PIN.</p>
+            <h2 id="pinSetupTitle" style="font-size: 1.25rem; font-weight: 700; margin-bottom: 6px;" data-i18n="pin_setup_title">Set 4-Digit PIN</h2>
+            <p id="pinSetupDesc" style="color: var(--text-grey); font-size: 0.86rem; margin-bottom: 18px;" data-i18n="pin_setup_sub">Enter 4 digits for your security PIN.</p>
 
             <div class="pin-dots-container" id="setupPinDotsContainer" style="margin-bottom: 16px;">
                 <div class="pin-dot" id="sdot0"></div>
@@ -2494,7 +2481,7 @@
                 <div class="pin-dot" id="sdot3"></div>
             </div>
 
-            <p class="pin-error-msg" id="setupPinErrorMsg" style="display: none; margin-bottom: 14px;">PIN confirmation does not match.</p>
+            <p class="pin-error-msg" id="setupPinErrorMsg" style="display: none; margin-bottom: 14px;" data-i18n="pin_mismatch_error">PIN confirmation does not match.</p>
 
             <div class="pin-keypad compact-keypad">
                 <button type="button" class="pin-key-btn compact" data-skey="1">1</button>
@@ -2506,7 +2493,7 @@
                 <button type="button" class="pin-key-btn compact" data-skey="7">7</button>
                 <button type="button" class="pin-key-btn compact" data-skey="8">8</button>
                 <button type="button" class="pin-key-btn compact" data-skey="9">9</button>
-                <button type="button" class="pin-key-btn compact aux-btn" id="btnCancelPinSetup">Cancel</button>
+                <button type="button" class="pin-key-btn compact aux-btn" id="btnCancelPinSetup" data-i18n="btn_cancel">Cancel</button>
                 <button type="button" class="pin-key-btn compact" data-skey="0">0</button>
                 <button type="button" class="pin-key-btn compact aux-btn" id="btnSetupBackspace" title="Delete" aria-label="Delete"><i class="fa-solid fa-delete-left"></i></button>
             </div>
@@ -2520,14 +2507,14 @@
             <div style="width: 50px; height: 50px; border-radius: 50%; background: rgba(239, 68, 68, 0.1); color: #ef4444; display: flex; align-items: center; justify-content: center; margin: 0 auto 14px auto; font-size: 1.35rem;">
                 <i class="fa-solid fa-key"></i>
             </div>
-            <h2 style="font-size: 1.25rem; font-weight: 700; margin-bottom: 6px;">Forgot PIN?</h2>
-            <p style="color: var(--text-grey); font-size: 0.86rem; margin-bottom: 18px; line-height: 1.45;">Verify your account password to reset your PIN, or sign out to log in again.</p>
+            <h2 style="font-size: 1.25rem; font-weight: 700; margin-bottom: 6px;" data-i18n="forgot_pin_title">Forgot PIN?</h2>
+            <p style="color: var(--text-grey); font-size: 0.86rem; margin-bottom: 18px; line-height: 1.45;" data-i18n="forgot_pin_sub">Verify your account password to reset your PIN, or sign out to log in again.</p>
 
             <form id="forgotPinForm" onsubmit="event.preventDefault();" style="display: flex; flex-direction: column; gap: 12px; margin-bottom: 16px;">
                 <div style="position: relative; text-align: left;">
-                    <label style="font-size: 0.74rem; font-weight: 700; color: var(--text-grey); text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 4px; display: block;">Account Password</label>
+                    <label style="font-size: 0.74rem; font-weight: 700; color: var(--text-grey); text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 4px; display: block;" data-i18n="lbl_account_password">Account Password</label>
                     <div style="position: relative; display: flex; align-items: center;">
-                        <input type="password" id="forgotPinPasswordInput" placeholder="Enter your account password" style="width: 100%; padding: 11px 40px 11px 14px; border: 1.5px solid var(--border-color); border-radius: var(--radius-lg); background: var(--input-bg); color: var(--text-dark); font-size: 0.92rem; outline: none; transition: border-color 0.2s;" autocomplete="current-password">
+                        <input type="password" id="forgotPinPasswordInput" placeholder="Enter your account password" data-i18n-placeholder="placeholder_account_pwd" style="width: 100%; padding: 11px 40px 11px 14px; border: 1.5px solid var(--border-color); border-radius: var(--radius-lg); background: var(--input-bg); color: var(--text-dark); font-size: 0.92rem; outline: none; transition: border-color 0.2s;" autocomplete="current-password">
                         <button type="button" id="btnToggleForgotPassVisibility" style="position: absolute; right: 10px; background: none; border: none; color: var(--text-muted); cursor: pointer; padding: 6px; font-size: 0.9rem;" aria-label="Toggle password visibility">
                             <i class="fa-regular fa-eye"></i>
                         </button>
@@ -2536,18 +2523,18 @@
 
                 <p id="forgotPinErrorMsg" style="display: none; color: #ef4444; font-size: 0.8rem; font-weight: 600; margin: 0; text-align: left;"></p>
 
-                <button type="button" id="btnVerifyAndResetPin" class="btn-primary" style="width: 100%; padding: 12px; font-size: 0.9rem; font-weight: 700; border-radius: var(--radius-lg); margin-top: 4px;">
+                <button type="button" id="btnVerifyAndResetPin" class="btn-primary" style="width: 100%; padding: 12px; font-size: 0.9rem; font-weight: 700; border-radius: var(--radius-lg); margin-top: 4px;" data-i18n="btn_verify_reset_pin">
                     Verify & Reset PIN
                 </button>
             </form>
 
             <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 14px;">
                 <div style="flex: 1; height: 1px; background: var(--border-color);"></div>
-                <span style="font-size: 0.72rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase;">or</span>
+                <span style="font-size: 0.72rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase;" data-i18n="or_divider">or</span>
                 <div style="flex: 1; height: 1px; background: var(--border-color);"></div>
             </div>
 
-            <button type="button" id="btnForgotPinSignOut" style="width: 100%; padding: 11px; background: var(--hover-bg); border: 1px solid var(--border-color); border-radius: var(--radius-lg); color: var(--text-dark); font-size: 0.86rem; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; transition: background 0.2s;">
+            <button type="button" id="btnForgotPinSignOut" style="width: 100%; padding: 11px; background: var(--hover-bg); border: 1px solid var(--border-color); border-radius: var(--radius-lg); color: var(--text-dark); font-size: 0.86rem; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; transition: background 0.2s;" data-i18n="btn_signout_relogin">
                 <i class="fa-solid fa-arrow-right-from-bracket"></i>
                 Sign Out & Re-login
             </button>

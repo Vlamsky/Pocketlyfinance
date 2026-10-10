@@ -2184,7 +2184,7 @@ window.getScopedExportTransactions = function() {
         const ym = singleInput ? singleInput.value : '';
         if (ym) {
             scoped = allTrans.filter(t => t.date && t.date.startsWith(ym));
-            periodLabel = formatYmEng(ym);
+            periodLabel = (window.PocketlyI18n && typeof window.PocketlyI18n.formatMonthYear === 'function') ? window.PocketlyI18n.formatMonthYear(ym) : formatYmEng(ym);
             fileSuffix = ym;
             const parts = ym.split('-');
             daysInPeriod = new Date(parseInt(parts[0], 10), parseInt(parts[1], 10), 0).getDate();
@@ -2206,7 +2206,9 @@ window.getScopedExportTransactions = function() {
                 const ym = t.date.slice(0, 7);
                 return ym >= sYm && ym <= eYm;
             });
-            periodLabel = `${formatYmEng(sYm)} — ${formatYmEng(eYm)}`;
+            const sLbl = (window.PocketlyI18n && typeof window.PocketlyI18n.formatMonthYear === 'function') ? window.PocketlyI18n.formatMonthYear(sYm) : formatYmEng(sYm);
+            const eLbl = (window.PocketlyI18n && typeof window.PocketlyI18n.formatMonthYear === 'function') ? window.PocketlyI18n.formatMonthYear(eYm) : formatYmEng(eYm);
+            periodLabel = `${sLbl} — ${eLbl}`;
             fileSuffix = `${sYm}_to_${eYm}`;
             const sParts = sYm.split('-');
             const eParts = eYm.split('-');
@@ -2219,7 +2221,7 @@ window.getScopedExportTransactions = function() {
         }
     } else {
         scoped = [...allTrans];
-        periodLabel = 'All Historical Data (All-Time)';
+        periodLabel = (window.PocketlyI18n && window.PocketlyI18n.t('export_all_time_title')) || 'All Historical Data (All-Time)';
         fileSuffix = 'AllTime';
         daysInPeriod = 90;
     }
@@ -2246,7 +2248,10 @@ window.updateExportPdfScope = function() {
     const netEl = document.getElementById('exportScopeNet');
 
     if (periodTagEl) periodTagEl.textContent = periodLabel;
-    if (countEl) countEl.textContent = `${scoped.length} ${scoped.length === 1 ? 'Transaction' : 'Transactions'}`;
+    const countStr = scoped.length === 1
+        ? ((window.PocketlyI18n && window.PocketlyI18n.t('stat_transaction_single')) || 'Transaction')
+        : ((window.PocketlyI18n && window.PocketlyI18n.t('stat_transactions')) || 'Transactions');
+    if (countEl) countEl.textContent = `${scoped.length} ${countStr}`;
     if (incEl) incEl.textContent = typeof formatCurrency === 'function' ? formatCurrency(inc) : `Rp${inc.toLocaleString()}`;
     if (expEl) expEl.textContent = typeof formatCurrency === 'function' ? formatCurrency(exp) : `Rp${exp.toLocaleString()}`;
     if (netEl) {
@@ -3063,8 +3068,29 @@ if (soundEffectsToggle) {
     });
 }
 function handleInputTypeChange(type) {
-    const catGroup = document.getElementById('categoryGroup'); const targetGroup = document.getElementById('targetAccountGroup'); const accLabel = document.getElementById('accountLabel');
-    if (type === 'transfer') { if(catGroup) catGroup.style.display = 'none'; if(targetGroup) targetGroup.style.display = 'block'; if(accLabel) accLabel.innerText = "From Account"; const inputCat = document.getElementById('inputCategory'); if(inputCat) inputCat.removeAttribute('required'); } else { if(catGroup) catGroup.style.display = 'block'; if(targetGroup) targetGroup.style.display = 'none'; if(accLabel) accLabel.innerText = "Account"; const inputCat = document.getElementById('inputCategory'); if(inputCat) inputCat.setAttribute('required', 'true'); } setTimeout(initCustomSelects, 100); 
+    const catGroup = document.getElementById('categoryGroup');
+    const targetGroup = document.getElementById('targetAccountGroup');
+    const accLabel = document.getElementById('accountLabel');
+    if (type === 'transfer') {
+        if (catGroup) catGroup.style.display = 'none';
+        if (targetGroup) targetGroup.style.display = 'block';
+        if (accLabel) {
+            accLabel.innerText = (window.PocketlyI18n && window.PocketlyI18n.t('trans_lbl_from_account')) || "From Account";
+            accLabel.setAttribute('data-i18n', 'trans_lbl_from_account');
+        }
+        const inputCat = document.getElementById('inputCategory');
+        if (inputCat) inputCat.removeAttribute('required');
+    } else {
+        if (catGroup) catGroup.style.display = 'block';
+        if (targetGroup) targetGroup.style.display = 'none';
+        if (accLabel) {
+            accLabel.innerText = (window.PocketlyI18n && window.PocketlyI18n.t('trans_lbl_account')) || "Account";
+            accLabel.setAttribute('data-i18n', 'trans_lbl_account');
+        }
+        const inputCat = document.getElementById('inputCategory');
+        if (inputCat) inputCat.setAttribute('required', 'true');
+    }
+    setTimeout(initCustomSelects, 100);
 }
 
 window.showAlert = function(message, isError = true) {
@@ -3320,14 +3346,16 @@ function generateWalletCardHTML(account) {
 }
 
 function getWalletAddCardHTML() {
+    const title = (window.PocketlyI18n && window.PocketlyI18n.t('add_account')) || 'Add Account';
+    const sub = (window.PocketlyI18n && window.PocketlyI18n.t('add_account_sub')) || 'Bank, E-Wallet or Cash';
     return `
-    <div class="apple-wallet-card awc-add-card" onclick="window.triggerAddAccountFromWallet()" role="button" tabindex="0" title="Add New Card / Account">
+    <div class="apple-wallet-card awc-add-card" onclick="window.triggerAddAccountFromWallet()" role="button" tabindex="0" title="${title}">
         <div class="awc-add-inner">
             <div class="awc-add-icon">
                 <i class="fa-solid fa-plus"></i>
             </div>
-            <span class="awc-add-title">Add Account</span>
-            <span class="awc-add-sub">Bank, E-Wallet or Cash</span>
+            <span class="awc-add-title" data-i18n="add_account">${title}</span>
+            <span class="awc-add-sub" data-i18n="add_account_sub">${sub}</span>
         </div>
     </div>`;
 }
@@ -3360,10 +3388,15 @@ function listenToAccounts() {
         
         let htmlContent = ''; 
         
-        const defaultOpt = `<option value="" disabled selected>Select Account</option><option value="NEW_ACCOUNT" style="font-weight:bold; color:var(--blue-accent);">+ Create New Account</option>`; 
+        const selAccText = (window.PocketlyI18n && window.PocketlyI18n.t('trans_select_account_placeholder')) || 'Select Account';
+        const newAccText = (window.PocketlyI18n && window.PocketlyI18n.t('trans_create_new_account')) || '+ Create New Account...';
+        const selDestText = (window.PocketlyI18n && window.PocketlyI18n.t('trans_select_dest_placeholder')) || 'Select Destination Account';
+        const allAccText = (window.PocketlyI18n && window.PocketlyI18n.t('opt_all_accounts')) || 'All Accounts';
+
+        const defaultOpt = `<option value="" disabled selected data-i18n="trans_select_account_placeholder">${selAccText}</option><option value="NEW_ACCOUNT" style="font-weight:bold; color:var(--blue-accent);" data-i18n="trans_create_new_account">${newAccText}</option>`; 
         if(accSelect) accSelect.innerHTML = defaultOpt; 
-        if(toAccSelect) toAccSelect.innerHTML = `<option value="" disabled selected>Select Destination Account</option>`; 
-        if (filterAccSelect) filterAccSelect.innerHTML = '<option value="all">All Accounts</option>';
+        if(toAccSelect) toAccSelect.innerHTML = `<option value="" disabled selected data-i18n="trans_select_dest_placeholder">${selDestText}</option>`; 
+        if (filterAccSelect) filterAccSelect.innerHTML = `<option value="all" data-i18n="opt_all_accounts">${allAccText}</option>`;
         
         snapshot.docs.forEach(doc => {
             const data = doc.data(); 
@@ -4382,9 +4415,11 @@ window.openCreateBudgetModal = (type, preselectedCategory = '') => {
     document.getElementById('budgetForm').reset(); 
     document.getElementById('editBudgetId').value = ""; 
     
-    const title = type === 'goal' ? "Add Financial Goal" : "Add Monthly Budget"; 
+    const goalTitle = (window.PocketlyI18n && window.PocketlyI18n.t('budget_modal_goal_title')) || "New Savings Goal";
+    const budgetTitle = (window.PocketlyI18n && window.PocketlyI18n.t('budget_modal_limit_title')) || "Set Budget Limit";
+    const title = type === 'goal' ? goalTitle : budgetTitle;
     document.getElementById('budgetModalTitle').innerText = title; 
-    document.getElementById('btnSaveBudget').innerText = "Save"; 
+    document.getElementById('btnSaveBudget').innerText = (window.PocketlyI18n && window.PocketlyI18n.t('btn_save_plan')) || "Save Plan"; 
     
     const typeSelect = document.getElementById('budgetType'); 
     if (typeSelect) { 
@@ -4413,8 +4448,8 @@ window.openCreateBudgetModal = (type, preselectedCategory = '') => {
 
 // Tambahkan 'async' di depan
 window.openEditBudget = async (id, name, target, current, type) => { 
-    document.getElementById('budgetModalTitle').innerText = "Edit Plan"; 
-    document.getElementById('btnSaveBudget').innerText = "Update Plan"; 
+    document.getElementById('budgetModalTitle').innerText = (window.PocketlyI18n && window.PocketlyI18n.t('budget_modal_edit_title')) || "Edit Budget Plan"; 
+    document.getElementById('btnSaveBudget').innerText = (window.PocketlyI18n && window.PocketlyI18n.t('btn_update_plan')) || "Update Plan"; 
     document.getElementById('editBudgetId').value = id; 
     
     const typeSelect = document.getElementById('budgetType'); 
@@ -4586,7 +4621,8 @@ window.openTopupBudget = (id, name, current, type, defaultAction = 'deposit') =>
 
     // 3. Populate Dropdown Akun (Ambil dari variabel global 'accounts')
     const accSelect = document.getElementById('topupAccount');
-    accSelect.innerHTML = '<option value="" disabled selected>Select Account</option>'; // Reset opsi
+    const selAccText = (window.PocketlyI18n && window.PocketlyI18n.t('trans_select_account_placeholder')) || 'Select Account';
+    accSelect.innerHTML = `<option value="" disabled selected data-i18n="trans_select_account_placeholder">${selAccText}</option>`; // Reset opsi
     
     if (accounts && accounts.length > 0) {
         accounts.forEach(acc => {
@@ -4858,17 +4894,19 @@ window.toggleTopupLabel = () => {
     const modalTitle = document.getElementById('topupModalTitle');
     
     if (action === 'deposit') {
-        if (modalTitle) modalTitle.innerText = "Deposit to Savings Goal";
-        if (lbl) lbl.innerText = "Source Account (Deduct from)";
+        if (modalTitle) modalTitle.innerText = (window.PocketlyI18n && window.PocketlyI18n.t('topup_deposit_title')) || "Deposit to Savings Goal";
+        if (lbl) lbl.innerText = (window.PocketlyI18n && window.PocketlyI18n.t('topup_account_label')) || "Source Account (Deduct from)";
         if (btn) {
-            btn.innerHTML = '<i class="fa-solid fa-arrow-down"></i> Deposit to Goal';
+            const btnText = (window.PocketlyI18n && window.PocketlyI18n.t('btn_deposit_to_goal')) || "Deposit to Goal";
+            btn.innerHTML = `<i class="fa-solid fa-arrow-down"></i> ${btnText}`;
             btn.className = "btn-primary full-width";
         }
     } else {
-        if (modalTitle) modalTitle.innerText = "Withdraw from Savings Goal";
-        if (lbl) lbl.innerText = "Destination Account (Deposit to)";
+        if (modalTitle) modalTitle.innerText = (window.PocketlyI18n && window.PocketlyI18n.t('topup_withdraw_title')) || "Withdraw from Savings Goal";
+        if (lbl) lbl.innerText = (window.PocketlyI18n && window.PocketlyI18n.t('topup_dest_account_label')) || "Destination Account (Deposit to)";
         if (btn) {
-            btn.innerHTML = '<i class="fa-solid fa-arrow-up-from-bracket"></i> Withdraw Funds';
+            const btnText = (window.PocketlyI18n && window.PocketlyI18n.t('btn_withdraw_funds')) || "Withdraw Funds";
+            btn.innerHTML = `<i class="fa-solid fa-arrow-up-from-bracket"></i> ${btnText}`;
             btn.className = "btn-warning full-width";
         }
     }
@@ -5207,8 +5245,8 @@ window.onActionSheetDelete = function() {
 };
 
 window.openEditAccount = (id, name, balance) => { 
-    document.getElementById('accModalTitle').innerText = "Edit Account"; 
-    document.getElementById('btnSaveAcc').innerText = "Update Name"; // Ubah teks tombol biar jelas
+    document.getElementById('accModalTitle').innerText = (window.PocketlyI18n && window.PocketlyI18n.t('btn_edit_account')) || "Edit Account"; 
+    document.getElementById('btnSaveAcc').innerText = (window.PocketlyI18n && window.PocketlyI18n.t('btn_update_name')) || "Update Name"; // Ubah teks tombol biar jelas
     document.getElementById('editAccId').value = id; 
     document.getElementById('accName').value = name; 
     
@@ -5227,8 +5265,8 @@ window.openEditTrans = (id, desc, amount, date, type, accId, category) => {
     } 
     
     // 2. Setup Judul & Tombol
-    document.getElementById('transModalTitle').innerText = "Edit Record"; 
-    document.getElementById('btnSaveTrans').innerText = "Update"; 
+    document.getElementById('transModalTitle').innerText = (window.PocketlyI18n && window.PocketlyI18n.t('btn_edit_record')) || "Edit Record"; 
+    document.getElementById('btnSaveTrans').innerText = (window.PocketlyI18n && window.PocketlyI18n.t('btn_update')) || "Update"; 
     document.getElementById('editTransId').value = id; 
     
     // 3. Set Nilai Input Form
@@ -5260,7 +5298,7 @@ window.openEditTrans = (id, desc, amount, date, type, accId, category) => {
 
     if (isAdjustment) {
         // JIKA ADJUSTMENT: Kunci semua KECUALI Amount & Desc
-        document.getElementById('transModalTitle').innerText = "Correct Initial Balance"; 
+        document.getElementById('transModalTitle').innerText = (window.PocketlyI18n && window.PocketlyI18n.t('btn_correct_balance')) || "Correct Initial Balance"; 
         
         typeSelect.disabled = true;      // Type terkunci
         catSelect.disabled = true;       // Category terkunci
@@ -6032,8 +6070,8 @@ if (btnOpenTransFix) {
         if (filterPopup) filterPopup.classList.remove('show');
         const exportDrop = document.getElementById('exportDropdown');
         if (exportDrop) exportDrop.classList.remove('show');
-        document.getElementById('transModalTitle').innerText = "Add Record";
-        document.getElementById('btnSaveTrans').innerText = "Save";
+        document.getElementById('transModalTitle').innerText = (window.PocketlyI18n && window.PocketlyI18n.t('btn_add_record')) || "Add Record";
+        document.getElementById('btnSaveTrans').innerText = (window.PocketlyI18n && window.PocketlyI18n.t('btn_save')) || "Save";
         document.getElementById('editTransId').value = "";
         document.getElementById('transactionForm').reset();
         document.getElementById('inputType').disabled = false;      
@@ -6052,8 +6090,8 @@ if(btnOpenAccFix) {
     const newBtnAcc = btnOpenAccFix.cloneNode(true);
     btnOpenAccFix.parentNode.replaceChild(newBtnAcc, btnOpenAccFix);
     newBtnAcc.addEventListener('click', () => {
-        document.getElementById('accModalTitle').innerText = "Add Account";
-        document.getElementById('btnSaveAcc').innerText = "Create";
+        document.getElementById('accModalTitle').innerText = (window.PocketlyI18n && window.PocketlyI18n.t('acc_modal_title')) || "Add Account";
+        document.getElementById('btnSaveAcc').innerText = (window.PocketlyI18n && window.PocketlyI18n.t('btn_create')) || "Create";
         document.getElementById('editAccId').value = "";
         document.getElementById('accountForm').reset();
         document.getElementById('balanceGroup').style.display = 'block'; 
@@ -8277,11 +8315,18 @@ function populateCategorySelects() {
         const config = getCategoryConfig(cat);
         const item = CATEGORY_ICON_OPTIONS.find(([icon]) => icon === config.icon);
         const prefix = item ? item[1] : 'Category';
-        return `${prefix} - ${cat}`;
+        const translatedCat = (window.PocketlyI18n && typeof window.PocketlyI18n.translateCategory === 'function')
+            ? window.PocketlyI18n.translateCategory(cat)
+            : cat;
+        return `${prefix} - ${translatedCat}`;
     };
 
     const generateOptions = (includeAll = false, forBudget = false) => {
-        let html = includeAll ? '<option value="all">All Categories</option>' : '<option value="" disabled selected>Select Category</option>';
+        const allText = (window.PocketlyI18n && window.PocketlyI18n.t('opt_all_categories')) || 'All Categories';
+        const selText = (window.PocketlyI18n && window.PocketlyI18n.t('trans_select_category_placeholder')) || 'Select Category';
+        let html = includeAll 
+            ? `<option value="all" data-i18n="opt_all_categories">${allText}</option>` 
+            : `<option value="" disabled selected data-i18n="trans_select_category_placeholder">${selText}</option>`;
         const list = forBudget 
             ? userCategories.filter(c => c !== 'Salary' && c !== 'Investment' && c !== 'Transfer' && c !== 'Adjustment')
             : userCategories;
@@ -8494,10 +8539,15 @@ function renderAccountsFromCache() {
     const filterAccSelect = document.getElementById('transFilterAccount');
 
     let htmlContent = '';
-    const defaultOpt = '<option value="" disabled selected>Select Account</option><option value="NEW_ACCOUNT" style="font-weight:bold; color:var(--blue-accent);">+ Create New Account</option>';
+    const selAccText = (window.PocketlyI18n && window.PocketlyI18n.t('trans_select_account_placeholder')) || 'Select Account';
+    const newAccText = (window.PocketlyI18n && window.PocketlyI18n.t('trans_create_new_account')) || '+ Create New Account...';
+    const selDestText = (window.PocketlyI18n && window.PocketlyI18n.t('trans_select_dest_placeholder')) || 'Select Destination Account';
+    const allAccText = (window.PocketlyI18n && window.PocketlyI18n.t('opt_all_accounts')) || 'All Accounts';
+
+    const defaultOpt = `<option value="" disabled selected data-i18n="trans_select_account_placeholder">${selAccText}</option><option value="NEW_ACCOUNT" style="font-weight:bold; color:var(--blue-accent);" data-i18n="trans_create_new_account">${newAccText}</option>`;
     if (accSelect) accSelect.innerHTML = defaultOpt;
-    if (toAccSelect) toAccSelect.innerHTML = '<option value="" disabled selected>Select Destination Account</option>';
-    if (filterAccSelect) filterAccSelect.innerHTML = '<option value="all">All Accounts</option>';
+    if (toAccSelect) toAccSelect.innerHTML = `<option value="" disabled selected data-i18n="trans_select_dest_placeholder">${selDestText}</option>`;
+    if (filterAccSelect) filterAccSelect.innerHTML = `<option value="all" data-i18n="opt_all_accounts">${allAccText}</option>`;
 
     accounts.forEach((data) => {
         htmlContent += generateWalletCardHTML(data);
@@ -8541,8 +8591,11 @@ function populateDebtAccountSelects(selectedId = '') {
     selectIds.forEach((id) => {
         const select = document.getElementById(id);
         if (!select) return;
-        const label = id === 'debtAccount' ? 'Select linked account' : 'Select payment account';
-        select.innerHTML = `<option value="" disabled selected>${label}</option>`;
+        const defaultLabel = id === 'debtAccount'
+            ? ((window.PocketlyI18n && window.PocketlyI18n.t('debt_account_select_placeholder')) || 'Select linked account')
+            : ((window.PocketlyI18n && window.PocketlyI18n.t('debt_payment_select_placeholder')) || 'Select Account');
+        const dataI18nKey = id === 'debtAccount' ? 'debt_account_select_placeholder' : 'debt_payment_select_placeholder';
+        select.innerHTML = `<option value="" disabled selected data-i18n="${dataI18nKey}">${defaultLabel}</option>`;
         accounts.forEach((acc) => {
             const opt = document.createElement('option');
             opt.value = acc.id;
@@ -8550,6 +8603,9 @@ function populateDebtAccountSelects(selectedId = '') {
             if (selectedId && selectedId === acc.id) opt.selected = true;
             select.appendChild(opt);
         });
+        if (typeof select.__syncSearchable === 'function') {
+            select.__syncSearchable();
+        }
     });
 }
 
@@ -8744,8 +8800,8 @@ window.openDebtModal = function() {
     const saveBtn = document.getElementById('btnSaveDebt');
     const editId = document.getElementById('editDebtId');
     const affectRow = document.getElementById('debtAffectBalanceRow');
-    if (title) title.innerText = 'Add Debt / Loan';
-    if (saveBtn) saveBtn.innerText = 'Save Debt / Loan';
+    if (title) title.innerText = (window.PocketlyI18n && window.PocketlyI18n.t('debt_modal_title')) || 'Add Debt / Loan';
+    if (saveBtn) saveBtn.innerText = (window.PocketlyI18n && window.PocketlyI18n.t('debt_save_btn')) || 'Save Record';
     if (editId) editId.value = '';
     if (affectRow) affectRow.style.display = 'flex';
     const startDate = document.getElementById('debtStartDate');
@@ -8758,8 +8814,10 @@ window.openDebtModal = function() {
 window.openEditDebt = function(id) {
     const debt = rawDebts.find((item) => item.id === id);
     if (!debt) return showAlert('Debt record not found.', true);
-    document.getElementById('debtModalTitle').innerText = 'Edit Debt / Loan';
-    document.getElementById('btnSaveDebt').innerText = 'Update Debt / Loan';
+    const titleEl = document.getElementById('debtModalTitle');
+    const saveBtn = document.getElementById('btnSaveDebt');
+    if (titleEl) titleEl.innerText = (window.PocketlyI18n && window.PocketlyI18n.t('debt_modal_edit_title')) || 'Edit Debt / Loan';
+    if (saveBtn) saveBtn.innerText = (window.PocketlyI18n && window.PocketlyI18n.t('debt_update_btn')) || 'Update Record';
     document.getElementById('editDebtId').value = id;
     document.getElementById('debtKind').value = debt.kind || 'lent';
     document.getElementById('debtPartyName').value = debt.partyName || '';
@@ -8906,13 +8964,21 @@ window.openDebtPayment = function(id) {
     document.getElementById('debtPaymentAmount').value = remaining;
     document.getElementById('debtPaymentDate').value = todayISO();
     document.getElementById('debtPaymentNote').value = '';
-    document.getElementById('debtPaymentTitle').innerText = debt.kind === 'lent' ? 'Record Collection' : 'Record Repayment';
+    const collTitle = (window.PocketlyI18n && window.PocketlyI18n.t('record_collection_title')) || 'Record Collection';
+    const repayTitle = (window.PocketlyI18n && window.PocketlyI18n.t('record_repayment_title')) || 'Record Repayment';
+    const titleEl = document.getElementById('debtPaymentTitle');
+    if (titleEl) titleEl.innerText = debt.kind === 'lent' ? collTitle : repayTitle;
     const context = document.getElementById('debtPaymentContext');
     if (context) {
+        const lblRemaining = (window.PocketlyI18n && window.PocketlyI18n.t('debt_context_remaining')) || 'Remaining';
+        const lblAction = (window.PocketlyI18n && window.PocketlyI18n.t('debt_context_action')) || 'Action:';
+        const actionText = debt.kind === 'lent' 
+            ? ((window.PocketlyI18n && window.PocketlyI18n.t('debt_context_received')) || 'Money received from borrower')
+            : ((window.PocketlyI18n && window.PocketlyI18n.t('debt_context_paid_back')) || 'Money paid back to lender');
         context.innerHTML = `
             <b>${escapeHTML(debt.partyName || 'Debt')}</b><br>
-            Remaining: <b>${formatRupiah(remaining)}</b><br>
-            Action: ${debt.kind === 'lent' ? 'Money received from borrower' : 'Money paid back to lender'}`;
+            ${lblRemaining}: <b>${formatRupiah(remaining)}</b><br>
+            ${lblAction} ${actionText}`;
     }
     populateDebtAccountSelects(debt.accountId || '');
     const accountSelect = document.getElementById('debtPaymentAccount');
