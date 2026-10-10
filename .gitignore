@@ -1,5 +1,12 @@
-# Object file
-*.o
+# IDE and Agent metadata
+.agents/
+.claude/
+.gemini/
+.vscode/
+AGENTS.md
+CLAUDE.md
+GEMINI.md
 
-# Ada Library Information
-*.ali
+# OS files
+.DS_Store
+Thumbs.db

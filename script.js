@@ -3008,6 +3008,22 @@ if(darkModeToggle) darkModeToggle.addEventListener('change', () => {
         updateMetaTheme(false); // Ubah status bar jadi Terang
     } 
 });
+
+const soundEffectsToggle = document.getElementById('soundEffectsToggle');
+if (soundEffectsToggle) {
+    if (window.PocketlyAudio) {
+        soundEffectsToggle.checked = !window.PocketlyAudio.isMuted();
+    }
+    soundEffectsToggle.addEventListener('change', () => {
+        if (window.PocketlyAudio) {
+            const isMuted = window.PocketlyAudio.toggleMute();
+            soundEffectsToggle.checked = !isMuted;
+            if (!isMuted) {
+                window.PocketlyAudio.playSuccessChime();
+            }
+        }
+    });
+}
 function handleInputTypeChange(type) {
     const catGroup = document.getElementById('categoryGroup'); const targetGroup = document.getElementById('targetAccountGroup'); const accLabel = document.getElementById('accountLabel');
     if (type === 'transfer') { if(catGroup) catGroup.style.display = 'none'; if(targetGroup) targetGroup.style.display = 'block'; if(accLabel) accLabel.innerText = "From Account"; const inputCat = document.getElementById('inputCategory'); if(inputCat) inputCat.removeAttribute('required'); } else { if(catGroup) catGroup.style.display = 'block'; if(targetGroup) targetGroup.style.display = 'none'; if(accLabel) accLabel.innerText = "Account"; const inputCat = document.getElementById('inputCategory'); if(inputCat) inputCat.setAttribute('required', 'true'); } setTimeout(initCustomSelects, 100); 
@@ -3030,6 +3046,9 @@ window.showAlert = function(message, isError = true) {
         title.style.color = "var(--green)";
         icon.className = "fa-solid fa-circle-check text-green";
         icon.style.color = "var(--green)";
+        if (window.PocketlyAudio && typeof window.PocketlyAudio.playSuccessChime === 'function') {
+            window.PocketlyAudio.playSuccessChime();
+        }
     }
     msg.innerText = message;
     alertBox.style.zIndex = '999999';
@@ -3109,24 +3128,186 @@ function initFilters() {
     yearSelect.value = currentYear;
 }
 
-// --- 1. HELPER: Menentukan Warna & Ikon Kartu berdasarkan Nama Bank ---
+// --- 1. HELPER: Menentukan Gaya Kartu Apple Wallet & Bank Brand ---
 function getAccountStyle(name) {
-    const n = name.toLowerCase();
-    // Bank Umum (Biru)
-    if (n.includes('bca') || n.includes('mandiri') || n.includes('bri') || n.includes('bni') || n.includes('btn') || n.includes('cimb') || n.includes('cimb niaga') || n.includes('danamon') || n.includes('permata') || n.includes('panin') || n.includes('maybank') || n.includes('ocbc') || n.includes('hsbc') || n.includes('uob') || n.includes('mega') || n.includes('bukopin') || n.includes('kb bukopin') || n.includes('bsi') || n.includes('bank syariah indonesia') || n.includes('muamalat') || n.includes('bjb') || n.includes('bank jatim') || n.includes('bank jateng') || n.includes('bank dki') || n.includes('bank aceh') || n.includes('bank nagari') || n.includes('bank riau') || n.includes('bank sumut') || n.includes('bank sumsel') || n.includes('bank lampung') || n.includes('bank kaltim') || n.includes('bank kalsel') || n.includes('bank kalbar') || n.includes('bank sulsel') || n.includes('bank sulut') || n.includes('bank ntb') || n.includes('bank ntt') || n.includes('bank maluku') || n.includes('bank papua') || n.includes('bank bali') || n.includes('bank banten') || n.includes('bank jambi') || n.includes('bank bengkulu') || n.includes('bank babel') || n.includes('bank sulteng') || n.includes('bank sultra') || n.includes('bank gorontalo')) 
-        return { grad: 'card-grad-steel', icon: 'fa-building-columns' };
-    // E-Wallet (Ungu)
-    if (n.includes('gopay') || n.includes('ovo') || n.includes('dana') || n.includes('linkaja') || n.includes('shopeepay') || n.includes('sakuku') || n.includes('isaku') || n.includes('doku') || n.includes('paytren') || n.includes('flip') || n.includes('payfazz') || n.includes('truemoney') || n.includes('true money') || n.includes('motionpay') || n.includes('octopay') || n.includes('indodana') || n.includes('kredivo') || n.includes('akulaku') || n.includes('spaylater') || n.includes('gopaylater')) 
-        return { grad: 'card-grad-sage', icon: 'fa-mobile-screen' };
-    // Uang Tunai (Hijau)
-    if (n.includes('cash') || n.includes('tunai') || n.includes('dompet')) 
-        return { grad: 'card-grad-beige', icon: 'fa-money-bill-wave' };
-    // Bank Digital
-    if (n.includes('jenius') || n.includes('blu') || n.includes('line bank') || n.includes('seabank') || n.includes('sea bank') || n.includes('neobank') || n.includes('superbank') || n.includes('allobank') || n.includes('bank jago') || n.includes('jago') || n.includes('digibank') || n.includes('tbank') || n.includes('bankina')) 
-        return { grad: 'card-grad-steel', icon: 'fa-building-columns' };
-    // Default (Hijau)
-    return { grad: 'card-grad-gray', icon: 'fa-wallet' }; 
+    const n = (name || '').toLowerCase();
+
+    // 1. Bank Central Asia (BCA)
+    if (n.includes('bca')) {
+        return {
+            themeClass: 'card-wallet-bca',
+            network: 'PASPOR',
+            cardType: 'DEBIT CARD',
+            icon: 'fa-building-columns'
+        };
+    }
+
+    // 2. Bank Mandiri
+    if (n.includes('mandiri')) {
+        return {
+            themeClass: 'card-wallet-mandiri',
+            network: 'MANDIRI',
+            cardType: 'DEBIT CARD',
+            icon: 'fa-building-columns'
+        };
+    }
+
+    // 3. Bank Rakyat Indonesia (BRI)
+    if (n.includes('bri')) {
+        return {
+            themeClass: 'card-wallet-bri',
+            network: 'BRIMO',
+            cardType: 'DEBIT CARD',
+            icon: 'fa-building-columns'
+        };
+    }
+
+    // 4. Bank Negara Indonesia (BNI)
+    if (n.includes('bni')) {
+        return {
+            themeClass: 'card-wallet-bni',
+            network: 'BNI PLUS',
+            cardType: 'DEBIT CARD',
+            icon: 'fa-building-columns'
+        };
+    }
+
+    // 5. Bank Digital (Jago, Blu, Seabank, Jenius, Neobank, Allo, Line Bank)
+    if (n.includes('jago') || n.includes('blu') || n.includes('seabank') || n.includes('sea bank') || n.includes('jenius') || n.includes('neobank') || n.includes('superbank') || n.includes('allobank') || n.includes('line bank')) {
+        return {
+            themeClass: 'card-wallet-digital',
+            network: 'VISA DIGITAL',
+            cardType: 'SMART DEBIT',
+            icon: 'fa-microchip'
+        };
+    }
+
+    // 6. E-Wallet (GoPay, OVO, Dana, ShopeePay, LinkAja, Doku, Flip, etc.)
+    if (n.includes('gopay') || n.includes('ovo') || n.includes('dana') || n.includes('shopeepay') || n.includes('linkaja') || n.includes('isaku') || n.includes('sakuku') || n.includes('doku') || n.includes('flip') || n.includes('paytren')) {
+        return {
+            themeClass: 'card-wallet-ewallet',
+            network: 'E-WALLET',
+            cardType: 'INSTANT PAY',
+            icon: 'fa-mobile-screen'
+        };
+    }
+
+    // 7. Cash / Uang Tunai / Dompet Fisik
+    if (n.includes('cash') || n.includes('tunai') || n.includes('dompet') || n.includes('petty') || n.includes('brankas')) {
+        return {
+            themeClass: 'card-wallet-cash',
+            network: 'POCKET CASH',
+            cardType: 'PHYSICAL CASH',
+            icon: 'fa-money-bill-wave'
+        };
+    }
+
+    // 8. Bank Lainnya (CIMB, Danamon, Permata, Panin, BSI, OCBC, Maybank, BTN, UOB, HSBC, Mega, dll.)
+    if (n.includes('cimb') || n.includes('danamon') || n.includes('permata') || n.includes('panin') || n.includes('bsi') || n.includes('ocbc') || n.includes('maybank') || n.includes('btn') || n.includes('uob') || n.includes('hsbc') || n.includes('mega') || n.includes('bukopin') || n.includes('muamalat')) {
+        return {
+            themeClass: 'card-wallet-bca',
+            network: 'GPN / DEBIT',
+            cardType: 'DEBIT CARD',
+            icon: 'fa-building-columns'
+        };
+    }
+
+    // Default
+    return {
+        themeClass: 'card-wallet-default',
+        network: 'POCKETLY',
+        cardType: 'PRIMARY WALLET',
+        icon: 'fa-wallet'
+    };
 }
+
+// Helper Generator HTML Kartu Apple Wallet
+function generateWalletCardHTML(account) {
+    const rawName = account.name || 'Account';
+    const safeNameDisplay = (typeof escapeHTML === 'function') ? escapeHTML(rawName) : rawName;
+    const safeNameJs = (typeof escapeForJsString === 'function') ? escapeForJsString(rawName) : rawName.replace(/'/g, "\\'");
+    const style = getAccountStyle(rawName);
+    const balanceNum = Number(account.balance) || 0;
+    
+    let last4 = '8829';
+    if (account.id) {
+        const idClean = String(account.id).replace(/[^a-zA-Z0-9]/g, '');
+        if (idClean.length >= 4) {
+            last4 = idClean.slice(-4).toUpperCase();
+        }
+    }
+
+    return `
+    <div class="apple-wallet-card ${style.themeClass}" onclick="window.handleCardClick(event, '${account.id}', '${safeNameJs}', ${balanceNum}, '${style.icon}')" role="button" tabindex="0" aria-label="${safeNameDisplay} card">
+        <div class="awc-ambient-shine"></div>
+        <div class="awc-top">
+            <div class="awc-brand">
+                <div class="awc-icon-badge">
+                    <i class="fa-solid ${style.icon}"></i>
+                </div>
+                <div class="awc-brand-names">
+                    <span class="awc-bank-name">${safeNameDisplay}</span>
+                    <span class="awc-card-type">${style.cardType}</span>
+                </div>
+            </div>
+            <div class="awc-top-right">
+                <span class="awc-nfc" title="Contactless"><i class="fa-solid fa-wifi"></i></span>
+                <button type="button" class="awc-menu-btn" onclick="window.openAccountActions(event, '${account.id}', '${safeNameJs}', ${balanceNum}, '${style.icon}')" title="Card Options" aria-label="Card Options">
+                    <i class="fa-solid fa-ellipsis-vertical"></i>
+                </button>
+            </div>
+        </div>
+        <div class="awc-middle">
+            <div class="awc-chip">
+                <div class="awc-chip-line horizontal"></div>
+                <div class="awc-chip-line vertical"></div>
+            </div>
+            <div class="awc-card-number">
+                <span>••••</span>
+                <span>••••</span>
+                <span>••••</span>
+                <span class="awc-digits">${last4}</span>
+            </div>
+        </div>
+        <div class="awc-bottom">
+            <div class="awc-balance-col">
+                <span class="awc-balance-label">AVAILABLE BALANCE</span>
+                <span class="awc-balance-value">${formatRupiah(account.balance)}</span>
+            </div>
+            <div class="awc-network">
+                <span class="awc-network-tag">${style.network}</span>
+            </div>
+        </div>
+    </div>`;
+}
+
+function getWalletAddCardHTML() {
+    return `
+    <div class="apple-wallet-card awc-add-card" onclick="window.triggerAddAccountFromWallet()" role="button" tabindex="0" title="Add New Card / Account">
+        <div class="awc-add-inner">
+            <div class="awc-add-icon">
+                <i class="fa-solid fa-plus"></i>
+            </div>
+            <span class="awc-add-title">Add Account</span>
+            <span class="awc-add-sub">Bank, E-Wallet or Cash</span>
+        </div>
+    </div>`;
+}
+
+window.handleCardClick = function(event, id, name, balance, icon) {
+    if (window.PocketlyAudio && typeof window.PocketlyAudio.playCardTap === 'function') {
+        window.PocketlyAudio.playCardTap();
+    }
+    window.openAccountActions(event, id, name, balance, icon);
+};
+
+window.triggerAddAccountFromWallet = function() {
+    if (window.PocketlyAudio && typeof window.PocketlyAudio.playCardTap === 'function') {
+        window.PocketlyAudio.playCardTap();
+    }
+    const btn = document.getElementById('openAccountModalBtn');
+    if (btn) btn.click();
+};
 
 function listenToAccounts() {
     const q = query(collection(db, "accounts"), where("uid", "==", currentUser.uid));
@@ -3148,26 +3329,11 @@ function listenToAccounts() {
         
         snapshot.docs.forEach(doc => {
             const data = doc.data(); 
-            accounts.push({ id: doc.id, ...data }); 
-            const safeName = data.name.replace(/'/g, "\\'"); 
+            const accountObj = { id: doc.id, ...data };
+            accounts.push(accountObj); 
             
-            // Ambil Style Baru
-            const style = getAccountStyle(data.name);
-
-            // RENDER KARTU (Updated with clean Action Sheet)
-            htmlContent += `
-            <div class="retro-account-card" onclick="window.openAccountActions(event, '${doc.id}', '${safeName}', ${Number(data.balance) || 0}, '${style.icon}')">
-                <div class="rac-header">
-                    <div class="rac-logo">
-                        <i class="fa-solid ${style.icon}"></i> 
-                        <span>${data.name}</span>
-                    </div>
-                    <button type="button" class="card-menu-btn" onclick="window.openAccountActions(event, '${doc.id}', '${safeName}', ${Number(data.balance) || 0}, '${style.icon}')" title="Account Options" aria-label="Account Options">
-                        <i class="fa-solid fa-ellipsis-vertical"></i>
-                    </button>
-                </div>
-                <div class="rac-balance">${formatRupiah(data.balance)}</div>
-            </div>`;
+            // RENDER KARTU APPLE WALLET
+            htmlContent += generateWalletCardHTML(accountObj);
             
             // Update Dropdown (Sama seperti sebelumnya)
             const opt = document.createElement('option'); 
@@ -3184,7 +3350,7 @@ function listenToAccounts() {
             }
         });
         
-        if(accList) accList.innerHTML = htmlContent;
+        if(accList) accList.innerHTML = htmlContent + getWalletAddCardHTML();
         
         const total = accounts.reduce((sum, acc) => sum + Number(acc.balance), 0); 
         const totalDisplay = document.getElementById('displayTotalBalance'); 
@@ -4706,6 +4872,9 @@ document.getElementById('topupBudgetForm').addEventListener('submit', async (e) 
                 budgetId: id
             });
 
+            if (window.PocketlyAudio && typeof window.PocketlyAudio.playGoalCelebration === 'function') {
+                window.PocketlyAudio.playGoalCelebration();
+            }
             showAlert(`Successfully deposited ${formatRupiah(amount)} to goal!`, false);
 
         } else {
@@ -8244,22 +8413,7 @@ function renderAccountsFromCache() {
     if (filterAccSelect) filterAccSelect.innerHTML = '<option value="all">All Accounts</option>';
 
     accounts.forEach((data) => {
-        const safeNameDisplay = escapeHTML(data.name || 'Account');
-        const safeNameJs = escapeForJsString(data.name || 'Account');
-        const style = getAccountStyle(data.name || '');
-        htmlContent += `
-            <div class="retro-account-card" onclick="window.openAccountActions(event, '${data.id}', '${safeNameJs}', ${Number(data.balance) || 0}, '${style.icon}')">
-                <div class="rac-header">
-                    <div class="rac-logo">
-                        <i class="fa-solid ${style.icon}"></i> 
-                        <span>${safeNameDisplay}</span>
-                    </div>
-                    <button type="button" class="card-menu-btn" onclick="window.openAccountActions(event, '${data.id}', '${safeNameJs}', ${Number(data.balance) || 0}, '${style.icon}')" title="Account Options" aria-label="Account Options">
-                        <i class="fa-solid fa-ellipsis-vertical"></i>
-                    </button>
-                </div>
-                <div class="rac-balance">${formatRupiah(data.balance)}</div>
-            </div>`;
+        htmlContent += generateWalletCardHTML(data);
 
         const opt = document.createElement('option');
         opt.value = data.id;
@@ -8274,7 +8428,7 @@ function renderAccountsFromCache() {
         }
     });
 
-    if (accList) accList.innerHTML = htmlContent;
+    if (accList) accList.innerHTML = htmlContent + getWalletAddCardHTML();
     const total = accounts.reduce((sum, acc) => sum + Number(acc.balance || 0), 0);
     const totalDisplay = document.getElementById('displayTotalBalance');
     if (totalDisplay) totalDisplay.innerText = formatRupiah(total);

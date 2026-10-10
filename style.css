@@ -1638,68 +1638,331 @@ body.dark-mode .hero-unified-stats .stat-box {
     color: var(--text-grey);
 }
 
-/* Account Cards - Horizontal Swipeable Row */
+/* ==========================================================================
+   APPLE WALLET STYLE ATM / DEBIT CARDS & HORIZONTAL STACK CAROUSEL
+   ========================================================================== */
 .account-card-grid {
     display: flex;
     flex-direction: row;
     overflow-x: auto;
     overflow-y: hidden;
-    gap: 14px;
+    gap: 16px;
     scroll-snap-type: x mandatory;
     scroll-behavior: smooth;
     -webkit-overflow-scrolling: touch;
-    padding: 4px 2px 10px 2px;
+    padding: 6px 4px 18px 4px;
+    perspective: 1000px;
 }
-.retro-account-card, .acc-card {
-    min-width: 250px;
-    max-width: 275px;
-    flex: 0 0 260px;
+
+.apple-wallet-card, .retro-account-card, .acc-card {
+    position: relative;
+    width: 285px;
+    min-width: 285px;
+    height: 168px;
+    border-radius: 18px;
+    padding: 16px 18px;
     scroll-snap-align: start;
-    border-radius: var(--radius-xl);
-    padding: 18px 20px;
-    background: var(--card-bg);
-    border: 1px solid var(--border-color);
-    box-shadow: var(--shadow-sm);
-    transition: all var(--transition-fast);
     cursor: pointer;
+    user-select: none;
     display: flex;
     flex-direction: column;
     justify-content: space-between;
-    min-height: 112px;
+    overflow: hidden;
+    color: #ffffff;
+    box-shadow: 0 10px 24px -4px rgba(15, 23, 42, 0.22), 0 4px 8px -2px rgba(15, 23, 42, 0.12);
+    transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.25s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.25s ease;
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    background: linear-gradient(135deg, #181d26 0%, #262f3d 60%, #384556 100%);
 }
-.retro-account-card:hover, .acc-card:hover {
-    border-color: var(--primary-color);
-    transform: translateY(-2px);
-    box-shadow: var(--shadow-md);
+
+.apple-wallet-card:hover, .retro-account-card:hover, .acc-card:hover {
+    transform: translateY(-5px) scale(1.015);
+    box-shadow: 0 18px 32px -6px rgba(15, 23, 42, 0.32), 0 8px 14px -4px rgba(15, 23, 42, 0.18);
+    border-color: rgba(255, 255, 255, 0.35);
 }
-.rac-header {
+
+.apple-wallet-card:active, .retro-account-card:active, .acc-card:active {
+    transform: translateY(-1px) scale(0.99);
+}
+
+/* Glass Specular Sheen Effect */
+.awc-ambient-shine {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(125deg, rgba(255, 255, 255, 0.18) 0%, rgba(255, 255, 255, 0.04) 40%, transparent 65%);
+    pointer-events: none;
+    border-radius: inherit;
+}
+
+/* Bank Theme Gradients */
+.apple-wallet-card.card-wallet-bca {
+    background: linear-gradient(135deg, #072146 0%, #004b93 55%, #0060be 100%);
+}
+
+.apple-wallet-card.card-wallet-mandiri {
+    background: linear-gradient(135deg, #0b1a30 0%, #15325b 60%, #1e457d 100%);
+}
+
+.apple-wallet-card.card-wallet-bri {
+    background: linear-gradient(135deg, #002b66 0%, #0052b3 60%, #006ee6 100%);
+}
+
+.apple-wallet-card.card-wallet-bni {
+    background: linear-gradient(135deg, #0d282a 0%, #114245 60%, #00696b 100%);
+}
+
+.apple-wallet-card.card-wallet-digital {
+    background: linear-gradient(135deg, #220e3a 0%, #451b66 50%, #6312a0 100%);
+}
+
+.apple-wallet-card.card-wallet-ewallet {
+    background: linear-gradient(135deg, #062b2e 0%, #094a4e 55%, #0d6d73 100%);
+}
+
+.apple-wallet-card.card-wallet-cash {
+    background: linear-gradient(135deg, #212126 0%, #35353d 60%, #4d4d59 100%);
+}
+
+.apple-wallet-card.card-wallet-default {
+    background: linear-gradient(135deg, #181d26 0%, #262f3d 60%, #384556 100%);
+}
+
+/* Card Header (Top) */
+.awc-top {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    margin-bottom: 12px;
+    z-index: 1;
 }
-.rac-logo {
+
+.awc-brand {
     display: flex;
     align-items: center;
-    gap: 10px;
-    font-weight: 700;
-    font-size: 0.95rem;
+    gap: 9px;
 }
-.rac-logo i {
-    width: 30px;
-    height: 30px;
-    border-radius: var(--radius-sm);
-    background: var(--blue-accent-light);
-    color: var(--primary-color);
+
+.awc-icon-badge {
+    width: 32px;
+    height: 32px;
+    border-radius: 9px;
+    background: rgba(255, 255, 255, 0.18);
+    backdrop-filter: blur(8px);
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 0.9rem;
+    font-size: 0.95rem;
+    color: #ffffff;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.15);
 }
-.rac-balance {
+
+.awc-brand-names {
+    display: flex;
+    flex-direction: column;
+}
+
+.awc-bank-name {
+    font-size: 0.92rem;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    color: #ffffff;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.25);
+    white-space: nowrap;
+    max-width: 145px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.awc-card-type {
+    font-size: 0.64rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: rgba(255, 255, 255, 0.75);
+}
+
+.awc-top-right {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.awc-nfc {
+    font-size: 0.95rem;
+    color: rgba(255, 255, 255, 0.8);
+    transform: rotate(90deg);
+    display: inline-block;
+}
+
+.awc-menu-btn {
+    width: 28px;
+    height: 28px;
+    border: none;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.14);
+    color: #ffffff;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.8rem;
+    transition: background 0.15s ease, transform 0.15s ease;
+}
+
+.awc-menu-btn:hover {
+    background: rgba(255, 255, 255, 0.3);
+    transform: scale(1.08);
+}
+
+/* Card Middle: Realistic EMV Chip & Number */
+.awc-middle {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin: 6px 0;
+    z-index: 1;
+}
+
+.awc-chip {
+    width: 35px;
+    height: 25px;
+    border-radius: 5px;
+    background: linear-gradient(135deg, #d4af37 0%, #f3e5ab 45%, #aa771c 100%);
+    position: relative;
+    box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.5), 0 2px 4px rgba(0, 0, 0, 0.25);
+    overflow: hidden;
+}
+
+.awc-chip-line.horizontal {
+    position: absolute;
+    top: 50%;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: rgba(0, 0, 0, 0.35);
+}
+
+.awc-chip-line.vertical {
+    position: absolute;
+    left: 50%;
+    top: 0;
+    bottom: 0;
+    width: 1px;
+    background: rgba(0, 0, 0, 0.35);
+}
+
+.awc-card-number {
+    font-family: var(--font-mono, monospace);
+    font-size: 0.82rem;
+    letter-spacing: 0.1em;
+    color: rgba(255, 255, 255, 0.85);
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.35);
+    display: flex;
+    gap: 6px;
+    align-items: center;
+}
+
+.awc-digits {
+    font-weight: 700;
+    color: #ffffff;
+}
+
+/* Card Bottom: Balance & Network */
+.awc-bottom {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    z-index: 1;
+}
+
+.awc-balance-col {
+    display: flex;
+    flex-direction: column;
+}
+
+.awc-balance-label {
+    font-size: 0.62rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    color: rgba(255, 255, 255, 0.72);
+    margin-bottom: 2px;
+}
+
+.awc-balance-value {
     font-family: var(--font-display);
-    font-size: 1.45rem;
+    font-size: 1.3rem;
     font-weight: 800;
+    color: #ffffff;
+    letter-spacing: -0.02em;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.awc-network-tag {
+    font-size: 0.68rem;
+    font-weight: 800;
+    letter-spacing: 0.06em;
+    padding: 3px 8px;
+    border-radius: 6px;
+    background: rgba(255, 255, 255, 0.18);
+    backdrop-filter: blur(6px);
+    color: #ffffff;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+/* Add New Card / Account Placeholder Card */
+.apple-wallet-card.awc-add-card {
+    background: transparent !important;
+    border: 2px dashed var(--border-color);
+    box-shadow: none;
+    color: var(--text-muted);
+    align-items: center;
+    justify-content: center;
+    transition: all var(--transition-base);
+}
+
+.apple-wallet-card.awc-add-card:hover {
+    border-color: var(--primary-color);
+    background: var(--blue-accent-light) !important;
+    color: var(--primary-color);
+    transform: translateY(-4px);
+}
+
+.awc-add-inner {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    text-align: center;
+}
+
+.awc-add-icon {
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    background: var(--hover-bg);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.1rem;
+    color: var(--primary-color);
+    transition: transform var(--transition-fast), background var(--transition-fast);
+}
+
+.apple-wallet-card.awc-add-card:hover .awc-add-icon {
+    transform: scale(1.1);
+    background: var(--primary-color);
+    color: #ffffff;
+}
+
+.awc-add-title {
+    font-size: 0.92rem;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+.awc-add-sub {
+    font-size: 0.74rem;
+    color: var(--text-grey);
 }
 
 /* Debts Overview Widget */
