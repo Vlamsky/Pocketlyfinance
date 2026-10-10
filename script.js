@@ -974,6 +974,11 @@ onAuthStateChanged(auth, (user) => {
             } else {
                 switchPage('dashboard', false);
             }
+
+            // App Lock: notify authenticated user session
+            if (window.PocketlyAppLock && typeof window.PocketlyAppLock.onUserAuth === 'function') {
+                window.PocketlyAppLock.onUserAuth(user);
+            }
         } else {
             currentUser = null; 
             appScreen.style.display = 'none';
@@ -982,6 +987,11 @@ onAuthStateChanged(auth, (user) => {
                 mobileBottomNav.style.display = 'none';
             }
             if(window.history.pushState) window.history.pushState(null, null, window.location.href.split('#')[0]);
+
+            // App Lock: dismiss lock overlay immediately on logout / unauthenticated
+            if (window.PocketlyAppLock && typeof window.PocketlyAppLock.onSignOut === 'function') {
+                window.PocketlyAppLock.onSignOut();
+            }
         }
     } catch (error) {
         console.error("Auth State Error:", error);

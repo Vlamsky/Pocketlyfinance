@@ -5,18 +5,68 @@
 (function() {
     'use strict';
 
-    const PIN_KEY = 'pocketly_app_lock_pin_hash';
-    const ENABLED_KEY = 'pocketly_app_lock_enabled';
-    const BIOMETRIC_KEY = 'pocketly_app_lock_biometric';
-    const BIO_CRED_KEY = 'pocketly_bio_cred_id';
     const SALT = 'pocketly_fintech_vault_salt_v1';
 
+    let currentUserId = null;
     let currentEnteredPin = '';
     let isCurrentlyLocked = false;
     let setupStep = 1; // 1: Enter new PIN, 2: Confirm new PIN
     let firstEnteredSetupPin = '';
     let currentSetupPin = '';
     let isChangingPin = false;
+
+    // Retrieve active user ID
+    function getUid() {
+        if (currentUserId) return currentUserId;
+        if (window.PocketlyAuth && window.PocketlyAuth.currentUser) {
+            return window.PocketlyAuth.currentUser.uid;
+        }
+        return null;
+    }
+
+    function getPinKey(uid = getUid()) {
+        return uid ? `pocketly_app_lock_pin_${uid}` : 'pocketly_app_lock_pin_hash';
+    }
+
+    function getEnabledKey(uid = getUid()) {
+        return uid ? `pocketly_app_lock_enabled_${uid}` : 'pocketly_app_lock_enabled';
+    }
+
+    function getBioKey(uid = getUid()) {
+        return uid ? `pocketly_app_lock_bio_${uid}` : 'pocketly_app_lock_biometric';
+    }
+
+    function getBioCredKey(uid = getUid()) {
+        return uid ? `pocketly_app_lock_bio_cred_${uid}` : 'pocketly_bio_cred_id';
+    }
+
+    // Migrate any legacy un-namespaced keys to active user
+    function migrateLegacyKeys(uid) {
+        if (!uid) return;
+        const legacyPin = localStorage.getItem('pocketly_app_lock_pin_hash');
+        const legacyEnabled = localStorage.getItem('pocketly_app_lock_enabled');
+        const legacyBio = localStorage.getItem('pocketly_app_lock_biometric');
+        const legacyBioCred = localStorage.getItem('pocketly_bio_cred_id');
+
+        if (legacyPin && !localStorage.getItem(getPinKey(uid))) {
+            localStorage.setItem(getPinKey(uid), legacyPin);
+        }
+        if (legacyEnabled && !localStorage.getItem(getEnabledKey(uid))) {
+            localStorage.setItem(getEnabledKey(uid), legacyEnabled);
+        }
+        if (legacyBio && !localStorage.getItem(getBioKey(uid))) {
+            localStorage.setItem(getBioKey(uid), legacyBio);
+        }
+        if (legacyBioCred && !localStorage.getItem(getBioCredKey(uid))) {
+            localStorage.setItem(getBioCredKey(uid), legacyBioCred);
+        }
+
+        // Clean up un-scoped keys so logged-out state is completely clean
+        localStorage.removeItem('pocketly_app_lock_pin_hash');
+        localStorage.removeItem('pocketly_app_lock_enabled');
+        localStorage.removeItem('pocketly_app_lock_biometric');
+        localStorage.removeItem('pocketly_bio_cred_id');
+    }
 
     // SHA-256 PIN Hashing
     async function hashPin(pin) {
@@ -27,20 +77,47 @@
         return hashArr.map(b => b.toString(16).padStart(2, '0')).join('');
     }
 
+    // Is App Lock enabled for current account?
     function isLockEnabled() {
-        return localStorage.getItem(ENABLED_KEY) === 'true' && Boolean(localStorage.getItem(PIN_KEY));
+        const uid = getUid();
+        if (!uid) return false; // Never enabled for unauthenticated / logged-out users
+        return localStorage.getItem(getEnabledKey(uid)) === 'true' && Boolean(localStorage.getItem(getPinKey(uid)));
     }
 
+    // Is Biometrics enabled for current account?
     function isBiometricEnabled() {
-        return localStorage.getItem(BIOMETRIC_KEY) === 'true';
+        const uid = getUid();
+        if (!uid) return false;
+        return localStorage.getItem(getBioKey(uid)) === 'true';
     }
 
-    // Completely wipe PIN and biometric credentials from local storage
-    function clearAllLockData() {
-        localStorage.removeItem(PIN_KEY);
-        localStorage.removeItem(ENABLED_KEY);
-        localStorage.removeItem(BIOMETRIC_KEY);
-        localStorage.removeItem(BIO_CRED_KEY);
+    // Check if user is actively in authenticated app screen (not login/register)
+    function isUserLoggedIn() {
+        const uid = getUid();
+        if (!uid) return false;
+        const authScreen = document.getElementById('authScreen');
+        const appScreen = document.getElementById('appScreen');
+        if (authScreen && authScreen.style.display !== 'none' && authScreen.style.display !== '') {
+            return false;
+        }
+        if (appScreen && appScreen.style.display === 'none') {
+            return false;
+        }
+        return true;
+    }
+
+    // Wipe all PIN and biometric credentials for user
+    function clearAllLockData(uid = getUid()) {
+        if (uid) {
+            localStorage.removeItem(getPinKey(uid));
+            localStorage.removeItem(getEnabledKey(uid));
+            localStorage.removeItem(getBioKey(uid));
+            localStorage.removeItem(getBioCredKey(uid));
+        }
+        localStorage.removeItem('pocketly_app_lock_pin_hash');
+        localStorage.removeItem('pocketly_app_lock_enabled');
+        localStorage.removeItem('pocketly_app_lock_biometric');
+        localStorage.removeItem('pocketly_bio_cred_id');
     }
 
     // Update PIN indicator dots on lock screen
@@ -63,8 +140,26 @@
         }
     }
 
+    // Immediately hide lock overlay
+    function hideLockScreenImmediately() {
+        const overlay = document.getElementById('appLockScreen');
+        if (overlay) {
+            overlay.style.display = 'none';
+            overlay.classList.remove('unlocking');
+        }
+        isCurrentlyLocked = false;
+        currentEnteredPin = '';
+        updateLockDots();
+    }
+
     // Show Lock Screen
     function showLockScreen() {
+        // Guard: App Lock should NEVER appear if user is logged out or viewing login/register
+        if (!isUserLoggedIn() || !isLockEnabled()) {
+            hideLockScreenImmediately();
+            return;
+        }
+
         const overlay = document.getElementById('appLockScreen');
         if (!overlay) return;
 
@@ -83,7 +178,6 @@
         overlay.classList.remove('unlocking');
         isCurrentlyLocked = true;
 
-        // Auto-prompt biometrics if enabled
         if (isBiometricEnabled()) {
             setTimeout(triggerBiometricAuth, 350);
         }
@@ -110,10 +204,11 @@
 
     // Verify entered PIN
     async function verifyEnteredPin() {
-        const storedHash = localStorage.getItem(PIN_KEY);
+        const uid = getUid();
+        const storedHash = uid ? localStorage.getItem(getPinKey(uid)) : null;
         const enteredHash = await hashPin(currentEnteredPin);
 
-        if (enteredHash === storedHash) {
+        if (storedHash && enteredHash === storedHash) {
             unlockApp();
         } else {
             // Mismatch: Shake animation & error buzz
@@ -183,7 +278,8 @@
             };
 
             if (navigator.credentials && navigator.credentials.get) {
-                const rawCredId = localStorage.getItem(BIO_CRED_KEY);
+                const uid = getUid();
+                const rawCredId = uid ? localStorage.getItem(getBioCredKey(uid)) : null;
                 if (rawCredId) {
                     options.publicKey.allowCredentials = [{
                         id: Uint8Array.from(atob(rawCredId), c => c.charCodeAt(0)),
@@ -235,8 +331,11 @@
             const credential = await navigator.credentials.create(createOptions);
             if (credential) {
                 const credIdBase64 = btoa(String.fromCharCode(...new Uint8Array(credential.rawId)));
-                localStorage.setItem(BIO_CRED_KEY, credIdBase64);
-                localStorage.setItem(BIOMETRIC_KEY, 'true');
+                const uid = getUid();
+                if (uid) {
+                    localStorage.setItem(getBioCredKey(uid), credIdBase64);
+                    localStorage.setItem(getBioKey(uid), 'true');
+                }
                 return true;
             }
         } catch (e) {
@@ -287,7 +386,7 @@
 
         if (currentSetupPin.length === 4) {
             if (setupStep === 1) {
-                // Step 1 done -> Proceed to Step 2 (Confirm)
+                // Step 1 complete -> Confirm step
                 firstEnteredSetupPin = currentSetupPin;
                 setTimeout(() => {
                     setupStep = 2;
@@ -297,11 +396,18 @@
                     if (descEl) descEl.innerText = 'Re-enter your 4-digit PIN to confirm.';
                 }, 200);
             } else if (setupStep === 2) {
-                // Step 2 done -> Check if matches Step 1
+                // Step 2 complete -> Match check
                 if (currentSetupPin === firstEnteredSetupPin) {
+                    const uid = getUid();
+                    if (!uid) {
+                        if (window.showAlert) showAlert('Please log in first to set up App Lock.', true);
+                        closePinSetup();
+                        return;
+                    }
+
                     const hashed = await hashPin(currentSetupPin);
-                    localStorage.setItem(PIN_KEY, hashed);
-                    localStorage.setItem(ENABLED_KEY, 'true');
+                    localStorage.setItem(getPinKey(uid), hashed);
+                    localStorage.setItem(getEnabledKey(uid), 'true');
 
                     closePinSetup();
                     syncSettingsUI();
@@ -389,8 +495,8 @@
             if (window.PocketlyAuth && typeof window.PocketlyAuth.verifyPassword === 'function') {
                 await window.PocketlyAuth.verifyPassword(password);
                 
-                // Success: remove PIN lock completely
-                clearAllLockData();
+                // Password confirmed: wipe PIN for this user
+                clearAllLockData(getUid());
                 closeForgotPinModal();
                 unlockApp();
                 syncSettingsUI();
@@ -399,8 +505,7 @@
                     showAlert('Identity verified! App Lock has been reset.', false);
                 }
             } else {
-                // Fallback: clear lock
-                clearAllLockData();
+                clearAllLockData(getUid());
                 closeForgotPinModal();
                 unlockApp();
                 syncSettingsUI();
@@ -413,7 +518,7 @@
                 } else if (err.message === 'NO_USER') {
                     errMsg.innerText = 'No active session found. Please sign out and log in again.';
                 } else {
-                    errMsg.innerText = 'Verification failed. You can sign out and log in again below.';
+                    errMsg.innerText = 'Verification failed. You can choose "Sign Out & Re-login" below.';
                 }
                 errMsg.style.display = 'block';
             }
@@ -426,14 +531,10 @@
     }
 
     async function handleForgotPinSignOut() {
-        clearAllLockData();
+        const uid = getUid();
+        clearAllLockData(uid);
         closeForgotPinModal();
-
-        const lockOverlay = document.getElementById('appLockScreen');
-        if (lockOverlay) {
-            lockOverlay.style.display = 'none';
-            isCurrentlyLocked = false;
-        }
+        hideLockScreenImmediately();
 
         if (window.PocketlyAuth && typeof window.PocketlyAuth.signOut === 'function') {
             try {
@@ -459,20 +560,39 @@
         if (toggle) toggle.checked = enabled;
         if (rowChangePin) rowChangePin.style.display = enabled ? 'flex' : 'none';
 
-        // Check platform biometrics support
         const hasWebAuthn = Boolean(window.PublicKeyCredential);
         if (rowBio) rowBio.style.display = (enabled && hasWebAuthn) ? 'flex' : 'none';
         if (bioToggle) bioToggle.checked = enabled && isBiometricEnabled();
     }
 
-    // Setup Event Listeners
-    function initAppLock() {
-        // 1. Check if app should start locked on boot
+    // External hooks for Firebase Auth state changes
+    function onUserAuth(user) {
+        if (!user) {
+            onSignOut();
+            return;
+        }
+        currentUserId = user.uid;
+        migrateLegacyKeys(currentUserId);
+        syncSettingsUI();
+
+        // If App Lock is enabled for this account, present the PIN lock now
         if (isLockEnabled()) {
             showLockScreen();
+        } else {
+            hideLockScreenImmediately();
         }
+    }
 
-        // 2. Virtual Keypad buttons on Lock Screen
+    function onSignOut() {
+        currentUserId = null;
+        hideLockScreenImmediately();
+        closePinSetup();
+        closeForgotPinModal();
+    }
+
+    // Setup Event Listeners
+    function initAppLock() {
+        // Virtual Keypad buttons on Lock Screen
         document.querySelectorAll('.pin-key-btn[data-key]').forEach(btn => {
             btn.addEventListener('click', () => {
                 handlePinInput(btn.getAttribute('data-key'));
@@ -485,11 +605,11 @@
         const btnBio = document.getElementById('btnBiometricUnlock');
         if (btnBio) btnBio.addEventListener('click', triggerBiometricAuth);
 
-        // 3. Forgot PIN button on Lock Screen
+        // Forgot PIN button on Lock Screen
         const btnForgot = document.getElementById('btnForgotPin');
         if (btnForgot) btnForgot.addEventListener('click', openForgotPinModal);
 
-        // 4. Physical Keyboard listeners
+        // Physical Keyboard listeners
         window.addEventListener('keydown', (e) => {
             const forgotModal = document.getElementById('forgotPinModal');
             if (forgotModal && forgotModal.classList.contains('show')) {
@@ -521,7 +641,7 @@
             }
         });
 
-        // 5. Setup modal buttons
+        // Setup modal buttons
         document.querySelectorAll('.pin-key-btn[data-skey]').forEach(btn => {
             btn.addEventListener('click', () => {
                 handleSetupPinInput(btn.getAttribute('data-skey'));
@@ -537,7 +657,7 @@
         const btnCancelSetup = document.getElementById('btnCancelPinSetup');
         if (btnCancelSetup) btnCancelSetup.addEventListener('click', closePinSetup);
 
-        // 6. Forgot PIN Modal actions
+        // Forgot PIN Modal actions
         const btnCloseForgot = document.getElementById('btnCloseForgotPin');
         if (btnCloseForgot) btnCloseForgot.addEventListener('click', closeForgotPinModal);
 
@@ -561,17 +681,15 @@
             });
         }
 
-        // 7. Settings: Toggle App Lock (Fixed Flaw: Disabling always clears PIN)
+        // Settings: Toggle App Lock (Disabling always wipes PIN)
         const appLockToggle = document.getElementById('appLockToggle');
         if (appLockToggle) {
             appLockToggle.addEventListener('change', () => {
                 if (appLockToggle.checked) {
-                    // Always require creating a new PIN when toggled ON
                     appLockToggle.checked = false;
                     openPinSetup('Create 4-Digit PIN');
                 } else {
-                    // When turned OFF: completely clear PIN & Biometrics
-                    clearAllLockData();
+                    clearAllLockData(getUid());
                     syncSettingsUI();
                     if (window.showAlert) {
                         showAlert('App Lock has been disabled and your PIN was cleared.', false);
@@ -580,7 +698,7 @@
             });
         }
 
-        // 8. Settings: Change PIN
+        // Settings: Change PIN
         const rowChangePin = document.getElementById('rowChangePin');
         if (rowChangePin) {
             rowChangePin.addEventListener('click', () => {
@@ -588,7 +706,7 @@
             });
         }
 
-        // 9. Settings: Biometric Toggle
+        // Settings: Biometric Toggle
         const bioToggle = document.getElementById('biometricLockToggle');
         if (bioToggle) {
             bioToggle.addEventListener('change', async () => {
@@ -599,22 +717,24 @@
                         showAlert('Biometric Unlock (Face ID / Fingerprint) enabled!', false);
                     }
                 } else {
-                    localStorage.setItem(BIOMETRIC_KEY, 'false');
+                    const uid = getUid();
+                    if (uid) localStorage.setItem(getBioKey(uid), 'false');
                     if (window.showAlert) showAlert('Biometric Unlock disabled.', false);
                 }
             });
         }
 
-        // 10. Auto-lock on app minimize / tab switch
+        // Auto-lock when user leaves the tab or minimizes browser
         document.addEventListener('visibilitychange', () => {
             if (document.visibilityState === 'hidden') {
-                if (isLockEnabled()) {
+                if (isLockEnabled() && isUserLoggedIn()) {
                     showLockScreen();
                 }
             }
         });
 
-        syncSettingsUI();
+        // Ensure lock screen starts hidden by default on boot until auth resolves
+        hideLockScreenImmediately();
     }
 
     if (document.readyState === 'loading') {
@@ -627,11 +747,14 @@
     window.PocketlyAppLock = {
         isLocked: () => isCurrentlyLocked,
         lockNow: showLockScreen,
+        unlockNow: hideLockScreenImmediately,
         openSetup: openPinSetup,
         closeSetup: closePinSetup,
         openForgotModal: openForgotPinModal,
         closeForgotModal: closeForgotPinModal,
         isEnabled: isLockEnabled,
-        clearLock: clearAllLockData
+        clearLock: clearAllLockData,
+        onUserAuth: onUserAuth,
+        onSignOut: onSignOut
     };
 })();
