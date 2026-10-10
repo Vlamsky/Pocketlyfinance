@@ -212,16 +212,22 @@ window.switchPage = function(targetId, addToHistory = true) {
     window.scrollTo({ top: 0, behavior: 'smooth' });
 
     // 4. Update Judul Header
-    const titles = { 
-        'dashboard': 'Dashboard', 
-        'transactions': 'Transaction History', 
-        'budget': 'Budget Plan', 
-        'account': 'User Settings', 
-        'reports': 'Analytics', 
-        'connections': 'Connections' 
-    };
     const pageTitle = document.getElementById('pageTitle');
-    if(pageTitle && titles[targetId]) pageTitle.innerText = titles[targetId];
+    if (pageTitle) {
+        if (window.PocketlyI18n && typeof window.PocketlyI18n.getPageTitle === 'function') {
+            pageTitle.innerText = window.PocketlyI18n.getPageTitle(targetId);
+        } else {
+            const titles = { 
+                'dashboard': 'Dashboard', 
+                'transactions': 'Transaction History', 
+                'budget': 'Budget Plan', 
+                'account': 'User Settings', 
+                'reports': 'Analytics', 
+                'connections': 'Connections' 
+            };
+            if (titles[targetId]) pageTitle.innerText = titles[targetId];
+        }
+    }
 
     // 5. Logic Khusus Halaman Reports
     if (targetId === 'reports') {
@@ -9411,14 +9417,20 @@ window.switchPage = function(targetId, addToHistory = true) {
     }
 
     originalSwitchPagePocketly(targetId, addToHistory);
-    const extendedTitles = {
-        debts: 'Debts & Loans',
-        currencySettings: 'Currency',
-        categorySettings: 'Categories',
-        themeSettings: 'Theme Accent'
-    };
     const pageTitle = document.getElementById('pageTitle');
-    if (pageTitle && extendedTitles[targetId]) pageTitle.innerText = extendedTitles[targetId];
+    if (pageTitle) {
+        if (window.PocketlyI18n && typeof window.PocketlyI18n.getPageTitle === 'function') {
+            pageTitle.innerText = window.PocketlyI18n.getPageTitle(targetId);
+        } else {
+            const extendedTitles = {
+                debts: 'Debts & Loans',
+                currencySettings: 'Currency',
+                categorySettings: 'Categories',
+                themeSettings: 'Theme Accent'
+            };
+            if (extendedTitles[targetId]) pageTitle.innerText = extendedTitles[targetId];
+        }
+    }
 
     const settingsSubpages = ['account', 'connections', 'currencySettings', 'themeSettings', 'categorySettings'];
     const isSettings = settingsSubpages.includes(targetId);

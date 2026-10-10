@@ -355,23 +355,23 @@
 
                         <!-- User Popup Menu Dropdown -->
                         <div class="user-popup-menu glass-popup" id="userPopupMenu">
-                            <div class="popup-header">My Account</div>
+                            <div class="popup-header" data-i18n="user_popup_title">My Account</div>
                             <a href="#" class="popup-item" id="btnGoToConnections"
                                 onclick="switchPage('connections'); return false;">
-                                <i class="fa-solid fa-user-group text-purple"></i> Connections
+                                <i class="fa-solid fa-user-group text-purple"></i> <span data-i18n="nav_connections">Connections</span>
                             </a>
                             <a href="#" class="popup-item" id="btnGoToSettings"
                                 onclick="switchPage('account'); return false;">
-                                <i class="fa-solid fa-gear text-blue"></i> Settings
+                                <i class="fa-solid fa-gear text-blue"></i> <span data-i18n="nav_settings">Settings</span>
                             </a>
                             <div class="popup-divider"></div>
                             <a href="#" class="popup-item text-red-muted" id="btnPopupLogout">
-                                <i class="fa-solid fa-right-from-bracket"></i> Sign Out
+                                <i class="fa-solid fa-right-from-bracket"></i> <span data-i18n="nav_sign_out">Sign Out</span>
                             </a>
                         </div>
 
                         <div>
-                            <h1 id="pageTitle">Dashboard</h1>
+                            <h1 id="pageTitle" data-i18n="page_dashboard">Dashboard</h1>
                         </div>
                     </div>
 
@@ -487,10 +487,10 @@
                             <div class="dashboard-grid-col debts-col">
                                 <div class="section-header">
                                     <div class="section-title-with-desc">
-                                        <h3>Debts & Loans</h3>
+                                        <h3 data-i18n="debts_loans">Debts & Loans</h3>
                                     </div>
                                     <button class="btn-secondary btn-round-small" onclick="switchPage('debts')"
-                                        title="Open Debt Tracker">
+                                        title="Open Debt Tracker" data-i18n-title="debts_loans">
                                         <i class="fa-solid fa-arrow-right"></i>
                                     </button>
                                 </div>
@@ -499,13 +499,11 @@
                                     style="cursor: pointer;">
                                     <div class="widget-row">
                                         <div class="widget-item receivable">
-                                            <span class="widget-label"><i class="fa-solid fa-arrow-down"></i> Lent
-                                                (Receivable)</span>
+                                            <span class="widget-label"><i class="fa-solid fa-arrow-down"></i> <span data-i18n="lent_receivable">Lent (Receivable)</span></span>
                                             <h4 id="dashDebtReceivable">Rp0</h4>
                                         </div>
                                         <div class="widget-item payable">
-                                            <span class="widget-label"><i class="fa-solid fa-arrow-up"></i> Borrowed
-                                                (Payable)</span>
+                                            <span class="widget-label"><i class="fa-solid fa-arrow-up"></i> <span data-i18n="borrowed_payable">Borrowed (Payable)</span></span>
                                             <h4 id="dashDebtPayable">Rp0</h4>
                                         </div>
                                     </div>
@@ -518,10 +516,10 @@
                             <div class="dashboard-grid-col transactions-col">
                                 <div class="section-header">
                                     <div class="section-title-with-desc">
-                                        <h3>Recent Transactions</h3>
+                                        <h3 data-i18n="recent_activity">Recent Transactions</h3>
                                     </div>
                                     <button class="btn-secondary btn-round-small" onclick="switchPage('transactions')"
-                                        title="View All History">
+                                        title="View All History" data-i18n-title="view_all">
                                         <i class="fa-solid fa-arrow-right"></i>
                                     </button>
                                 </div>
@@ -541,11 +539,11 @@
                             <div class="trans-switch-glider"></div>
                             <button type="button" class="trans-view-tab active" id="transactionListTab"
                                 data-trans-view="list">
-                                <i class="fa-solid fa-list-check"></i> <span>Transaction List</span>
+                                <i class="fa-solid fa-list-check"></i> <span data-i18n="trans_list_tab">Transaction List</span>
                             </button>
                             <button type="button" class="trans-view-tab" id="transactionCalendarTab"
                                 data-trans-view="calendar">
-                                <i class="fa-solid fa-calendar-days"></i> <span>Financial Calendar</span>
+                                <i class="fa-solid fa-calendar-days"></i> <span data-i18n="trans_calendar_tab">Financial Calendar</span>
                             </button>
                         </div>
 
@@ -553,22 +551,22 @@
                         <div class="trans-header-row">
                             <div class="pill-search-trans">
                                 <i class="fa-solid fa-magnifying-glass"></i>
-                                <input type="text" id="searchTransaction" placeholder="Search transactions...">
+                                <input type="text" id="searchTransaction" placeholder="Search transactions..." data-i18n-placeholder="search_transactions_ph">
                             </div>
 
                             <div class="action-group">
                                 <button type="button" id="btnExportPDF_Header"
                                     class="btn-circle-glass btn-action-export" title="Export PDF Statement"
-                                    aria-label="Export PDF Statement" onclick="openExportPdfModal()">
+                                    aria-label="Export PDF Statement" data-i18n-title="btn_export_pdf" onclick="openExportPdfModal()">
                                     <i class="fa-solid fa-file-pdf"></i>
                                 </button>
                                 <button type="button" id="transFilterToggleBtn"
                                     class="btn-circle-glass btn-action-filter" title="Filter & Sort"
-                                    aria-label="Filter & Sort">
+                                    aria-label="Filter & Sort" data-i18n-title="btn_filter_sort">
                                     <i class="fa-solid fa-sliders"></i>
                                 </button>
                                 <button type="button" class="btn-primary btn-action-add" id="openTransModalBtn"
-                                    title="New Transaction" aria-label="New Transaction">
+                                    title="New Transaction" aria-label="New Transaction" data-i18n-title="btn_new_transaction">
                                     <i class="fa-solid fa-plus"></i>
                                 </button>
                             </div>
@@ -598,7 +596,7 @@
                             <div class="calendar-page-wrapper">
                                 <div class="calendar-toolbar glass-effect-card">
                                     <div>
-                                        <h3 style="margin-bottom: 4px;">Financial Calendar</h3>
+                                        <h3 style="margin-bottom: 4px;" data-i18n="financial_calendar">Financial Calendar</h3>
                                     </div>
                                     <div class="calendar-controls">
                                         <button class="btn-circle-small" id="calendarPrevMonth" title="Previous Month">
@@ -610,21 +608,21 @@
                                             <i class="fa-solid fa-chevron-right"></i>
                                         </button>
                                         <button class="btn-secondary" id="btnCalendarToday"
-                                            style="padding: 6px 14px; font-size: 0.85rem;">Today</button>
+                                            style="padding: 6px 14px; font-size: 0.85rem;" data-i18n="btn_today">Today</button>
                                     </div>
                                 </div>
 
                                 <div class="calendar-layout-grid">
                                     <div class="glass-effect-card calendar-card">
                                         <div class="calendar-weekdays">
-                                            <span>Sun</span><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span>
+                                            <span data-i18n="weekday_sun">Sun</span><span data-i18n="weekday_mon">Mon</span><span data-i18n="weekday_tue">Tue</span><span data-i18n="weekday_wed">Wed</span><span data-i18n="weekday_thu">Thu</span><span data-i18n="weekday_fri">Fri</span><span data-i18n="weekday_sat">Sat</span>
                                         </div>
                                         <div id="calendarGrid" class="calendar-grid"></div>
                                     </div>
                                     <div id="calendarDaySummary" class="glass-effect-card calendar-day-summary">
                                         <div class="empty-calendar-summary">
                                             <i class="fa-solid fa-calendar-day"></i>
-                                            <p>Select a date to view daily details.</p>
+                                            <p data-i18n="select_date_msg">Select a date to view daily details.</p>
                                         </div>
                                     </div>
                                 </div>
@@ -642,8 +640,8 @@
                                     <i class="fa-solid fa-arrow-left"></i>
                                 </button>
                                 <div>
-                                    <h2>Debts & Loans</h2>
-                                    <span class="debt-header-subtitle">Receivables & Payables</span>
+                                    <h2 data-i18n="debts_loans">Debts & Loans</h2>
+                                    <span class="debt-header-subtitle" data-i18n="debt_subtitle">Receivables & Payables</span>
                                 </div>
                             </div>
                             <button class="btn-primary btn-round debt-header-add" onclick="openDebtModal()" title="Add Debt or Loan" aria-label="Add Record">
@@ -655,7 +653,7 @@
                         <div class="debt-summary-grid">
                             <div class="glass-effect-card debt-summary-card receivable">
                                 <div>
-                                    <small>Total Lent</small>
+                                    <small data-i18n="total_lent">Total Lent</small>
                                     <h3 id="debtTotalReceivable">Rp0</h3>
                                 </div>
                                 <div class="debt-summary-icon">
@@ -664,7 +662,7 @@
                             </div>
                             <div class="glass-effect-card debt-summary-card payable">
                                 <div>
-                                    <small>Total Borrowed</small>
+                                    <small data-i18n="total_borrowed">Total Borrowed</small>
                                     <h3 id="debtTotalPayable">Rp0</h3>
                                 </div>
                                 <div class="debt-summary-icon">
@@ -673,7 +671,7 @@
                             </div>
                             <div class="glass-effect-card debt-summary-card net">
                                 <div>
-                                    <small>Net Position</small>
+                                    <small data-i18n="net_position">Net Position</small>
                                     <h3 id="debtNetPosition">Rp0</h3>
                                 </div>
                                 <div class="debt-summary-icon">
@@ -682,7 +680,7 @@
                             </div>
                             <div class="glass-effect-card debt-summary-card due">
                                 <div>
-                                    <small>Due Soon</small>
+                                    <small data-i18n="due_soon">Due Soon</small>
                                     <h3 id="debtDueSoonCount">0</h3>
                                 </div>
                                 <div class="debt-summary-icon">
@@ -695,25 +693,25 @@
                         <div class="glass-toolbar debt-toolbar">
                             <div class="pill-search-wrapper debt-search-pill">
                                 <i class="fa-solid fa-magnifying-glass"></i>
-                                <input type="text" id="debtSearch" placeholder="Search records...">
+                                <input type="text" id="debtSearch" placeholder="Search records..." data-i18n-placeholder="search_records_ph">
                             </div>
                             <div class="debt-toolbar-actions">
                                 <div class="debt-filter-select-wrap">
                                     <select id="debtKindFilter" class="clean-select">
-                                        <option value="all">All Types</option>
-                                        <option value="lent">Lent</option>
-                                        <option value="borrowed">Borrowed</option>
+                                        <option value="all" data-i18n="all_types">All Types</option>
+                                        <option value="lent" data-i18n="lent">Lent</option>
+                                        <option value="borrowed" data-i18n="borrowed">Borrowed</option>
                                     </select>
                                 </div>
                                 <div class="debt-filter-select-wrap">
                                     <select id="debtStatusFilter" class="clean-select">
-                                        <option value="active">Active</option>
-                                        <option value="paid">Settled</option>
-                                        <option value="all">All</option>
+                                        <option value="active" data-i18n="status_active">Active</option>
+                                        <option value="paid" data-i18n="status_settled">Settled</option>
+                                        <option value="all" data-i18n="all_types">All</option>
                                     </select>
                                 </div>
                                 <button class="btn-primary debt-add-btn" id="openDebtModalBtn">
-                                    <i class="fa-solid fa-plus"></i> <span>Add</span>
+                                    <i class="fa-solid fa-plus"></i> <span data-i18n="btn_add">Add</span>
                                 </button>
                             </div>
                         </div>
@@ -727,9 +725,9 @@
                     <div class="savings-goals-section" style="margin-bottom: 30px;">
                         <div class="section-header" style="margin-bottom: 20px;">
                             <div>
-                                <h3>🎯 Savings Goal</h3>
+                                <h3>🎯 <span data-i18n="savings_goals_title">Savings Goals</span></h3>
                             </div>
-                            <button class="btn-primary btn-round" onclick="openCreateBudgetModal('goal')" title="New Goal" aria-label="New Goal">
+                            <button class="btn-primary btn-round" onclick="openCreateBudgetModal('goal')" title="New Goal" aria-label="New Goal" data-i18n-title="btn_new_goal">
                                 <i class="fa-solid fa-plus"></i>
                             </button>
                         </div>
@@ -739,9 +737,9 @@
                     <div class="category-budgets-section">
                         <div class="section-header" style="margin-bottom: 20px;">
                             <div>
-                                <h3>📉 Category Budget </h3>
+                                <h3>📉 <span data-i18n="category_budgets_title">Category Budgets</span></h3>
                             </div>
-                            <button class="btn-primary btn-round" onclick="openCreateBudgetModal('budget')" title="Set Budget Limit" aria-label="Set Budget Limit">
+                            <button class="btn-primary btn-round" onclick="openCreateBudgetModal('budget')" title="Set Budget Limit" aria-label="Set Budget Limit" data-i18n-title="btn_set_budget">
                                 <i class="fa-solid fa-plus"></i>
                             </button>
                         </div>
@@ -754,7 +752,7 @@
                     <div class="analytics-summary-grid">
                         <div class="glass-effect-card summary-glass">
                             <div class="sum-info">
-                                <small>Total Income</small>
+                                <small data-i18n="total_income">Total Income</small>
                                 <h3 class="text-green" id="rptTotalIncome">Rp0</h3>
                             </div>
                             <i class="fa-solid fa-sack-dollar card-watermark text-green"></i>
@@ -762,7 +760,7 @@
 
                         <div class="glass-effect-card summary-glass">
                             <div class="sum-info">
-                                <small>Total Expenses</small>
+                                <small data-i18n="total_expenses">Total Expenses</small>
                                 <h3 class="text-red" id="rptTotalExpense">Rp0</h3>
                             </div>
                             <i class="fa-solid fa-cart-shopping card-watermark text-red"></i>
@@ -770,7 +768,7 @@
 
                         <div class="glass-effect-card summary-glass">
                             <div class="sum-info">
-                                <small>Net Savings</small>
+                                <small data-i18n="net_savings">Net Savings</small>
                                 <h3 class="text-blue" id="rptNetSavings">Rp0</h3>
                             </div>
                             <i class="fa-solid fa-piggy-bank card-watermark text-blue"></i>
@@ -778,9 +776,9 @@
 
                         <div class="glass-effect-card summary-glass">
                             <div class="sum-info">
-                                <small>Savings Rate</small>
+                                <small data-i18n="savings_rate">Savings Rate</small>
                                 <h3 id="rptSavingsRateText">0%</h3>
-                                <span style="font-size:0.75rem; color:var(--text-grey);">of total income</span>
+                                <span style="font-size:0.75rem; color:var(--text-grey);" data-i18n="of_total_income">of total income</span>
                             </div>
                             <i class="fa-solid fa-chart-line card-watermark"></i>
                         </div>
@@ -789,7 +787,7 @@
                     <div class="charts-row">
                         <div class="glass-effect-card chart-card-wide">
                             <div class="section-header">
-                                <h3>Cash Flow Trends</h3>
+                                <h3 data-i18n="cash_flow_trends">Cash Flow Trends</h3>
                             </div>
                             <div class="chart-container-wide">
                                 <canvas id="cashFlowChart"></canvas>
@@ -798,12 +796,12 @@
 
                         <div class="glass-effect-card chart-card-narrow">
                             <div class="section-header">
-                                <h3>Spending Breakdown</h3>
+                                <h3 data-i18n="spending_breakdown">Spending Breakdown</h3>
                             </div>
                             <div class="chart-container-narrow" style="position: relative;">
                                 <canvas id="spendingBreakdownChart"></canvas>
                                 <div id="donutCenterLabel" class="donut-center-text">
-                                    <span id="topCategoryName">Top Category</span>
+                                    <span id="topCategoryName" data-i18n="top_category">Top Category</span>
                                     <small id="topCategoryValue">-</small>
                                 </div>
                             </div>
@@ -812,7 +810,7 @@
 
                     <div class="card glass-effect-card">
                         <div class="section-header">
-                            <h3>Top 5 Expenses</h3>
+                            <h3 data-i18n="top_5_expenses">Top 5 Expenses</h3>
                         </div>
                         <div id="topSpendingList" class="spending-list-wrapper"></div>
                     </div>
@@ -827,8 +825,8 @@
                                     <i class="fa-solid fa-arrow-left"></i>
                                 </button>
                                 <div>
-                                    <h2>Connections</h2>
-                                    <span class="connections-header-subtitle">Friends & Requests</span>
+                                    <h2 data-i18n="nav_connections">Connections</h2>
+                                    <span class="connections-header-subtitle" data-i18n="con_subtitle">Friends & Requests</span>
                                 </div>
                             </div>
                             <button class="btn-primary btn-round con-header-add" onclick="openAddFriendModal()" title="Add Friend" aria-label="Add Friend">
@@ -839,10 +837,10 @@
                         <div class="glass-toolbar connections-toolbar">
                             <div class="connection-segmented-tabs">
                                 <button class="con-tab active" id="tabBtnFriends" onclick="switchConnectionTab('friends')" type="button">
-                                    <i class="fa-solid fa-user-group"></i> Friends
+                                    <i class="fa-solid fa-user-group"></i> <span data-i18n="tab_friends">Friends</span>
                                 </button>
                                 <button class="con-tab" id="tabBtnRequests" onclick="switchConnectionTab('requests')" type="button">
-                                    <i class="fa-solid fa-bell"></i> Requests
+                                    <i class="fa-solid fa-bell"></i> <span data-i18n="tab_requests">Requests</span>
                                     <span id="tabRequestBadge" class="tab-badge" style="display:none;">0</span>
                                 </button>
                             </div>
@@ -850,10 +848,10 @@
                             <div class="connections-search-group">
                                 <div class="pill-search-wrapper con-search-pill">
                                     <i class="fa-solid fa-magnifying-glass"></i>
-                                    <input type="text" id="searchFriend" placeholder="Search friends...">
+                                    <input type="text" id="searchFriend" placeholder="Search friends..." data-i18n-placeholder="search_friends_ph">
                                 </div>
                                 <button class="btn-primary con-add-btn" onclick="openAddFriendModal()" type="button">
-                                    <i class="fa-solid fa-plus"></i> <span>Add</span>
+                                    <i class="fa-solid fa-plus"></i> <span data-i18n="btn_add">Add</span>
                                 </button>
                             </div>
                         </div>
@@ -879,8 +877,8 @@
                                     <i class="fa-solid fa-arrow-left"></i>
                                 </button>
                                 <div>
-                                    <h2>Settings</h2>
-                                    <span class="settings-header-subtitle">Preferences & Account</span>
+                                    <h2 data-i18n="settings_title">Settings</h2>
+                                    <span class="settings-header-subtitle" data-i18n="settings_subtitle">Preferences & Account</span>
                                 </div>
                             </div>
                         </div>
@@ -900,12 +898,12 @@
                                 <p id="settingsUserEmail">email@example.com</p>
                             </div>
                             <button class="btn-secondary btn-action-pill edit-profile-badge-btn" onclick="openEditProfileModal()" type="button" title="Edit Profile">
-                                <i class="fa-solid fa-pen"></i> <span>Edit</span>
+                                <i class="fa-solid fa-pen"></i> <span data-i18n="btn_edit">Edit</span>
                             </button>
                         </div>
 
                         <!-- Settings: General & Appearance -->
-                        <div class="settings-group-label">Preferences</div>
+                        <div class="settings-group-label" data-i18n="settings_preferences">Preferences</div>
                         <div class="settings-list">
                             <div class="settings-row" onclick="switchPage('connections')">
                                 <div class="set-icon bg-purple"><i class="fa-solid fa-user-group"></i></div>
@@ -1091,8 +1089,8 @@
                                 <i class="fa-solid fa-arrow-left"></i>
                             </button>
                             <div>
-                                <h2>Currency</h2>
-                                <span class="subpage-subtitle">Live Exchange Rates</span>
+                                <h2 data-i18n="page_currency">Currency</h2>
+                                <span class="subpage-subtitle" data-i18n="currency_subtitle">Live Exchange Rates</span>
                             </div>
                         </div>
 
@@ -1101,24 +1099,24 @@
                             <div class="sync-status-left">
                                 <span class="live-pulse-dot"></span>
                                 <div>
-                                    <span id="currencyRateStatus" class="sync-status-text">Live rates connected</span>
+                                    <span id="currencyRateStatus" class="sync-status-text" data-i18n="currency_sync_text">Live rates connected</span>
                                     <span id="convRateTime" class="sync-status-time"></span>
                                 </div>
                             </div>
                             <button class="btn-refresh-rates" id="btnRefreshRates" type="button" title="Refresh Live Rates">
-                                <i class="fa-solid fa-rotate"></i> <span>Sync</span>
+                                <i class="fa-solid fa-rotate"></i> <span data-i18n="currency_sync_btn">Sync</span>
                             </button>
                         </div>
 
                         <!-- LIVE CURRENCY CONVERTER WIDGET -->
                         <div class="converter-widget glass-effect-card">
                             <div class="converter-header-info">
-                                <span class="rate-badge"><i class="fa-solid fa-chart-line"></i> Mid-Market Rate</span>
+                                <span class="rate-badge"><i class="fa-solid fa-chart-line"></i> <span data-i18n="mid_market_rate">Mid-Market Rate</span></span>
                                 <h3 id="convRateText" class="rate-highlight">1 USD = 16,000 IDR</h3>
                             </div>
                             <div class="converter-inputs">
                                 <div class="converter-group">
-                                    <span class="conv-field-label">From</span>
+                                    <span class="conv-field-label" data-i18n="conv_from">From</span>
                                     <div class="converter-field">
                                         <input type="number" id="convInputFrom" value="100" step="any" min="0" class="conv-amount-input" placeholder="0">
                                         <button type="button" class="conv-currency-pill-btn" id="convBtnFrom" onclick="openCurrencyPicker('from')" title="Change Currency">
@@ -1139,7 +1137,7 @@
                                 </div>
 
                                 <div class="converter-group">
-                                    <span class="conv-field-label">Converted</span>
+                                    <span class="conv-field-label" data-i18n="conv_converted">Converted</span>
                                     <div class="converter-field">
                                         <input type="number" id="convInputTo" value="1600000" step="any" min="0" class="conv-amount-input" readonly placeholder="0">
                                         <button type="button" class="conv-currency-pill-btn" id="convBtnTo" onclick="openCurrencyPicker('to')" title="Change Currency">
@@ -1178,8 +1176,8 @@
                                 <i class="fa-solid fa-arrow-left"></i>
                             </button>
                             <div>
-                                <h2>Theme Accent</h2>
-                                <span class="subpage-subtitle">System-Wide Color Palette</span>
+                                <h2 data-i18n="page_theme">Theme Accent</h2>
+                                <span class="subpage-subtitle" data-i18n="theme_subtitle">System-Wide Color Palette</span>
                             </div>
                         </div>
 
@@ -1187,8 +1185,8 @@
                         <div class="theme-live-preview-card glass-effect-card">
                             <div class="theme-live-header">
                                 <div class="theme-live-title-wrap">
-                                    <span class="theme-live-kicker"><i class="fa-solid fa-wand-magic-sparkles"></i> Live UI Preview</span>
-                                    <p class="theme-live-desc">Simulate dynamic theme colors applied across buttons, icons, docks, and cards</p>
+                                    <span class="theme-live-kicker"><i class="fa-solid fa-wand-magic-sparkles"></i> <span data-i18n="theme_preview_title">Live UI Preview</span></span>
+                                    <p class="theme-live-desc" data-i18n="theme_preview_desc">Simulate dynamic theme colors applied across buttons, icons, docks, and cards</p>
                                 </div>
                                 <div class="theme-live-badge" id="themeLivePreviewBadge">
                                     <span class="preview-badge-dot"></span>
@@ -1227,7 +1225,7 @@
 
                         <!-- PALETTE SELECTION GRID -->
                         <div class="theme-section-subheader">
-                            <h3>Curated Palettes</h3>
+                            <h3 data-i18n="theme_curated">Curated Palettes</h3>
                             <span class="theme-count-badge">10 Themes</span>
                         </div>
 
@@ -1243,8 +1241,8 @@
                                 <i class="fa-solid fa-arrow-left"></i>
                             </button>
                             <div>
-                                <h2>Categories</h2>
-                                <span class="subpage-subtitle">Category Studio & Catalog</span>
+                                <h2 data-i18n="page_categories">Categories</h2>
+                                <span class="subpage-subtitle" data-i18n="cat_subtitle">Category Studio & Catalog</span>
                             </div>
                         </div>
 
@@ -1252,7 +1250,7 @@
                         <div class="cat-studio-card glass-effect-card">
                             <div class="cat-studio-header">
                                 <div>
-                                    <h3>New Category</h3>
+                                    <h3 data-i18n="cat_new_title">New Category</h3>
                                 </div>
                                 <div class="cat-live-preview-chip" id="catStudioPreview">
                                     <span class="cat-preview-dot" id="catStudioDot" style="background:#2563eb;">
@@ -1265,7 +1263,7 @@
                             <div class="cat-studio-form">
                                 <div class="cat-input-pill">
                                     <i class="fa-solid fa-tag"></i>
-                                    <input type="text" id="newCatName" placeholder="Category name..." oninput="window.updateCatStudioPreview && window.updateCatStudioPreview()">
+                                    <input type="text" id="newCatName" placeholder="Category name..." data-i18n-placeholder="cat_name_ph" oninput="window.updateCatStudioPreview && window.updateCatStudioPreview()">
                                 </div>
                                 <div class="cat-studio-pickers-grid">
                                     <div class="cat-studio-field-wrap">
@@ -1286,7 +1284,7 @@
                                     </div>
                                 </div>
                                 <button class="btn-primary cat-add-btn-full" onclick="addNewCategory()" type="button">
-                                    <i class="fa-solid fa-plus"></i> <span>Add Category</span>
+                                    <i class="fa-solid fa-plus"></i> <span data-i18n="btn_add_category">Add Category</span>
                                 </button>
                             </div>
                         </div>
@@ -1294,7 +1292,7 @@
                         <!-- SAVED CATEGORIES CATALOG -->
                         <div class="cat-catalog-wrapper">
                             <div class="cat-catalog-header">
-                                <h3>Saved Categories</h3>
+                                <h3 data-i18n="cat_saved_title">Saved Categories</h3>
                                 <span class="cat-catalog-badge" id="categoryCountText">0 categories</span>
                             </div>
                             <div id="manageCategoryList" class="category-grid-catalog"></div>
