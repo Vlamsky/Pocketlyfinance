@@ -442,13 +442,16 @@ function renderFriendsList(data = rawFriends) {
     
     listContainer.innerHTML = '';
     const safeData = Array.isArray(data) ? data : (rawFriends || []);
+    const tFunc = (window.PocketlyI18n && typeof window.PocketlyI18n.t === 'function')
+        ? window.PocketlyI18n.t
+        : (k, fb) => fb;
 
     if(safeData.length === 0) {
         listContainer.innerHTML = `
         <div class="con-empty-state">
             <div class="con-empty-icon"><i class="fa-solid fa-user-group"></i></div>
-            <div class="con-empty-title">No connections yet</div>
-            <div class="con-empty-sub">Add friends using their @userid</div>
+            <div class="con-empty-title">${tFunc('no_connections_yet', 'No connections yet')}</div>
+            <div class="con-empty-sub">${tFunc('add_friends_sub', 'Add friends using their @userid')}</div>
         </div>`;
     } else {
         safeData.forEach(f => {
@@ -458,14 +461,14 @@ function renderFriendsList(data = rawFriends) {
 
             listContainer.innerHTML += `
             <div class="friend-glass-card">
-                <button class="friend-card-remove-btn" onclick="deleteFriend('${f.id}')" title="Remove Connection" aria-label="Remove">
+                <button class="friend-card-remove-btn" onclick="deleteFriend('${f.id}')" title="${tFunc('remove_connection', 'Remove Connection')}" aria-label="${tFunc('remove_connection', 'Remove')}">
                     <i class="fa-solid fa-user-minus"></i>
                 </button>
                 <div class="friend-card-avatar">${avatarHTML}</div>
                 <div class="friend-card-name" title="${f.friendName}">${f.friendName}</div>
                 <div class="friend-card-id">@${f.friendID}</div>
                 <div class="friend-status">
-                    <i class="fa-solid fa-link" style="font-size:0.65rem;"></i> Connected
+                    <i class="fa-solid fa-link" style="font-size:0.65rem;"></i> ${tFunc('friend_connected', 'Connected')}
                 </div>
             </div>`;
         });
@@ -509,12 +512,16 @@ function listenToRequests() {
 
         if (!listContainer) return;
 
+        const tFunc = (window.PocketlyI18n && typeof window.PocketlyI18n.t === 'function')
+            ? window.PocketlyI18n.t
+            : (k, fb) => fb;
+
         if (snapshot.empty) {
             listContainer.innerHTML = `
             <div class="con-empty-state">
                 <div class="con-empty-icon"><i class="fa-regular fa-bell-slash"></i></div>
-                <div class="con-empty-title">No pending requests</div>
-                <div class="con-empty-sub">Invitations will appear here</div>
+                <div class="con-empty-title">${tFunc('no_pending_requests', 'No pending requests')}</div>
+                <div class="con-empty-sub">${tFunc('invites_appear_here', 'Invitations will appear here')}</div>
             </div>`;
         } else {
             listContainer.innerHTML = ''; 
@@ -533,10 +540,10 @@ function listenToRequests() {
                     
                     <div class="friend-request-actions">
                         <button class="btn-primary full-width con-action-btn con-confirm-btn" onclick="respondRequest('${doc.id}', 'accept', '${req.fromUID}', '${req.fromName}', '${req.fromID}', '${req.fromPhoto || ''}')">
-                            <i class="fa-solid fa-check"></i> Accept
+                            <i class="fa-solid fa-check"></i> ${tFunc('btn_accept', 'Accept')}
                         </button>
                         <button class="btn-secondary full-width con-action-btn con-decline-btn" onclick="respondRequest('${doc.id}', 'reject')">
-                            <i class="fa-solid fa-xmark"></i> Decline
+                            <i class="fa-solid fa-xmark"></i> ${tFunc('btn_decline', 'Decline')}
                         </button>
                     </div>
                 </div>`;
@@ -3516,43 +3523,54 @@ function updateDashboard() {
         yesterdayDate.setDate(yesterdayDate.getDate() - 1);
         const yesterday = yesterdayDate.toISOString().split('T')[0];
 
+        const activeLocale = (window.PocketlyI18n && typeof window.PocketlyI18n.getCurrentLocale === 'function')
+            ? window.PocketlyI18n.getCurrentLocale()
+            : 'en-US';
+        const tFunc = (window.PocketlyI18n && typeof window.PocketlyI18n.t === 'function')
+            ? window.PocketlyI18n.t
+            : (k, fb) => fb;
+
         paginatedData.forEach(t => {
-    // A. Cek Header Tanggal (Sticky Header) - Biarkan sama
-    if (t.date !== lastDate) {
-        let dateLabel = formatDateIndo(t.date); 
-        if (t.date === today) dateLabel = "Today";
-        else if (t.date === yesterday) dateLabel = "Yesterday";
-        else {
-            const dObj = new Date(t.date);
-            const options = { day: 'numeric', month: 'short', year: 'numeric' };
-            dateLabel = dObj.toLocaleDateString('en-GB', options);
-        }
-        listContainer.innerHTML += `<div class="date-header-sticky">${dateLabel}</div>`;
-        lastDate = t.date;
-    }
+            // A. Cek Header Tanggal (Sticky Header)
+            if (t.date !== lastDate) {
+                let dateLabel = ''; 
+                if (t.date === today) dateLabel = tFunc('date_today', 'Today');
+                else if (t.date === yesterday) dateLabel = tFunc('date_yesterday', 'Yesterday');
+                else {
+                    const dObj = new Date(t.date + 'T00:00:00');
+                    const options = { day: 'numeric', month: 'short', year: 'numeric' };
+                    dateLabel = dObj.toLocaleDateString(activeLocale, options);
+                }
+                listContainer.innerHTML += `<div class="date-header-sticky">${dateLabel}</div>`;
+                lastDate = t.date;
+            }
 
-    // B. Setup Variabel Tampilan
-    const accName = accounts.find(a => a.id === t.accountId)?.name || 'Unknown'; 
-    
-    let iconClass = CATEGORY_ICONS[t.category] || "fa-bag-shopping";
-    let iconBg = "#f1f5f9"; 
-    let iconColor = "#64748b";
-    let amountClass = "text-dark";
-    let amountSign = "";
-    let categoryLabel = t.category || '-';
+            // B. Setup Variabel Tampilan
+            const accName = accounts.find(a => a.id === t.accountId)?.name || 'Unknown'; 
+            
+            let iconClass = CATEGORY_ICONS[t.category] || "fa-bag-shopping";
+            let iconBg = "#f1f5f9"; 
+            let iconColor = "#64748b";
+            let amountClass = "text-dark";
+            let amountSign = "";
+            let categoryLabel = (window.PocketlyI18n && typeof window.PocketlyI18n.translateCategory === 'function')
+                ? window.PocketlyI18n.translateCategory(t.category)
+                : (t.category || '-');
 
-    if(t.type === 'income') { 
-        iconBg = "rgba(16, 185, 129, 0.1)"; iconColor = "#10b981"; 
-        amountClass = "text-pastel-green"; amountSign = "+";
-    } else if (t.type === 'expense') { 
-        iconBg = "rgba(244, 63, 94, 0.1)"; iconColor = "#f43f5e"; 
-        amountClass = "text-pastel-red"; amountSign = "-";
-    } else if (t.type === 'transfer') { 
-        iconBg = "rgba(59, 130, 246, 0.1)"; iconColor = "#3b82f6";
-        iconClass = "fa-arrow-right-arrow-left";
-        amountClass = "text-pastel-blue"; amountSign = "";
-        categoryLabel = "Transfer";
-    }
+            if(t.type === 'income') { 
+                iconBg = "rgba(16, 185, 129, 0.1)"; iconColor = "#10b981"; 
+                amountClass = "text-pastel-green"; amountSign = "+";
+            } else if (t.type === 'expense') { 
+                iconBg = "rgba(244, 63, 94, 0.1)"; iconColor = "#f43f5e"; 
+                amountClass = "text-pastel-red"; amountSign = "-";
+            } else if (t.type === 'transfer') { 
+                iconBg = "rgba(59, 130, 246, 0.1)"; iconColor = "#3b82f6";
+                iconClass = "fa-arrow-right-arrow-left";
+                amountClass = "text-pastel-blue"; amountSign = "";
+                categoryLabel = (window.PocketlyI18n && typeof window.PocketlyI18n.translateCategory === 'function')
+                    ? window.PocketlyI18n.translateCategory('Transfer')
+                    : "Transfer";
+            }
 
     // C. Cek Status Locked (Hanya class, ikon gembok sudah dihilangkan sesuai request sebelumnya)
     const isSystemRefund = t.category === 'Adjustment' && (t.desc || "").toLowerCase().includes('refund');
@@ -3952,18 +3970,22 @@ function renderSmartBudgets(filterMonth, filterYear) {
     if (goalsList) goalsList.innerHTML = ''; 
     if (budgetsList) budgetsList.innerHTML = '';
 
+    const tFunc = (window.PocketlyI18n && typeof window.PocketlyI18n.t === 'function')
+        ? window.PocketlyI18n.t
+        : (k, fb) => fb;
+
     // 1. RENDER SAVINGS GOAL CONTAINERS
     const goals = rawBudgets.filter(b => b.type === 'goal');
     if (goals.length === 0 && goalsList) {
         goalsList.innerHTML = `
             <div class="goal-budget-container" style="text-align: center; padding: 36px 20px;">
                 <div style="font-size: 2.2rem; color: var(--text-muted); margin-bottom: 10px;">🎯</div>
-                <h4 style="margin-bottom: 6px; font-size: 1.1rem;">No Savings Goals Active</h4>
+                <h4 style="margin-bottom: 6px; font-size: 1.1rem;">${tFunc('no_goals_active', 'No Savings Goals Active')}</h4>
                 <p style="color: var(--text-grey); font-size: 0.88rem; max-width: 360px; margin: 0 auto 18px auto;">
-                    Create a savings goal container to track vacation funds, emergency reserves, or collaborative goals with friends.
+                    ${tFunc('no_goals_desc', 'Create a savings goal container to track vacation funds, emergency reserves, or collaborative goals with friends.')}
                 </p>
                 <button class="btn-primary" onclick="openCreateBudgetModal('goal')" style="border-radius: var(--radius-pill); padding: 8px 22px;">
-                    <i class="fa-solid fa-plus"></i> Create First Goal Container
+                    <i class="fa-solid fa-plus"></i> ${tFunc('btn_create_first_goal', 'Create First Goal Container')}
                 </button>
             </div>`;
     } else if (goalsList) {
@@ -3977,19 +3999,19 @@ function renderSmartBudgets(filterMonth, filterYear) {
             const safeName = (b.name || 'Goal').replace(/'/g, "\\'");
             const isOwner = b.uid === currentUser.uid;
 
-            let statusText = 'In Progress';
+            let statusText = tFunc('status_in_progress', 'In Progress');
             let statusBadgeClass = 'safe';
             if (percent >= 100) {
-                statusText = 'Achieved! 🎉';
+                statusText = tFunc('status_achieved', 'Achieved! 🎉');
                 statusBadgeClass = 'safe';
             } else if (percent >= 75) {
-                statusText = 'Almost There';
+                statusText = tFunc('status_almost_there', 'Almost There');
                 statusBadgeClass = 'warning';
             } else if (percent >= 50) {
-                statusText = 'Halfway';
+                statusText = tFunc('status_halfway', 'Halfway');
                 statusBadgeClass = 'warning';
             } else {
-                statusText = `${Math.round(percent)}% Saved`;
+                statusText = `${Math.round(percent)}% ${tFunc('saved_word', 'Saved')}`;
                 statusBadgeClass = 'unbudgeted';
             }
 
@@ -4029,32 +4051,32 @@ function renderSmartBudgets(filterMonth, filterYear) {
                     <div class="cat-container-body">
                         <div class="cat-metrics-grid">
                             <div class="cat-metric-item">
-                                <small>Current Saved</small>
+                                <small>${tFunc('current_saved', 'Current Saved')}</small>
                                 <div class="cat-metric-value text-green">${formatRupiah(currentAmount)}</div>
                             </div>
                             <div class="cat-metric-item">
-                                <small>Target Goal</small>
+                                <small>${tFunc('target_goal', 'Target Goal')}</small>
                                 <div class="cat-metric-value text-dark">${formatRupiah(target)}</div>
                             </div>
                             <div class="cat-metric-item">
-                                <small>${percent >= 100 ? 'Milestone' : 'Remaining Needed'}</small>
+                                <small>${percent >= 100 ? tFunc('milestone', 'Milestone') : tFunc('remaining_needed', 'Remaining Needed')}</small>
                                 <div class="cat-metric-value ${percent >= 100 ? 'text-green' : 'text-blue'}">
-                                    ${percent >= 100 ? 'Goal Reached! 🎉' : formatRupiah(remaining)}
+                                    ${percent >= 100 ? tFunc('status_achieved', 'Goal Reached! 🎉') : formatRupiah(remaining)}
                                 </div>
                             </div>
                             <div class="cat-metric-item">
-                                <small>Goal Progress</small>
-                                <div class="cat-metric-value text-secondary">${Math.round(percent)}% Saved</div>
+                                <small>${tFunc('goal_progress', 'Goal Progress')}</small>
+                                <div class="cat-metric-value text-secondary">${Math.round(percent)}% ${tFunc('saved_word', 'Saved')}</div>
                             </div>
                         </div>
 
                         <div class="cat-progress-wrapper">
                             <div class="cat-progress-labels">
                                 <span style="font-weight:700; color:${percent >= 100 ? '#10b981' : 'var(--primary-color)'};">
-                                    ${percent >= 100 ? 'Target fully achieved!' : `${Math.round(percent)}% of target saved`}
+                                    ${percent >= 100 ? tFunc('target_fully_achieved', 'Target fully achieved!') : `${Math.round(percent)}% ${tFunc('pct_of_target_saved', 'of target saved')}`}
                                 </span>
                                 <span style="color:var(--text-grey); font-size:0.82rem;">
-                                    ${percent >= 100 ? 'Ready to fulfill' : `${formatRupiah(remaining)} left to save`}
+                                    ${percent >= 100 ? tFunc('ready_to_fulfill', 'Ready to fulfill') : `${formatRupiah(remaining)} ${tFunc('left_to_save', 'left to save')}`}
                                 </span>
                             </div>
                             <div class="progress-bar-bg" style="height: 10px;">
@@ -4092,12 +4114,12 @@ function renderSmartBudgets(filterMonth, filterYear) {
             budgetsList.innerHTML = `
                 <div class="category-budget-container" style="text-align: center; padding: 36px 20px;">
                     <div style="font-size: 2.2rem; color: var(--text-muted); margin-bottom: 10px;">📉</div>
-                    <h4 style="margin-bottom: 6px; font-size: 1.1rem;">No Category Budgets Set</h4>
+                    <h4 style="margin-bottom: 6px; font-size: 1.1rem;">${tFunc('no_cat_budgets_active', 'No Category Budgets Set')}</h4>
                     <p style="color: var(--text-grey); font-size: 0.88rem; max-width: 360px; margin: 0 auto 18px auto;">
-                        No spending limits configured yet. Click 'Set Budget Limit' to establish monthly limits for your categories.
+                        ${tFunc('no_cat_budgets_desc', "No spending limits configured yet. Click 'Set Budget Limit' to establish monthly limits for your categories.")}
                     </p>
                     <button class="btn-primary" onclick="openCreateBudgetModal('budget')" style="border-radius: var(--radius-pill); padding: 8px 22px;">
-                        <i class="fa-solid fa-plus"></i> Set Budget Limit
+                        <i class="fa-solid fa-plus"></i> ${tFunc('btn_set_budget_limit', 'Set Budget Limit')}
                     </button>
                 </div>`;
         } else {
@@ -4124,13 +4146,13 @@ function renderSmartBudgets(filterMonth, filterYear) {
                 const isOver = remaining < 0;
 
                 let progressClass = 'safe';
-                let statusLabel = 'On Track';
+                let statusLabel = tFunc('on_track', 'On Track');
                 let statusBadgeClass = 'safe';
 
-                if (percent >= 100) { progressClass = 'danger'; statusLabel = 'Over Budget'; statusBadgeClass = 'danger'; }
-                else if (percent >= 80) { progressClass = 'danger'; statusLabel = 'Near Limit'; statusBadgeClass = 'warning'; }
-                else if (percent >= 50) { progressClass = 'warning'; statusLabel = 'Moderate'; statusBadgeClass = 'warning'; }
-                else { progressClass = 'safe'; statusLabel = 'On Track'; statusBadgeClass = 'safe'; }
+                if (percent >= 100) { progressClass = 'danger'; statusLabel = tFunc('over_budget', 'Over Budget'); statusBadgeClass = 'danger'; }
+                else if (percent >= 80) { progressClass = 'danger'; statusLabel = tFunc('near_limit', 'Near Limit'); statusBadgeClass = 'warning'; }
+                else if (percent >= 50) { progressClass = 'warning'; statusLabel = tFunc('moderate', 'Moderate'); statusBadgeClass = 'warning'; }
+                else { progressClass = 'safe'; statusLabel = tFunc('on_track', 'On Track'); statusBadgeClass = 'safe'; }
 
                 // Recent 3 transactions peek for this category container
                 let recentTxnsHTML = '';
@@ -4148,11 +4170,15 @@ function renderSmartBudgets(filterMonth, filterYear) {
 
                     recentTxnsHTML = `
                         <div class="cat-recent-txns">
-                            <div class="cat-txns-title">Recent Activity (${catExpenses.length} total)</div>
+                            <div class="cat-txns-title">${tFunc('recent_activity_total', 'Recent Activity')} (${catExpenses.length} total)</div>
                             ${itemsList}
                         </div>
                     `;
                 }
+
+                const catDisplayName = (window.PocketlyI18n && typeof window.PocketlyI18n.translateCategory === 'function')
+                    ? window.PocketlyI18n.translateCategory(cat)
+                    : cat;
 
                 categoriesHtml += `
                     <div class="category-budget-container" id="cat-container-${safeName.replace(/\s+/g, '-')}">
@@ -4162,7 +4188,7 @@ function renderSmartBudgets(filterMonth, filterYear) {
                                     <i class="fa-solid ${icon}"></i>
                                 </div>
                                 <div>
-                                    <h3 class="cat-header-title">${escapeHTML(cat)}</h3>
+                                    <h3 class="cat-header-title">${escapeHTML(catDisplayName)}</h3>
                                     <span class="cat-status-badge ${statusBadgeClass}">${statusLabel}</span>
                                 </div>
                             </div>
@@ -4171,21 +4197,21 @@ function renderSmartBudgets(filterMonth, filterYear) {
                         <div class="cat-container-body">
                             <div class="cat-metrics-grid">
                                 <div class="cat-metric-item">
-                                    <small>Monthly Spent</small>
+                                    <small>${tFunc('monthly_spent', 'Monthly Spent')}</small>
                                     <div class="cat-metric-value text-dark">${formatRupiah(spent)}</div>
                                 </div>
                                 <div class="cat-metric-item">
-                                    <small>Budget Limit</small>
+                                    <small>${tFunc('budget_limit', 'Budget Limit')}</small>
                                     <div class="cat-metric-value">${formatRupiah(limit)}</div>
                                 </div>
                                 <div class="cat-metric-item">
-                                    <small>${isOver ? 'Over Budget' : 'Remaining'}</small>
+                                    <small>${isOver ? tFunc('over_budget', 'Over Budget') : tFunc('remaining', 'Remaining')}</small>
                                     <div class="cat-metric-value ${isOver ? 'text-red' : 'text-green'}">
                                         ${isOver ? `+${formatRupiah(Math.abs(remaining))}` : formatRupiah(remaining)}
                                     </div>
                                 </div>
                                 <div class="cat-metric-item">
-                                    <small>Total Records</small>
+                                    <small>${tFunc('total_records', 'Total Records')}</small>
                                     <div class="cat-metric-value text-secondary">${catExpenses.length}</div>
                                 </div>
                             </div>
@@ -4193,10 +4219,10 @@ function renderSmartBudgets(filterMonth, filterYear) {
                             <div class="cat-progress-wrapper">
                                 <div class="cat-progress-labels">
                                     <span style="font-weight:700; color:${isOver ? 'var(--red)' : (percent >= 80 ? 'var(--yellow)' : 'var(--green)')};">
-                                        ${percent.toFixed(0)}% of limit spent
+                                        ${percent.toFixed(0)}% ${tFunc('pct_of_limit_spent', 'of limit spent')}
                                     </span>
                                     <span style="color:var(--text-grey); font-size:0.82rem;">
-                                        ${isOver ? 'Over budget limit' : `${formatRupiah(remaining)} left`}
+                                        ${isOver ? tFunc('over_budget_limit', 'Over budget limit') : `${formatRupiah(remaining)} ${tFunc('left_word', 'left')}`}
                                     </span>
                                 </div>
                                 <div class="progress-bar-bg" style="height: 10px;">
@@ -5415,7 +5441,22 @@ if (transFilterBtn) {
     }); 
 }
 
-function initReportFilters() { const rptAccSelect = document.getElementById('reportAccount'); if (!rptAccSelect) return; rptAccSelect.innerHTML = '<option value="All">All Accounts</option>'; accounts.forEach(acc => { const opt = document.createElement('option'); opt.value = acc.id; opt.innerText = acc.name; rptAccSelect.appendChild(opt); }); if (typeof initCustomSelects === 'function') initCustomSelects(); }
+function initReportFilters() { 
+    const rptAccSelect = document.getElementById('reportAccount'); 
+    if (!rptAccSelect) return; 
+    const allAccountsText = (window.PocketlyI18n && typeof window.PocketlyI18n.t === 'function')
+        ? window.PocketlyI18n.t('filter_all_accounts', 'All Accounts')
+        : 'All Accounts';
+    rptAccSelect.innerHTML = `<option value="All">${allAccountsText}</option>`; 
+    accounts.forEach(acc => { 
+        const opt = document.createElement('option'); 
+        opt.value = acc.id; 
+        opt.innerText = acc.name; 
+        rptAccSelect.appendChild(opt); 
+    }); 
+    if (typeof initCustomSelects === 'function') initCustomSelects(); 
+    if (typeof rptAccSelect.__syncSearchable === 'function') rptAccSelect.__syncSearchable();
+}
 function updateReportsPage() { const periodEl = document.getElementById('reportPeriod'); const accountIdEl = document.getElementById('reportAccount'); if (!periodEl || !accountIdEl) return; const period = periodEl.value; const accountId = accountIdEl.value; let filtered = filterTransactionsByPeriod(rawTransactions, period); if (accountId !== 'All') filtered = filtered.filter(t => t.accountId === accountId); calculateReportSummary(filtered); renderCashFlowChart(filtered); renderSpendingBreakdown(filtered); renderTopSpending(filtered); }
 function filterTransactionsByPeriod(data, period) { const now = new Date(); now.setHours(23, 59, 59, 999); let startDate = new Date(); startDate.setHours(0, 0, 0, 0); if (period === 'this_month') { startDate.setDate(1); } else if (period === 'last_month') { startDate = new Date(now.getFullYear(), now.getMonth() - 1, 1); const endDate = new Date(now.getFullYear(), now.getMonth(), 0); endDate.setHours(23, 59, 59, 999); return data.filter(t => { const d = new Date(t.date + "T00:00:00"); return d >= startDate && d <= endDate; }); } else if (period === 'last_3_months') { startDate = new Date(now.getFullYear(), now.getMonth() - 3, 1); } else if (period === 'this_year') { startDate = new Date(now.getFullYear(), 0, 1); } return data.filter(t => { const d = new Date(t.date + "T00:00:00"); return d >= startDate && d <= now; }); }
 function calculateReportSummary(data) {
@@ -5447,6 +5488,10 @@ function calculateReportSummary(data) {
 function renderCashFlowChart(data) {
     const ctx = document.getElementById('cashFlowChart');
     if(!ctx) return;
+
+    const tFunc = (window.PocketlyI18n && typeof window.PocketlyI18n.t === 'function')
+        ? window.PocketlyI18n.t
+        : (k, fb) => fb;
 
     const dailyData = {};
     data.forEach(t => {
@@ -5486,7 +5531,7 @@ function renderCashFlowChart(data) {
             labels: labels,
             datasets: [
                 {
-                    label: 'Income',
+                    label: tFunc('chart_income', 'Income'),
                     data: incomes,
                     borderColor: '#10b981',
                     backgroundColor: gradientInc, // Pakai Gradient
@@ -5497,7 +5542,7 @@ function renderCashFlowChart(data) {
                     borderWidth: 2
                 },
                 {
-                    label: 'Expense',
+                    label: tFunc('chart_expense', 'Expense'),
                     data: expenses,
                     borderColor: '#ef4444',
                     backgroundColor: gradientExp, // Pakai Gradient
@@ -5650,6 +5695,9 @@ function legacyRenderTopSpending(data) {
     if(!listContainer) return; 
     
     listContainer.innerHTML = ''; 
+    const tFunc = (window.PocketlyI18n && typeof window.PocketlyI18n.t === 'function')
+        ? window.PocketlyI18n.t
+        : (k, fb) => fb;
     
     // Ambil Top 5 Expense
     const top5 = data.filter(t => t.type === 'expense')
@@ -5660,7 +5708,7 @@ function legacyRenderTopSpending(data) {
         listContainer.innerHTML = `
             <div style="text-align:center; padding:40px; color:var(--text-grey);">
                 <i class="fa-solid fa-money-bill-wave" style="font-size:2rem; margin-bottom:10px; opacity:0.3;"></i>
-                <p>No expenses found.</p>
+                <p>${tFunc('no_expenses_found', 'No expenses found.')}</p>
             </div>`; 
         return; 
     } 
@@ -7778,22 +7826,26 @@ function renderManageCategories() {
     const list = document.getElementById('manageCategoryList');
     if (!list) return;
 
+    const tFunc = (window.PocketlyI18n && typeof window.PocketlyI18n.t === 'function')
+        ? window.PocketlyI18n.t
+        : (k, fb) => fb;
+
     list.innerHTML = '';
     userCategories.forEach((cat, index) => {
         const config = getCategoryConfig(cat);
-        const isSystem = SYSTEM_CATEGORIES.includes(cat);
+        const isSystem = (typeof SYSTEM_CATEGORIES !== 'undefined' && SYSTEM_CATEGORIES.includes(cat));
         const safeCat = escapeHTML(cat);
         const disabledName = isSystem ? 'disabled' : '';
         const deleteOrLock = isSystem
-            ? `<span class="category-system-lock" title="System Category"><i class="fa-solid fa-lock"></i></span>`
-            : `<button class="btn-delete-cat" onclick="deleteCategory(${index})" title="Delete"><i class="fa-solid fa-trash-can"></i></button>`;
+            ? `<span class="category-system-lock" title="${tFunc('action_system_category', 'System Category')}"><i class="fa-solid fa-lock"></i></span>`
+            : `<button class="btn-delete-cat" onclick="deleteCategory(${index})" title="${tFunc('btn_delete', 'Delete')}"><i class="fa-solid fa-trash-can"></i></button>`;
 
-        const saveButton = `<button type="button" class="btn-save-cat icon-only" onclick="saveCategoryEdit(${index})" title="Save changes" aria-label="Save changes"><i class="fa-solid fa-check"></i></button>`;
+        const saveButton = `<button type="button" class="btn-save-cat icon-only" onclick="saveCategoryEdit(${index})" title="${tFunc('action_save_changes', 'Save changes')}" aria-label="${tFunc('action_save_changes', 'Save changes')}"><i class="fa-solid fa-check"></i></button>`;
 
         list.innerHTML += `
             <div class="cat-manage-item enhanced">
                 <div class="cat-card-header-row">
-                    <div class="cat-icon-preview clickable-icon-badge" id="catPreview-${index}" style="background:${config.color};" onclick="openCategoryColorPicker(${index})" title="Change color">
+                    <div class="cat-icon-preview clickable-icon-badge" id="catPreview-${index}" style="background:${config.color};" onclick="openCategoryColorPicker(${index})" title="${tFunc('action_change_color', 'Change color')}">
                         <i class="fa-solid ${config.icon}"></i>
                     </div>
                     <input class="cat-name-input" id="catName-${index}" value="${safeCat}" ${disabledName} placeholder="Category Name" onchange="saveCategoryEdit(${index})">
@@ -7805,7 +7857,7 @@ function renderManageCategories() {
                 <div class="cat-card-controls-row">
                     <div class="cat-card-pickers-grid">
                         <div class="cat-picker-cell">
-                            <button type="button" class="cat-icon-select-trigger mini" onclick="openCategoryIconPicker(${index})" title="Change Icon">
+                            <button type="button" class="cat-icon-select-trigger mini" onclick="openCategoryIconPicker(${index})" title="${tFunc('action_change_icon', 'Change icon')}">
                                 <span class="icon-trigger-badge mini"><i class="fa-solid ${config.icon}" id="catIconDisplay-${index}"></i></span>
                                 <span class="icon-trigger-label" id="catIconText-${index}">${escapeHTML(getCategoryIconLabel(config.icon))}</span>
                                 <i class="fa-solid fa-chevron-down icon-trigger-chevron"></i>
@@ -7813,7 +7865,7 @@ function renderManageCategories() {
                             <input type="hidden" id="catIcon-${index}" value="${config.icon}">
                         </div>
                         <div class="cat-picker-cell">
-                            <button type="button" class="cat-color-select-trigger mini" id="catColorBtn-${index}" onclick="openCategoryColorPicker(${index})" title="Change Color">
+                            <button type="button" class="cat-color-select-trigger mini" id="catColorBtn-${index}" onclick="openCategoryColorPicker(${index})" title="${tFunc('action_change_color', 'Change color')}">
                                 <span class="color-trigger-swatch mini" id="catColorSwatch-${index}" style="background:${config.color};"></span>
                                 <span class="color-trigger-label" id="catColorLabel-${index}">${escapeHTML(getCategoryColorName(config.color))}</span>
                                 <i class="fa-solid fa-chevron-down color-trigger-chevron"></i>
@@ -7826,7 +7878,7 @@ function renderManageCategories() {
     });
 
     const countEl = document.getElementById('categoryCountText');
-    if (countEl) countEl.innerText = `${userCategories.length} categories`;
+    if (countEl) countEl.innerText = `${userCategories.length} ${tFunc('categories_unit', 'categories')}`;
 }
 
 window.previewCategoryEdit = function(index) {
@@ -8290,11 +8342,15 @@ function renderCurrencyOptions() {
         return !search || haystack.includes(search);
     });
 
+    const tFunc = (window.PocketlyI18n && typeof window.PocketlyI18n.t === 'function')
+        ? window.PocketlyI18n.t
+        : (k, fb) => fb;
+
     const countEl = document.getElementById('currencyCountText');
-    if (countEl) countEl.innerText = `${entries.length} currencies available`;
+    if (countEl) countEl.innerText = `${entries.length} ${tFunc('currencies_available', 'currencies available')}`;
 
     if (entries.length === 0) {
-        list.innerHTML = `<div class="currency-empty-state"><i class="fa-solid fa-magnifying-glass"></i><p>No currency found.</p></div>`;
+        list.innerHTML = `<div class="currency-empty-state"><i class="fa-solid fa-magnifying-glass"></i><p>${tFunc('no_currency_found', 'No currency found.')}</p></div>`;
         return;
     }
 
@@ -8303,7 +8359,7 @@ function renderCurrencyOptions() {
         const rate = Number(exchangeRates[code]) || Number(FALLBACK_RATES[code]) || 1;
         let ratePreview = '';
         if (code === 'IDR') {
-            ratePreview = 'Base Currency (1.00)';
+            ratePreview = `${tFunc('base_currency', 'Base Currency')} (1.00)`;
         } else {
             const idrPerUnit = (1 / rate);
             ratePreview = `1 ${code} ≈ ${idrPerUnit >= 1 ? Math.round(idrPerUnit).toLocaleString('id-ID') : idrPerUnit.toFixed(4)} IDR`;
@@ -8326,7 +8382,7 @@ function renderCurrencyOptions() {
                     </div>
                 </div>
                 <div class="currency-select-status">
-                    ${isActive ? '<span class="currency-active-indicator"><i class="fa-solid fa-circle-check"></i> Active</span>' : '<i class="fa-solid fa-chevron-right currency-arrow-icon"></i>'}
+                    ${isActive ? `<span class="currency-active-indicator"><i class="fa-solid fa-circle-check"></i> ${tFunc('active_status', 'Active')}</span>` : '<i class="fa-solid fa-chevron-right currency-arrow-icon"></i>'}
                 </div>
             </button>`;
     }).join('');
@@ -9050,19 +9106,28 @@ function renderCalendarDaySummary(dateString) {
     if (!summary) return;
     const data = getCalendarDayData(dateString);
     const dateObj = toLocalDate(dateString);
-    const dateTitle = dateObj ? dateObj.toLocaleDateString(currentLocale || 'en-US', { weekday: 'long', day: 'numeric', month: 'short', year: 'numeric' }) : dateString;
+    const activeLocale = (window.PocketlyI18n && typeof window.PocketlyI18n.getCurrentLocale === 'function')
+        ? window.PocketlyI18n.getCurrentLocale()
+        : (currentLocale || 'en-US');
+    const tFunc = (window.PocketlyI18n && typeof window.PocketlyI18n.t === 'function')
+        ? window.PocketlyI18n.t
+        : (k, fb) => fb;
+    const dateTitle = dateObj ? dateObj.toLocaleDateString(activeLocale, { weekday: 'long', day: 'numeric', month: 'short', year: 'numeric' }) : dateString;
 
     const transactionItems = data.transactions.map((t) => {
         const icon = getCategoryIcon(t.category || (t.type === 'transfer' ? 'Transfer' : 'Others'));
         const color = t.type === 'income' ? '#10b981' : (t.type === 'expense' ? getCategoryColor(t.category || 'Others') : '#3b82f6');
         const sign = t.type === 'income' ? '+' : (t.type === 'expense' ? '-' : '');
         const accName = accounts.find((a) => a.id === t.accountId)?.name || 'Unknown';
+        const catTranslated = (window.PocketlyI18n && typeof window.PocketlyI18n.translateCategory === 'function')
+            ? window.PocketlyI18n.translateCategory(t.category || (t.type === 'transfer' ? 'Transfer' : 'Others'))
+            : (t.category || t.type);
         return `
             <div class="calendar-event-item" onclick="openTransactionDetail('${t.id}')" style="cursor:pointer;">
                 <div class="calendar-event-icon" style="background:${hexToRgba(color, 0.12)}; color:${color};"><i class="fa-solid ${icon}"></i></div>
                 <div>
-                    <h4>${escapeHTML(t.desc || t.category || 'Transaction')}</h4>
-                    <p>${escapeHTML(t.category || t.type)} - ${escapeHTML(accName)} - <b>${sign} ${formatRupiah(t.amount)}</b></p>
+                    <h4>${escapeHTML(t.desc || catTranslated || 'Transaction')}</h4>
+                    <p>${escapeHTML(catTranslated)} - ${escapeHTML(accName)} - <b>${sign} ${formatRupiah(t.amount)}</b></p>
                 </div>
             </div>`;
     });
@@ -9072,22 +9137,22 @@ function renderCalendarDaySummary(dateString) {
             <div class="calendar-event-icon" style="background:rgba(245,158,11,0.12); color:#f59e0b;"><i class="fa-solid fa-bell"></i></div>
             <div>
                 <h4>${escapeHTML(d.partyName || 'Debt due')}</h4>
-                <p>${d.kind === 'lent' ? 'Collect receivable' : 'Pay loan'} - <b>${formatRupiah(d.remaining ?? d.principal)}</b></p>
+                <p>${d.kind === 'lent' ? tFunc('collect_receivable', 'Collect receivable') : tFunc('pay_loan', 'Pay loan')} - <b>${formatRupiah(d.remaining ?? d.principal)}</b></p>
             </div>
         </div>`);
 
     summary.innerHTML = `
         <h3 class="calendar-summary-date">${escapeHTML(dateTitle)}</h3>
         <div class="calendar-summary-stats">
-            <div class="calendar-summary-stat"><small>Income</small><span class="text-green">${formatRupiah(data.income)}</span></div>
-            <div class="calendar-summary-stat"><small>Expense</small><span class="text-red">${formatRupiah(data.expense)}</span></div>
-            <div class="calendar-summary-stat"><small>Transfer</small><span class="text-blue">${formatRupiah(data.transfer)}</span></div>
-            <div class="calendar-summary-stat"><small>Debt Due</small><span>${data.dueDebts.length}</span></div>
+            <div class="calendar-summary-stat"><small>${tFunc('income_stat', 'Income')}</small><span class="text-green">${formatRupiah(data.income)}</span></div>
+            <div class="calendar-summary-stat"><small>${tFunc('expense_stat', 'Expense')}</small><span class="text-red">${formatRupiah(data.expense)}</span></div>
+            <div class="calendar-summary-stat"><small>${tFunc('transfer_stat', 'Transfer')}</small><span class="text-blue">${formatRupiah(data.transfer)}</span></div>
+            <div class="calendar-summary-stat"><small>${tFunc('debt_due_stat', 'Debt Due')}</small><span>${data.dueDebts.length}</span></div>
         </div>
         <div class="calendar-event-list">
             ${transactionItems.join('')}
             ${debtItems.join('')}
-            ${transactionItems.length === 0 && debtItems.length === 0 ? '<div class="empty-calendar-summary"><i class="fa-solid fa-calendar-check"></i><p>No activity on this date.</p></div>' : ''}
+            ${transactionItems.length === 0 && debtItems.length === 0 ? `<div class="empty-calendar-summary"><i class="fa-solid fa-calendar-check"></i><p>${tFunc('no_activity_date', 'No activity on this date.')}</p></div>` : ''}
         </div>`;
 }
 
@@ -9572,6 +9637,9 @@ function renderTopSpending(data) {
     const listContainer = document.getElementById('topSpendingList');
     if (!listContainer) return;
     listContainer.innerHTML = '';
+    const tFunc = (window.PocketlyI18n && typeof window.PocketlyI18n.t === 'function')
+        ? window.PocketlyI18n.t
+        : (k, fb) => fb;
     const top5 = data.filter((t) => t.type === 'expense')
         .sort((a, b) => Number(b.amount || 0) - Number(a.amount || 0))
         .slice(0, 5);
@@ -9580,7 +9648,7 @@ function renderTopSpending(data) {
         listContainer.innerHTML = `
             <div style="text-align:center; padding:40px; color:var(--text-grey);">
                 <i class="fa-solid fa-money-bill-wave" style="font-size:2rem; margin-bottom:10px; opacity:0.3;"></i>
-                <p>No expenses found.</p>
+                <p>${tFunc('no_expenses_found', 'No expenses found.')}</p>
             </div>`;
         return;
     }
@@ -9589,6 +9657,9 @@ function renderTopSpending(data) {
         const iconClass = getCategoryIcon(t.category || 'Others');
         const color = getCategoryColor(t.category || 'Others');
         const safeDescJs = escapeForJsString(t.desc || '');
+        const catTranslated = (window.PocketlyI18n && typeof window.PocketlyI18n.translateCategory === 'function')
+            ? window.PocketlyI18n.translateCategory(t.category || 'Others')
+            : (t.category || 'Others');
         listContainer.innerHTML += `
         <div class="spending-item" onclick="jumpToTransaction('${safeDescJs}')" title="View Details">
             <div class="spi-icon" style="background:${hexToRgba(color, 0.12)}; color:${color};">
@@ -9597,10 +9668,10 @@ function renderTopSpending(data) {
             <div class="spi-info-wrapper">
                 <div class="spi-text-desktop">
                     <div class="spi-row-primary">${escapeHTML(t.desc || 'No description')}</div>
-                    <div class="spi-row-secondary">${escapeHTML(t.category || 'Others')} - ${formatDateIndo(t.date)}</div>
+                    <div class="spi-row-secondary">${escapeHTML(catTranslated)} - ${formatDateIndo(t.date)}</div>
                 </div>
                 <div class="spi-text-mobile">
-                    <div class="spi-row-primary">${escapeHTML(t.category || 'Others')}</div>
+                    <div class="spi-row-primary">${escapeHTML(catTranslated)}</div>
                     <div class="spi-row-secondary">${escapeHTML(t.desc || 'No description')}</div>
                 </div>
             </div>
@@ -10019,10 +10090,16 @@ window.startDemoMode = function() {
 
     if (accSelect) accSelect.innerHTML = defaultOpt + accounts.map(a => `<option value="${a.name}">${a.name} (${formatRupiah(a.balance)})</option>`).join('');
     if (toAccSelect) toAccSelect.innerHTML = `<option value="" disabled selected>Select Destination Account</option>` + accounts.map(a => `<option value="${a.name}">${a.name}</option>`).join('');
-    if (filterAccSelect) filterAccSelect.innerHTML = `<option value="all">All Accounts</option>` + accounts.map(a => `<option value="${a.name}">${a.name}</option>`).join('');
+    const allAccountsText = (window.PocketlyI18n && typeof window.PocketlyI18n.t === 'function')
+        ? window.PocketlyI18n.t('filter_all_accounts', 'All Accounts')
+        : 'All Accounts';
+    if (filterAccSelect) filterAccSelect.innerHTML = `<option value="all">${allAccountsText}</option>` + accounts.map(a => `<option value="${a.name}">${a.name}</option>`).join('');
     if (debtAccSelect) debtAccSelect.innerHTML = accounts.map(a => `<option value="${a.name}">${a.name}</option>`).join('');
     if (debtPayAccSelect) debtPayAccSelect.innerHTML = accounts.map(a => `<option value="${a.name}">${a.name}</option>`).join('');
-    if (reportAccSelect) reportAccSelect.innerHTML = `<option value="All">All Accounts</option>` + accounts.map(a => `<option value="${a.name}">${a.name}</option>`).join('');
+    if (reportAccSelect) {
+        reportAccSelect.innerHTML = `<option value="All">${allAccountsText}</option>` + accounts.map(a => `<option value="${a.name}">${a.name}</option>`).join('');
+        if (typeof reportAccSelect.__syncSearchable === 'function') reportAccSelect.__syncSearchable();
+    }
     if (topupAccSelect) topupAccSelect.innerHTML = accounts.map(a => `<option value="${a.id}">${a.name}</option>`).join('');
     if (refundAccSelect) refundAccSelect.innerHTML = accounts.map(a => `<option value="${a.name}">${a.name}</option>`).join('');
 
