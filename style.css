@@ -8398,3 +8398,49 @@ body.dark-mode .pin-dot {
     font-family: inherit;
     font-weight: 700;
 }
+
+/* Forgot PIN Link & Modal */
+.pin-forgot-row {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-top: 22px;
+    width: 100%;
+}
+
+.btn-forgot-pin {
+    background: transparent;
+    border: none;
+    outline: none;
+    color: var(--primary-color);
+    font-size: 0.88rem;
+    font-weight: 600;
+    cursor: pointer;
+    padding: 6px 12px;
+    border-radius: var(--radius-pill);
+    transition: all 0.2s ease;
+    opacity: 0.9;
+}
+
+.btn-forgot-pin:hover {
+    opacity: 1;
+    background: var(--hover-bg);
+    transform: translateY(-1px);
+}
+
+.btn-forgot-pin:active {
+    transform: scale(0.96);
+}
+
+body.dark-mode .btn-forgot-pin {
+    color: #60a5fa;
+}
+
+#forgotPinModal {
+    z-index: 100005 !important;
+}
+
+#forgotPinModal .modal-content {
+    animation: lockCardEntrance 0.3s cubic-bezier(0.16, 1, 0.3, 1) backwards;
+}
+

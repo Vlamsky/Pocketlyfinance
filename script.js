@@ -26,6 +26,21 @@ const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 
+// Expose PocketlyAuth for App Lock and security modules
+window.PocketlyAuth = {
+    get auth() { return auth; },
+    get currentUser() { return auth.currentUser; },
+    signOut: () => signOut(auth),
+    verifyPassword: async (password) => {
+        if (!auth.currentUser || !auth.currentUser.email) {
+            throw new Error('NO_USER');
+        }
+        const credential = EmailAuthProvider.credential(auth.currentUser.email, password);
+        await reauthenticateWithCredential(auth.currentUser, credential);
+        return true;
+    }
+};
+
 let currentUser = null;
 let isRegistering = false; 
 let rawTransactions = [];

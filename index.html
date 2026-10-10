@@ -22,7 +22,7 @@
     <link
         href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Outfit:wght@400;500;600;700;800;900&family=Plus+Jakarta+Sans:ital,wght@0,300..800;1,300..800&display=swap"
         rel="stylesheet">
-    <link rel="stylesheet" href="style.css?v=9.9">
+    <link rel="stylesheet" href="style.css?v=10.0">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
@@ -78,18 +78,18 @@
         <div class="app-lock-content">
             <div class="app-lock-brand">
                 <img src="logo-new.png" alt="Pocketly Logo" class="app-lock-logo">
-                <h2 class="app-lock-title">Pocketly Secure</h2>
-                <p class="app-lock-subtitle" id="appLockPromptText">Masukkan 4 digit PIN untuk membuka</p>
+                <h2 class="app-lock-title">Pocketly</h2>
+                <p class="app-lock-subtitle" id="appLockPromptText">Enter 4-Digit PIN to unlock</p>
             </div>
 
-            <div class="pin-dots-container" id="pinDotsContainer" aria-label="Status PIN">
+            <div class="pin-dots-container" id="pinDotsContainer" aria-label="PIN Status">
                 <div class="pin-dot" id="pdot0"></div>
                 <div class="pin-dot" id="pdot1"></div>
                 <div class="pin-dot" id="pdot2"></div>
                 <div class="pin-dot" id="pdot3"></div>
             </div>
 
-            <p class="pin-error-msg" id="pinErrorMsg" style="display: none;">PIN salah. Silakan coba lagi.</p>
+            <p class="pin-error-msg" id="pinErrorMsg" style="display: none;">Incorrect PIN. Please try again.</p>
 
             <div class="pin-keypad">
                 <button type="button" class="pin-key-btn" data-key="1">
@@ -138,9 +138,13 @@
                     <span class="pin-key-num">0</span>
                     <span class="pin-key-sub">&nbsp;</span>
                 </button>
-                <button type="button" class="pin-key-btn aux-btn" id="btnPinBackspace" title="Hapus" aria-label="Backspace">
+                <button type="button" class="pin-key-btn aux-btn" id="btnPinBackspace" title="Delete" aria-label="Delete">
                     <i class="fa-solid fa-delete-left"></i>
                 </button>
+            </div>
+
+            <div class="pin-forgot-row">
+                <button type="button" class="btn-forgot-pin" id="btnForgotPin">Forgot PIN?</button>
             </div>
         </div>
     </div>
@@ -979,7 +983,7 @@
                             <div class="settings-row">
                                 <div class="set-icon bg-blue"><i class="fa-solid fa-shield-halved"></i></div>
                                 <div class="set-text">
-                                    <h4>App Lock (PIN 4-Digit)</h4>
+                                    <h4>App Lock (4-Digit PIN)</h4>
                                 </div>
                                 <div class="set-action">
                                     <label class="switch">
@@ -1000,7 +1004,7 @@
                             <div class="settings-row" id="rowBiometric" style="display: none;">
                                 <div class="set-icon bg-green"><i class="fa-solid fa-fingerprint"></i></div>
                                 <div class="set-text">
-                                    <h4>Biometric Unlock (Face / Fingerprint)</h4>
+                                    <h4>Biometric Unlock (Face ID / Fingerprint)</h4>
                                 </div>
                                 <div class="set-action">
                                     <label class="switch">
@@ -2425,7 +2429,7 @@
                 <i class="fa-solid fa-shield-halved"></i>
             </div>
             <h2 id="pinSetupTitle" style="font-size: 1.25rem; font-weight: 700; margin-bottom: 6px;">Set 4-Digit PIN</h2>
-            <p id="pinSetupDesc" style="color: var(--text-grey); font-size: 0.86rem; margin-bottom: 18px;">Masukkan 4 angka untuk PIN keamanan Anda.</p>
+            <p id="pinSetupDesc" style="color: var(--text-grey); font-size: 0.86rem; margin-bottom: 18px;">Enter 4 digits for your security PIN.</p>
 
             <div class="pin-dots-container" id="setupPinDotsContainer" style="margin-bottom: 16px;">
                 <div class="pin-dot" id="sdot0"></div>
@@ -2434,7 +2438,7 @@
                 <div class="pin-dot" id="sdot3"></div>
             </div>
 
-            <p class="pin-error-msg" id="setupPinErrorMsg" style="display: none; margin-bottom: 14px;">PIN konfirmasi tidak cocok.</p>
+            <p class="pin-error-msg" id="setupPinErrorMsg" style="display: none; margin-bottom: 14px;">PIN confirmation does not match.</p>
 
             <div class="pin-keypad compact-keypad">
                 <button type="button" class="pin-key-btn compact" data-skey="1">1</button>
@@ -2446,18 +2450,59 @@
                 <button type="button" class="pin-key-btn compact" data-skey="7">7</button>
                 <button type="button" class="pin-key-btn compact" data-skey="8">8</button>
                 <button type="button" class="pin-key-btn compact" data-skey="9">9</button>
-                <button type="button" class="pin-key-btn compact aux-btn" id="btnCancelPinSetup">Batal</button>
+                <button type="button" class="pin-key-btn compact aux-btn" id="btnCancelPinSetup">Cancel</button>
                 <button type="button" class="pin-key-btn compact" data-skey="0">0</button>
-                <button type="button" class="pin-key-btn compact aux-btn" id="btnSetupBackspace"><i class="fa-solid fa-delete-left"></i></button>
+                <button type="button" class="pin-key-btn compact aux-btn" id="btnSetupBackspace" title="Delete" aria-label="Delete"><i class="fa-solid fa-delete-left"></i></button>
             </div>
+        </div>
+    </div>
+
+    <!-- Modal: Forgot PIN / Reset Lock -->
+    <div id="forgotPinModal" class="modal" role="dialog" aria-modal="true" onclick="if(event.target === this) { if(window.PocketlyAppLock && window.PocketlyAppLock.closeForgotModal) { window.PocketlyAppLock.closeForgotModal(); } }">
+        <div class="modal-content" style="max-width: 380px; text-align: center;">
+            <button type="button" class="close-btn" id="btnCloseForgotPin" aria-label="Close modal"><i class="fa-solid fa-xmark"></i></button>
+            <div style="width: 50px; height: 50px; border-radius: 50%; background: rgba(239, 68, 68, 0.1); color: #ef4444; display: flex; align-items: center; justify-content: center; margin: 0 auto 14px auto; font-size: 1.35rem;">
+                <i class="fa-solid fa-key"></i>
+            </div>
+            <h2 style="font-size: 1.25rem; font-weight: 700; margin-bottom: 6px;">Forgot PIN?</h2>
+            <p style="color: var(--text-grey); font-size: 0.86rem; margin-bottom: 18px; line-height: 1.45;">Verify your account password to reset your PIN, or sign out to log in again.</p>
+
+            <form id="forgotPinForm" onsubmit="event.preventDefault();" style="display: flex; flex-direction: column; gap: 12px; margin-bottom: 16px;">
+                <div style="position: relative; text-align: left;">
+                    <label style="font-size: 0.74rem; font-weight: 700; color: var(--text-grey); text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 4px; display: block;">Account Password</label>
+                    <div style="position: relative; display: flex; align-items: center;">
+                        <input type="password" id="forgotPinPasswordInput" placeholder="Enter your account password" style="width: 100%; padding: 11px 40px 11px 14px; border: 1.5px solid var(--border-color); border-radius: var(--radius-lg); background: var(--input-bg); color: var(--text-dark); font-size: 0.92rem; outline: none; transition: border-color 0.2s;" autocomplete="current-password">
+                        <button type="button" id="btnToggleForgotPassVisibility" style="position: absolute; right: 10px; background: none; border: none; color: var(--text-muted); cursor: pointer; padding: 6px; font-size: 0.9rem;" aria-label="Toggle password visibility">
+                            <i class="fa-regular fa-eye"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <p id="forgotPinErrorMsg" style="display: none; color: #ef4444; font-size: 0.8rem; font-weight: 600; margin: 0; text-align: left;"></p>
+
+                <button type="button" id="btnVerifyAndResetPin" class="btn-primary" style="width: 100%; padding: 12px; font-size: 0.9rem; font-weight: 700; border-radius: var(--radius-lg); margin-top: 4px;">
+                    Verify & Reset PIN
+                </button>
+            </form>
+
+            <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 14px;">
+                <div style="flex: 1; height: 1px; background: var(--border-color);"></div>
+                <span style="font-size: 0.72rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase;">or</span>
+                <div style="flex: 1; height: 1px; background: var(--border-color);"></div>
+            </div>
+
+            <button type="button" id="btnForgotPinSignOut" style="width: 100%; padding: 11px; background: var(--hover-bg); border: 1px solid var(--border-color); border-radius: var(--radius-lg); color: var(--text-dark); font-size: 0.86rem; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; transition: background 0.2s;">
+                <i class="fa-solid fa-arrow-right-from-bracket"></i>
+                Sign Out & Re-login
+            </button>
         </div>
     </div>
 
     <!-- Scripts -->
     <script src="audio-haptics.js?v=1.0"></script>
-    <script src="app-lock.js?v=1.0"></script>
+    <script src="app-lock.js?v=1.1"></script>
     <script src="poppins-font.js"></script>
-    <script type="module" src="script.js?v=10.9"></script>
+    <script type="module" src="script.js?v=11.0"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
     <script defer src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script defer

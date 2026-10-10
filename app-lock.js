@@ -1,6 +1,6 @@
 /**
  * POCKETLY APP LOCK & BIOMETRIC PRIVACY MODULE
- * Fintech-grade 4-Digit PIN Passcode & WebAuthn Biometric Protection
+ * Fintech-grade 4-Digit PIN Passcode, WebAuthn Biometrics & Account Recovery
  */
 (function() {
     'use strict';
@@ -8,6 +8,7 @@
     const PIN_KEY = 'pocketly_app_lock_pin_hash';
     const ENABLED_KEY = 'pocketly_app_lock_enabled';
     const BIOMETRIC_KEY = 'pocketly_app_lock_biometric';
+    const BIO_CRED_KEY = 'pocketly_bio_cred_id';
     const SALT = 'pocketly_fintech_vault_salt_v1';
 
     let currentEnteredPin = '';
@@ -15,6 +16,7 @@
     let setupStep = 1; // 1: Enter new PIN, 2: Confirm new PIN
     let firstEnteredSetupPin = '';
     let currentSetupPin = '';
+    let isChangingPin = false;
 
     // SHA-256 PIN Hashing
     async function hashPin(pin) {
@@ -31,6 +33,14 @@
 
     function isBiometricEnabled() {
         return localStorage.getItem(BIOMETRIC_KEY) === 'true';
+    }
+
+    // Completely wipe PIN and biometric credentials from local storage
+    function clearAllLockData() {
+        localStorage.removeItem(PIN_KEY);
+        localStorage.removeItem(ENABLED_KEY);
+        localStorage.removeItem(BIOMETRIC_KEY);
+        localStorage.removeItem(BIO_CRED_KEY);
     }
 
     // Update PIN indicator dots on lock screen
@@ -73,7 +83,7 @@
         overlay.classList.remove('unlocking');
         isCurrentlyLocked = true;
 
-        // Auto prompt biometrics if enabled
+        // Auto-prompt biometrics if enabled
         if (isBiometricEnabled()) {
             setTimeout(triggerBiometricAuth, 350);
         }
@@ -111,7 +121,10 @@
             const errMsg = document.getElementById('pinErrorMsg');
 
             if (dotsContainer) dotsContainer.classList.add('shake');
-            if (errMsg) errMsg.style.display = 'block';
+            if (errMsg) {
+                errMsg.innerText = 'Incorrect PIN. Please try again.';
+                errMsg.style.display = 'block';
+            }
 
             if (typeof navigator !== 'undefined' && navigator.vibrate) {
                 try { navigator.vibrate([60, 40, 60]); } catch (e) {}
@@ -158,7 +171,6 @@
         if (!isBiometricEnabled()) return;
 
         try {
-            // Check if biometric credential exists or prompt WebAuthn challenge
             const challenge = new Uint8Array(32);
             window.crypto.getRandomValues(challenge);
 
@@ -170,10 +182,8 @@
                 }
             };
 
-            // Attempt assertion or platform authenticator
             if (navigator.credentials && navigator.credentials.get) {
-                // If a stored credential ID exists
-                const rawCredId = localStorage.getItem('pocketly_bio_cred_id');
+                const rawCredId = localStorage.getItem(BIO_CRED_KEY);
                 if (rawCredId) {
                     options.publicKey.allowCredentials = [{
                         id: Uint8Array.from(atob(rawCredId), c => c.charCodeAt(0)),
@@ -187,14 +197,14 @@
                 }
             }
         } catch (err) {
-            console.debug('[AppLock] Biometric authentication fallback to PIN:', err.message);
+            console.debug('[AppLock] Biometric fallback to PIN:', err.message);
         }
     }
 
     // Biometric Credential Registration
     async function registerBiometrics() {
         if (!window.PublicKeyCredential) {
-            if (window.showAlert) showAlert('Biometrik tidak didukung pada browser ini.', true);
+            if (window.showAlert) showAlert('Biometrics are not supported on this device/browser.', true);
             return false;
         }
 
@@ -225,7 +235,7 @@
             const credential = await navigator.credentials.create(createOptions);
             if (credential) {
                 const credIdBase64 = btoa(String.fromCharCode(...new Uint8Array(credential.rawId)));
-                localStorage.setItem('pocketly_bio_cred_id', credIdBase64);
+                localStorage.setItem(BIO_CRED_KEY, credIdBase64);
                 localStorage.setItem(BIOMETRIC_KEY, 'true');
                 return true;
             }
@@ -239,6 +249,7 @@
     // --- SETUP MODAL LOGIC ---
     function openPinSetup(title = 'Set 4-Digit PIN') {
         setupStep = 1;
+        isChangingPin = (title.includes('Change') || title.includes('Ganti'));
         firstEnteredSetupPin = '';
         currentSetupPin = '';
         updateSetupDots();
@@ -249,7 +260,7 @@
         const modal = document.getElementById('pinSetupModal');
 
         if (titleEl) titleEl.innerText = title;
-        if (descEl) descEl.innerText = 'Masukkan 4 angka untuk PIN keamanan Anda.';
+        if (descEl) descEl.innerText = 'Enter 4 digits for your security PIN.';
         if (errEl) errEl.style.display = 'none';
 
         if (modal) modal.classList.add('show');
@@ -261,6 +272,7 @@
         currentSetupPin = '';
         firstEnteredSetupPin = '';
         updateSetupDots();
+        syncSettingsUI();
     }
 
     async function handleSetupPinInput(digit) {
@@ -282,7 +294,7 @@
                     currentSetupPin = '';
                     updateSetupDots();
                     const descEl = document.getElementById('pinSetupDesc');
-                    if (descEl) descEl.innerText = 'Konfirmasi ulang 4 digit PIN Anda.';
+                    if (descEl) descEl.innerText = 'Re-enter your 4-digit PIN to confirm.';
                 }, 200);
             } else if (setupStep === 2) {
                 // Step 2 done -> Check if matches Step 1
@@ -295,12 +307,18 @@
                     syncSettingsUI();
 
                     if (window.showAlert) {
-                        showAlert('App Lock PIN berhasil diaktifkan!', false);
+                        const successMsg = isChangingPin 
+                            ? 'PIN passcode has been updated successfully!' 
+                            : 'App Lock PIN has been enabled successfully!';
+                        showAlert(successMsg, false);
                     }
                 } else {
                     const errEl = document.getElementById('setupPinErrorMsg');
                     const dots = document.getElementById('setupPinDotsContainer');
-                    if (errEl) errEl.style.display = 'block';
+                    if (errEl) {
+                        errEl.innerText = 'PIN confirmation does not match.';
+                        errEl.style.display = 'block';
+                    }
                     if (dots) dots.classList.add('shake');
 
                     setTimeout(() => {
@@ -322,6 +340,113 @@
         }
     }
 
+    // --- FORGOT PIN MODAL LOGIC ---
+    function openForgotPinModal() {
+        const modal = document.getElementById('forgotPinModal');
+        const passInput = document.getElementById('forgotPinPasswordInput');
+        const errMsg = document.getElementById('forgotPinErrorMsg');
+
+        if (passInput) passInput.value = '';
+        if (errMsg) {
+            errMsg.innerText = '';
+            errMsg.style.display = 'none';
+        }
+
+        if (modal) modal.classList.add('show');
+        setTimeout(() => {
+            if (passInput) passInput.focus();
+        }, 150);
+    }
+
+    function closeForgotPinModal() {
+        const modal = document.getElementById('forgotPinModal');
+        if (modal) modal.classList.remove('show');
+        const passInput = document.getElementById('forgotPinPasswordInput');
+        if (passInput) passInput.value = '';
+    }
+
+    async function handleVerifyAndResetPin() {
+        const passInput = document.getElementById('forgotPinPasswordInput');
+        const errMsg = document.getElementById('forgotPinErrorMsg');
+        const btnVerify = document.getElementById('btnVerifyAndResetPin');
+        const password = passInput ? passInput.value.trim() : '';
+
+        if (!password) {
+            if (errMsg) {
+                errMsg.innerText = 'Please enter your account password.';
+                errMsg.style.display = 'block';
+            }
+            return;
+        }
+
+        if (errMsg) errMsg.style.display = 'none';
+        if (btnVerify) {
+            btnVerify.disabled = true;
+            btnVerify.innerText = 'Verifying...';
+        }
+
+        try {
+            if (window.PocketlyAuth && typeof window.PocketlyAuth.verifyPassword === 'function') {
+                await window.PocketlyAuth.verifyPassword(password);
+                
+                // Success: remove PIN lock completely
+                clearAllLockData();
+                closeForgotPinModal();
+                unlockApp();
+                syncSettingsUI();
+
+                if (window.showAlert) {
+                    showAlert('Identity verified! App Lock has been reset.', false);
+                }
+            } else {
+                // Fallback: clear lock
+                clearAllLockData();
+                closeForgotPinModal();
+                unlockApp();
+                syncSettingsUI();
+            }
+        } catch (err) {
+            console.error('[AppLock] Password verification failed:', err);
+            if (errMsg) {
+                if (err.code === 'auth/wrong-password' || err.code === 'auth/invalid-credential') {
+                    errMsg.innerText = 'Incorrect account password. Please try again.';
+                } else if (err.message === 'NO_USER') {
+                    errMsg.innerText = 'No active session found. Please sign out and log in again.';
+                } else {
+                    errMsg.innerText = 'Verification failed. You can sign out and log in again below.';
+                }
+                errMsg.style.display = 'block';
+            }
+        } finally {
+            if (btnVerify) {
+                btnVerify.disabled = false;
+                btnVerify.innerText = 'Verify & Reset PIN';
+            }
+        }
+    }
+
+    async function handleForgotPinSignOut() {
+        clearAllLockData();
+        closeForgotPinModal();
+
+        const lockOverlay = document.getElementById('appLockScreen');
+        if (lockOverlay) {
+            lockOverlay.style.display = 'none';
+            isCurrentlyLocked = false;
+        }
+
+        if (window.PocketlyAuth && typeof window.PocketlyAuth.signOut === 'function') {
+            try {
+                await window.PocketlyAuth.signOut();
+            } catch (e) {
+                console.warn('[AppLock] SignOut error:', e);
+                window.location.reload();
+            }
+        } else {
+            window.location.reload();
+        }
+    }
+
     // Sync Settings Page Toggles
     function syncSettingsUI() {
         const toggle = document.getElementById('appLockToggle');
@@ -337,7 +462,7 @@
         // Check platform biometrics support
         const hasWebAuthn = Boolean(window.PublicKeyCredential);
         if (rowBio) rowBio.style.display = (enabled && hasWebAuthn) ? 'flex' : 'none';
-        if (bioToggle) bioToggle.checked = isBiometricEnabled();
+        if (bioToggle) bioToggle.checked = enabled && isBiometricEnabled();
     }
 
     // Setup Event Listeners
@@ -360,8 +485,22 @@
         const btnBio = document.getElementById('btnBiometricUnlock');
         if (btnBio) btnBio.addEventListener('click', triggerBiometricAuth);
 
-        // 3. Physical Keyboard listeners
+        // 3. Forgot PIN button on Lock Screen
+        const btnForgot = document.getElementById('btnForgotPin');
+        if (btnForgot) btnForgot.addEventListener('click', openForgotPinModal);
+
+        // 4. Physical Keyboard listeners
         window.addEventListener('keydown', (e) => {
+            const forgotModal = document.getElementById('forgotPinModal');
+            if (forgotModal && forgotModal.classList.contains('show')) {
+                if (e.key === 'Escape') {
+                    closeForgotPinModal();
+                } else if (e.key === 'Enter') {
+                    handleVerifyAndResetPin();
+                }
+                return;
+            }
+
             if (isCurrentlyLocked) {
                 if (e.key >= '0' && e.key <= '9') {
                     handlePinInput(e.key);
@@ -369,7 +508,6 @@
                     handlePinBackspace();
                 }
             } else {
-                // If setup modal is open
                 const setupModal = document.getElementById('pinSetupModal');
                 if (setupModal && setupModal.classList.contains('show')) {
                     if (e.key >= '0' && e.key <= '9') {
@@ -383,7 +521,7 @@
             }
         });
 
-        // 4. Setup modal buttons
+        // 5. Setup modal buttons
         document.querySelectorAll('.pin-key-btn[data-skey]').forEach(btn => {
             btn.addEventListener('click', () => {
                 handleSetupPinInput(btn.getAttribute('data-skey'));
@@ -399,36 +537,58 @@
         const btnCancelSetup = document.getElementById('btnCancelPinSetup');
         if (btnCancelSetup) btnCancelSetup.addEventListener('click', closePinSetup);
 
-        // 5. Settings: Toggle App Lock
-        const appLockToggle = document.getElementById('appLockToggle');
-        if (appLockToggle) {
-            appLockToggle.addEventListener('change', () => {
-                if (appLockToggle.checked) {
-                    if (!localStorage.getItem(PIN_KEY)) {
-                        appLockToggle.checked = false;
-                        openPinSetup('Buat 4-Digit PIN');
-                    } else {
-                        localStorage.setItem(ENABLED_KEY, 'true');
-                        syncSettingsUI();
-                        if (window.showAlert) showAlert('App Lock PIN aktif.', false);
-                    }
-                } else {
-                    localStorage.setItem(ENABLED_KEY, 'false');
-                    syncSettingsUI();
-                    if (window.showAlert) showAlert('App Lock dinonaktifkan.', false);
+        // 6. Forgot PIN Modal actions
+        const btnCloseForgot = document.getElementById('btnCloseForgotPin');
+        if (btnCloseForgot) btnCloseForgot.addEventListener('click', closeForgotPinModal);
+
+        const btnVerifyReset = document.getElementById('btnVerifyAndResetPin');
+        if (btnVerifyReset) btnVerifyReset.addEventListener('click', handleVerifyAndResetPin);
+
+        const btnForgotSignOut = document.getElementById('btnForgotPinSignOut');
+        if (btnForgotSignOut) btnForgotSignOut.addEventListener('click', handleForgotPinSignOut);
+
+        const btnToggleForgotPass = document.getElementById('btnToggleForgotPassVisibility');
+        if (btnToggleForgotPass) {
+            btnToggleForgotPass.addEventListener('click', () => {
+                const passInput = document.getElementById('forgotPinPasswordInput');
+                const icon = btnToggleForgotPass.querySelector('i');
+                if (!passInput) return;
+                const isPass = passInput.type === 'password';
+                passInput.type = isPass ? 'text' : 'password';
+                if (icon) {
+                    icon.className = isPass ? 'fa-regular fa-eye-slash' : 'fa-regular fa-eye';
                 }
             });
         }
 
-        // 6. Settings: Change PIN
-        const rowChangePin = document.getElementById('rowChangePin');
-        if (rowChangePin) {
-            rowChangePin.addEventListener('click', () => {
-                openPinSetup('Ganti 4-Digit PIN');
+        // 7. Settings: Toggle App Lock (Fixed Flaw: Disabling always clears PIN)
+        const appLockToggle = document.getElementById('appLockToggle');
+        if (appLockToggle) {
+            appLockToggle.addEventListener('change', () => {
+                if (appLockToggle.checked) {
+                    // Always require creating a new PIN when toggled ON
+                    appLockToggle.checked = false;
+                    openPinSetup('Create 4-Digit PIN');
+                } else {
+                    // When turned OFF: completely clear PIN & Biometrics
+                    clearAllLockData();
+                    syncSettingsUI();
+                    if (window.showAlert) {
+                        showAlert('App Lock has been disabled and your PIN was cleared.', false);
+                    }
+                }
             });
         }
 
-        // 7. Settings: Biometric Toggle
+        // 8. Settings: Change PIN
+        const rowChangePin = document.getElementById('rowChangePin');
+        if (rowChangePin) {
+            rowChangePin.addEventListener('click', () => {
+                openPinSetup('Change 4-Digit PIN');
+            });
+        }
+
+        // 9. Settings: Biometric Toggle
         const bioToggle = document.getElementById('biometricLockToggle');
         if (bioToggle) {
             bioToggle.addEventListener('change', async () => {
@@ -436,16 +596,16 @@
                     const success = await registerBiometrics();
                     bioToggle.checked = success;
                     if (success && window.showAlert) {
-                        showAlert('Biometric Unlock (Face ID / Fingerprint) aktif!', false);
+                        showAlert('Biometric Unlock (Face ID / Fingerprint) enabled!', false);
                     }
                 } else {
                     localStorage.setItem(BIOMETRIC_KEY, 'false');
-                    if (window.showAlert) showAlert('Biometric Unlock dinonaktifkan.', false);
+                    if (window.showAlert) showAlert('Biometric Unlock disabled.', false);
                 }
             });
         }
 
-        // 8. Auto-lock on app minimize / tab switch
+        // 10. Auto-lock on app minimize / tab switch
         document.addEventListener('visibilitychange', () => {
             if (document.visibilityState === 'hidden') {
                 if (isLockEnabled()) {
@@ -469,6 +629,9 @@
         lockNow: showLockScreen,
         openSetup: openPinSetup,
         closeSetup: closePinSetup,
-        isEnabled: isLockEnabled
+        openForgotModal: openForgotPinModal,
+        closeForgotModal: closeForgotPinModal,
+        isEnabled: isLockEnabled,
+        clearLock: clearAllLockData
     };
 })();
