@@ -299,27 +299,27 @@
                     <nav class="menu-list">
                         <a href="#" class="nav-link active" data-target="dashboard">
                             <span class="nav-icon"><i class="fa-solid fa-house"></i></span>
-                            <span class="nav-text">Dashboard</span>
+                            <span class="nav-text" data-i18n="nav_dashboard">Dashboard</span>
                         </a>
                         <a href="#" class="nav-link" data-target="transactions">
                             <span class="nav-icon"><i class="fa-solid fa-receipt"></i></span>
-                            <span class="nav-text">Transactions</span>
+                            <span class="nav-text" data-i18n="nav_transactions">Transactions</span>
                         </a>
                         <a href="#" class="nav-link" data-target="debts">
                             <span class="nav-icon"><i class="fa-solid fa-hand-holding-dollar"></i></span>
-                            <span class="nav-text">Debts & Loans</span>
+                            <span class="nav-text" data-i18n="nav_debts">Debts & Loans</span>
                         </a>
                         <a href="#" class="nav-link" data-target="budget">
                             <span class="nav-icon"><i class="fa-solid fa-bullseye"></i></span>
-                            <span class="nav-text">Budgets & Goals</span>
+                            <span class="nav-text" data-i18n="nav_budget">Budgets & Goals</span>
                         </a>
                         <a href="#" class="nav-link" data-target="reports">
                             <span class="nav-icon"><i class="fa-solid fa-chart-pie"></i></span>
-                            <span class="nav-text">Analytics</span>
+                            <span class="nav-text" data-i18n="nav_reports">Analytics</span>
                         </a>
                         <a href="#" class="nav-link" data-target="connections">
                             <span class="nav-icon"><i class="fa-solid fa-user-group"></i></span>
-                            <span class="nav-text">Connections</span>
+                            <span class="nav-text" data-i18n="nav_connections">Connections</span>
                         </a>
                     </nav>
                 </div>
@@ -429,7 +429,7 @@
                     <div class="card premium-hero glass-effect-card dashboard-unified-hero">
                         <div class="hero-unified-main">
                             <div class="hero-header-row">
-                                <span class="hero-label">Net Worth</span>
+                                <span class="hero-label" data-i18n="net_worth">Net Worth</span>
                                 <button type="button" id="togglePrivacyBtn" class="btn-round-small"
                                     title="Toggle Balance Privacy" aria-label="Toggle Balance Privacy">
                                     <i class="fa-solid fa-eye" id="togglePrivacyIcon"></i>
@@ -450,7 +450,7 @@
                                     <i class="fa-solid fa-arrow-down"></i>
                                 </div>
                                 <div class="stat-text-group">
-                                    <span class="stat-label">Monthly Income</span>
+                                    <span class="stat-label" data-i18n="monthly_income">Monthly Income</span>
                                     <h3 id="displayIncome" class="text-green">Rp0</h3>
                                 </div>
                             </div>
@@ -459,7 +459,7 @@
                                     <i class="fa-solid fa-arrow-up"></i>
                                 </div>
                                 <div class="stat-text-group">
-                                    <span class="stat-label">Monthly Spending</span>
+                                    <span class="stat-label" data-i18n="monthly_spending">Monthly Spending</span>
                                     <h3 id="displaySpending">Rp0</h3>
                                 </div>
                             </div>
@@ -472,7 +472,7 @@
                         <div class="dashboard-grid-col accounts-col full-width-dash-col">
                             <div class="section-header">
                                 <div class="section-title-with-desc">
-                                    <h3>Accounts & Wallets</h3>
+                                    <h3 data-i18n="accounts_wallets">Accounts & Wallets</h3>
                                 </div>
                                 <button class="btn-primary btn-round" id="openAccountModalBtn" title="Add Account">
                                     <i class="fa-solid fa-plus"></i>
@@ -910,10 +910,24 @@
                             <div class="settings-row" onclick="switchPage('connections')">
                                 <div class="set-icon bg-purple"><i class="fa-solid fa-user-group"></i></div>
                                 <div class="set-text">
-                                    <h4>Connections</h4>
+                                    <h4 data-i18n="nav_connections">Connections</h4>
                                 </div>
                                 <div class="set-action">
                                     <span class="tab-badge" id="settingReqBadge" style="display:none">0</span>
+                                    <i class="fa-solid fa-chevron-right"></i>
+                                </div>
+                            </div>
+
+                            <div class="settings-row" id="btnSettingsLanguage" onclick="window.PocketlyI18n && window.PocketlyI18n.openPicker()">
+                                <div class="set-icon bg-blue" style="background: rgba(6, 182, 212, 0.12); color: #06b6d4;"><i class="fa-solid fa-globe"></i></div>
+                                <div class="set-text">
+                                    <h4 data-i18n="settings_language">Language</h4>
+                                </div>
+                                <div class="set-action">
+                                    <span class="conv-flag-box" id="settingsLangFlagBox" style="width: 22px; height: 15px; margin-right: 4px;">
+                                        <img src="https://flagcdn.com/w40/us.png" alt="English" id="settingsLangFlagImg" class="currency-flag-img">
+                                    </span>
+                                    <span class="value-text" id="settingsLanguageText">English</span>
                                     <i class="fa-solid fa-chevron-right"></i>
                                 </div>
                             </div>
@@ -922,7 +936,7 @@
                                 onclick="switchPage('categorySettings')">
                                 <div class="set-icon bg-pink"><i class="fa-solid fa-layer-group"></i></div>
                                 <div class="set-text">
-                                    <h4>Categories</h4>
+                                    <h4 data-i18n="settings_categories">Categories</h4>
                                 </div>
                                 <div class="set-action"><i class="fa-solid fa-chevron-right"></i></div>
                             </div>
@@ -930,7 +944,7 @@
                             <div class="settings-row" id="btnSettingsCurrency" onclick="switchPage('currencySettings')">
                                 <div class="set-icon bg-yellow"><i class="fa-solid fa-coins"></i></div>
                                 <div class="set-text">
-                                    <h4>Currency</h4>
+                                    <h4 data-i18n="settings_currency">Currency</h4>
                                 </div>
                                 <div class="set-action">
                                     <span class="value-text" id="currentCurrencyText">IDR (Rp)</span>
@@ -942,7 +956,7 @@
                                 <div class="set-icon bg-blue" id="settingsThemeIconBox"><i
                                         class="fa-solid fa-palette"></i></div>
                                 <div class="set-text">
-                                    <h4>Theme Color</h4>
+                                    <h4 data-i18n="settings_theme_color">Theme Color</h4>
                                 </div>
                                 <div class="set-action">
                                     <span class="value-text" id="currentThemeText">Sapphire Blue</span>
@@ -953,7 +967,7 @@
                             <div class="settings-row">
                                 <div class="set-icon bg-dark"><i class="fa-solid fa-moon"></i></div>
                                 <div class="set-text">
-                                    <h4>Dark Mode</h4>
+                                    <h4 data-i18n="settings_dark_mode">Dark Mode</h4>
                                 </div>
                                 <div class="set-action">
                                     <label class="switch">
@@ -966,7 +980,7 @@
                             <div class="settings-row">
                                 <div class="set-icon bg-blue"><i class="fa-solid fa-volume-high"></i></div>
                                 <div class="set-text">
-                                    <h4>Sound & Haptics</h4>
+                                    <h4 data-i18n="settings_sound_haptics">Sound & Haptics</h4>
                                 </div>
                                 <div class="set-action">
                                     <label class="switch">
@@ -978,12 +992,12 @@
                         </div>
 
                         <!-- Settings: Security -->
-                        <div class="settings-group-label">Security & Privacy</div>
+                        <div class="settings-group-label" data-i18n="settings_security">Security & Privacy</div>
                         <div class="settings-list">
                             <div class="settings-row">
                                 <div class="set-icon bg-blue"><i class="fa-solid fa-shield-halved"></i></div>
                                 <div class="set-text">
-                                    <h4>App Lock (4-Digit PIN)</h4>
+                                    <h4 data-i18n="settings_app_lock">App Lock (4-Digit PIN)</h4>
                                 </div>
                                 <div class="set-action">
                                     <label class="switch">
@@ -996,7 +1010,7 @@
                             <div class="settings-row" id="rowChangePin" style="display: none; cursor: pointer;">
                                 <div class="set-icon bg-purple"><i class="fa-solid fa-hashtag"></i></div>
                                 <div class="set-text">
-                                    <h4>Change PIN Passcode</h4>
+                                    <h4 data-i18n="settings_change_pin">Change PIN Passcode</h4>
                                 </div>
                                 <div class="set-action"><i class="fa-solid fa-chevron-right"></i></div>
                             </div>
@@ -1004,7 +1018,7 @@
                             <div class="settings-row" id="rowBiometric" style="display: none;">
                                 <div class="set-icon bg-green"><i class="fa-solid fa-fingerprint"></i></div>
                                 <div class="set-text">
-                                    <h4>Biometric Unlock (Face ID / Fingerprint)</h4>
+                                    <h4 data-i18n="settings_biometrics">Biometric Unlock (Face ID / Fingerprint)</h4>
                                 </div>
                                 <div class="set-action">
                                     <label class="switch">
@@ -1017,19 +1031,19 @@
                             <div class="settings-row" id="btnChangePass">
                                 <div class="set-icon bg-orange"><i class="fa-solid fa-key"></i></div>
                                 <div class="set-text">
-                                    <h4>Change Password</h4>
+                                    <h4 data-i18n="settings_change_pass">Change Password</h4>
                                 </div>
                                 <div class="set-action"><i class="fa-solid fa-chevron-right"></i></div>
                             </div>
                         </div>
 
                         <!-- Settings: Data Management & Backup -->
-                        <div class="settings-group-label">Data & Backup</div>
+                        <div class="settings-group-label" data-i18n="settings_backup_group">Data & Backup</div>
                         <div class="settings-list">
                             <div class="settings-row" id="btnExportJSON_Settings">
                                 <div class="set-icon bg-blue"><i class="fa-solid fa-file-arrow-down"></i></div>
                                 <div class="set-text">
-                                    <h4>Backup Data (JSON)</h4>
+                                    <h4 data-i18n="settings_backup_json">Backup Data (JSON)</h4>
                                 </div>
                                 <div class="set-action"><i class="fa-solid fa-download"></i></div>
                             </div>
@@ -1037,19 +1051,19 @@
                             <div class="settings-row" id="btnImportJSON_Settings">
                                 <div class="set-icon bg-purple"><i class="fa-solid fa-file-arrow-up"></i></div>
                                 <div class="set-text">
-                                    <h4>Restore Backup</h4>
+                                    <h4 data-i18n="settings_restore_json">Restore Backup</h4>
                                 </div>
                                 <div class="set-action"><i class="fa-solid fa-upload"></i></div>
                             </div>
                         </div>
 
                         <!-- Danger Zone -->
-                        <div class="settings-group-label">Account</div>
+                        <div class="settings-group-label" data-i18n="settings_danger_group">Account</div>
                         <div class="settings-list danger-zone">
                             <div class="settings-row text-red" id="btnSettingsLogout">
                                 <div class="set-icon bg-red-light"><i class="fa-solid fa-right-from-bracket"></i></div>
                                 <div class="set-text">
-                                    <h4 class="text-red">Sign Out</h4>
+                                    <h4 class="text-red" data-i18n="settings_sign_out">Sign Out</h4>
                                 </div>
                                 <div class="set-action"><i class="fa-solid fa-chevron-right text-red"></i></div>
                             </div>
@@ -1057,7 +1071,7 @@
                             <div class="settings-row text-red" id="btnResetData">
                                 <div class="set-icon bg-red-light"><i class="fa-solid fa-trash-can"></i></div>
                                 <div class="set-text">
-                                    <h4 class="text-red">Reset All Data</h4>
+                                    <h4 class="text-red" data-i18n="settings_reset_data">Reset All Data</h4>
                                 </div>
                                 <div class="set-action"><i class="fa-solid fa-chevron-right text-red"></i></div>
                             </div>
@@ -2272,6 +2286,50 @@
         </div>
     </div>
 
+    <!-- Modal: Language Picker Popup Modal -->
+    <div id="languagePickerModal" class="modal" role="dialog" aria-modal="true" onclick="if(event.target === this) { if(window.PocketlyI18n) window.PocketlyI18n.closePicker(); }">
+        <div class="modal-content currency-picker-modal-content">
+            <div class="currency-picker-modal-header">
+                <div class="currency-picker-title-group">
+                    <div class="currency-picker-header-badge" style="background: rgba(6, 182, 212, 0.12); color: #06b6d4;">
+                        <i class="fa-solid fa-globe"></i>
+                    </div>
+                    <div>
+                        <h3 class="currency-picker-title" data-i18n="lang_modal_title">Select Language</h3>
+                        <span class="currency-picker-subtitle" data-i18n="lang_modal_subtitle">Choose your preferred display language</span>
+                    </div>
+                </div>
+                <button type="button" class="close-btn" onclick="window.PocketlyI18n && window.PocketlyI18n.closePicker()" aria-label="Close modal">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <!-- Search input -->
+            <div class="currency-picker-search-bar">
+                <i class="fa-solid fa-magnifying-glass"></i>
+                <input type="text" id="languagePickerSearchInput" placeholder="Search language or country..." data-i18n-placeholder="lang_search_placeholder" autocomplete="off">
+                <button type="button" class="currency-picker-search-clear" id="languagePickerSearchClear" style="display: none;">
+                    <i class="fa-solid fa-circle-xmark"></i>
+                </button>
+            </div>
+
+            <!-- Popular Quick Picks -->
+            <div class="currency-picker-quick-picks">
+                <span class="quick-picks-label" data-i18n="lang_popular">Popular:</span>
+                <button type="button" class="quick-pick-pill" onclick="window.PocketlyI18n.select('en')"><img src="https://flagcdn.com/w40/us.png" alt="EN" class="quick-pick-flag"> English</button>
+                <button type="button" class="quick-pick-pill" onclick="window.PocketlyI18n.select('id')"><img src="https://flagcdn.com/w40/id.png" alt="ID" class="quick-pick-flag"> Indonesia</button>
+                <button type="button" class="quick-pick-pill" onclick="window.PocketlyI18n.select('es')"><img src="https://flagcdn.com/w40/es.png" alt="ES" class="quick-pick-flag"> Español</button>
+                <button type="button" class="quick-pick-pill" onclick="window.PocketlyI18n.select('ja')"><img src="https://flagcdn.com/w40/jp.png" alt="JA" class="quick-pick-flag"> 日本語</button>
+                <button type="button" class="quick-pick-pill" onclick="window.PocketlyI18n.select('zh')"><img src="https://flagcdn.com/w40/cn.png" alt="ZH" class="quick-pick-flag"> 简体中文</button>
+            </div>
+
+            <!-- List Container -->
+            <div class="currency-picker-list-container" id="languagePickerList">
+                <!-- Dynamically populated by i18n.js -->
+            </div>
+        </div>
+    </div>
+
     <!-- Modal W: Export PDF Statement & Period Selector Modal -->
     <div id="exportPdfModal" class="modal">
         <div class="modal-content export-pdf-modal-content">
@@ -2500,6 +2558,7 @@
 
     <!-- Scripts -->
     <script src="audio-haptics.js?v=1.0"></script>
+    <script src="i18n.js?v=1.0"></script>
     <script src="app-lock.js?v=1.2"></script>
     <script src="poppins-font.js"></script>
     <script type="module" src="script.js?v=11.1"></script>
