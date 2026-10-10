@@ -79,7 +79,7 @@
             <div class="app-lock-brand">
                 <img src="logo-new.png" alt="Pocketly Logo" class="app-lock-logo">
                 <h2 class="app-lock-title">Pocketly</h2>
-                <p class="app-lock-subtitle" id="appLockPromptText">Enter 4-Digit PIN to unlock</p>
+                <p class="app-lock-subtitle" id="appLockPromptText" data-i18n="lock_enter_pin">Enter 4-Digit PIN to unlock</p>
             </div>
 
             <div class="pin-dots-container" id="pinDotsContainer" aria-label="PIN Status">
@@ -89,7 +89,7 @@
                 <div class="pin-dot" id="pdot3"></div>
             </div>
 
-            <p class="pin-error-msg" id="pinErrorMsg" style="display: none;">Incorrect PIN. Please try again.</p>
+            <p class="pin-error-msg" id="pinErrorMsg" style="display: none;" data-i18n="lock_pin_incorrect">Incorrect PIN. Please try again.</p>
 
             <div class="pin-keypad">
                 <button type="button" class="pin-key-btn" data-key="1">
@@ -144,7 +144,7 @@
             </div>
 
             <div class="pin-forgot-row">
-                <button type="button" class="btn-forgot-pin" id="btnForgotPin">Forgot PIN?</button>
+                <button type="button" class="btn-forgot-pin" id="btnForgotPin" data-i18n="forgot_pin_title">Forgot PIN?</button>
             </div>
         </div>
     </div>
@@ -154,11 +154,11 @@
         <div class="modal-body center-text text-center" style="text-align: center;">
             <i class="fa-solid fa-circle-exclamation text-blue" id="alertIcon"
                 style="font-size: 2.6rem; margin: 0 auto 14px auto; display: block; text-align: center;"></i>
-            <h3 id="alertTitle" style="font-size: 1.3rem; margin-bottom: 8px; text-align: center;">Notice</h3>
+            <h3 id="alertTitle" data-i18n="alert_notice" style="font-size: 1.3rem; margin-bottom: 8px; text-align: center;">Notice</h3>
             <p id="alertMessage"
                 style="color: var(--text-grey); font-size: 0.92rem; margin-bottom: 22px; line-height: 1.5; text-align: center;">Message...
             </p>
-            <button class="btn-primary full-width" onclick="closeAlert()">Got it</button>
+            <button class="btn-primary full-width" data-i18n="alert_got_it" onclick="closeAlert()">Got it</button>
         </div>
     </div>
 
@@ -167,13 +167,13 @@
         <div class="modal-body center-text text-center" style="text-align: center;">
             <i id="confirmIcon" class="fa-solid fa-triangle-exclamation text-red"
                 style="font-size: 2.6rem; margin: 0 auto 14px auto; display: block; text-align: center;"></i>
-            <h3 id="confirmTitle" style="font-size: 1.3rem; margin-bottom: 8px; text-align: center;">Are you sure?</h3>
-            <p id="confirmMessage"
+            <h3 id="confirmTitle" data-i18n="confirm_are_you_sure" style="font-size: 1.3rem; margin-bottom: 8px; text-align: center;">Are you sure?</h3>
+            <p id="confirmMessage" data-i18n="confirm_cannot_undone"
                 style="color: var(--text-grey); font-size: 0.92rem; margin-bottom: 22px; line-height: 1.5; text-align: center;">This action
                 cannot be undone.</p>
             <div class="confirm-actions" style="display: flex; gap: 10px;">
-                <button class="btn-secondary" style="flex: 1;" onclick="closeConfirm()">Cancel</button>
-                <button id="confirmYesBtn" class="btn-danger" style="flex: 1;">Proceed</button>
+                <button class="btn-secondary" style="flex: 1;" data-i18n="btn_cancel" onclick="closeConfirm()">Cancel</button>
+                <button id="confirmYesBtn" class="btn-danger" style="flex: 1;" data-i18n="btn_proceed">Proceed</button>
             </div>
         </div>
     </div>
@@ -2543,10 +2543,10 @@
 
     <!-- Scripts -->
     <script src="audio-haptics.js?v=1.0"></script>
-    <script src="i18n.js?v=1.0"></script>
-    <script src="app-lock.js?v=1.2"></script>
+    <script src="i18n.js?v=2.0"></script>
+    <script src="app-lock.js?v=2.0"></script>
     <script src="poppins-font.js"></script>
-    <script type="module" src="script.js?v=11.1"></script>
+    <script type="module" src="script.js?v=12.0"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
     <script defer src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script defer

@@ -3100,13 +3100,16 @@ window.showAlert = function(message, isError = true) {
     const icon = document.getElementById('alertIcon');
     if (!alertBox || !msg) return;
 
+    const translate = (txt) => (window.PocketlyI18n && typeof window.PocketlyI18n.translateText === 'function') ? window.PocketlyI18n.translateText(txt) : txt;
+    const t = (key, fallback) => (window.PocketlyI18n && typeof window.PocketlyI18n.t === 'function') ? window.PocketlyI18n.t(key, fallback) : fallback;
+
     if (isError) {
-        title.innerText = "Oops!";
+        title.innerText = t('alert_error_title', 'Oops!');
         title.style.color = "var(--red)";
         icon.className = "fa-solid fa-circle-exclamation text-red";
         icon.style.color = "var(--red)";
     } else {
-        title.innerText = "Success";
+        title.innerText = t('alert_success_title', 'Success');
         title.style.color = "var(--green)";
         icon.className = "fa-solid fa-circle-check text-green";
         icon.style.color = "var(--green)";
@@ -3114,7 +3117,13 @@ window.showAlert = function(message, isError = true) {
             window.PocketlyAudio.playSuccessChime();
         }
     }
-    msg.innerText = message;
+
+    const alertBtn = alertBox.querySelector('button') || alertBox.querySelector('.btn-primary');
+    if (alertBtn) {
+        alertBtn.innerText = t('alert_got_it', 'Got it');
+    }
+
+    msg.innerText = translate(message);
     alertBox.style.zIndex = '999999';
     alertBox.classList.add('show');
 };
@@ -3128,8 +3137,11 @@ let confirmCallback = null;
 window.showConfirm = (title, message, btnText, callback) => {
     const modal = document.getElementById('confirmationModal') || document.getElementById('customConfirm');
     
+    const translate = (txt) => (window.PocketlyI18n && typeof window.PocketlyI18n.translateText === 'function') ? window.PocketlyI18n.translateText(txt) : txt;
+    const t = (key, fallback) => (window.PocketlyI18n && typeof window.PocketlyI18n.t === 'function') ? window.PocketlyI18n.t(key, fallback) : fallback;
+
     if (!modal) {
-        if (confirm(message)) {
+        if (confirm(translate(message))) {
             if (callback) callback();
         }
         return;
@@ -3138,10 +3150,12 @@ window.showConfirm = (title, message, btnText, callback) => {
     const titleEl = modal.querySelector('#confirmTitle') || modal.querySelector('#confirmActionTitle'); 
     const msgEl = modal.querySelector('#confirmMessage') || modal.querySelector('#confirmActionMessage');
     const btnEl = modal.querySelector('#btnConfirmAction') || modal.querySelector('#confirmYesBtn');
+    const cancelBtn = modal.querySelector('#confirmCancelBtn') || modal.querySelector('.btn-secondary') || modal.querySelector('[onclick*="closeConfirm"]');
 
-    if (titleEl) titleEl.innerText = title;
-    if (msgEl) msgEl.innerText = message;
-    if (btnEl) btnEl.innerText = btnText || "Delete";
+    if (titleEl) titleEl.innerText = translate(title);
+    if (msgEl) msgEl.innerText = translate(message);
+    if (btnEl) btnEl.innerText = translate(btnText || "Delete");
+    if (cancelBtn) cancelBtn.innerText = t('btn_cancel', 'Cancel');
 
     confirmCallback = callback;
     modal.classList.add('show');

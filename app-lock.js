@@ -169,6 +169,12 @@
         const errMsg = document.getElementById('pinErrorMsg');
         if (errMsg) errMsg.style.display = 'none';
 
+        const promptEl = document.getElementById('appLockPromptText');
+        const forgotBtn = document.getElementById('btnForgotPin');
+        const t = (key, fallback) => (window.PocketlyI18n && typeof window.PocketlyI18n.t === 'function') ? window.PocketlyI18n.t(key, fallback) : fallback;
+        if (promptEl) promptEl.innerText = t('lock_enter_pin', 'Enter 4-Digit PIN to unlock');
+        if (forgotBtn) forgotBtn.innerText = t('forgot_pin_title', 'Forgot PIN?');
+
         const bioBtn = document.getElementById('btnBiometricUnlock');
         if (bioBtn) {
             bioBtn.style.visibility = isBiometricEnabled() ? 'visible' : 'hidden';
@@ -217,7 +223,8 @@
 
             if (dotsContainer) dotsContainer.classList.add('shake');
             if (errMsg) {
-                errMsg.innerText = 'Incorrect PIN. Please try again.';
+                const t = (key, fallback) => (window.PocketlyI18n && typeof window.PocketlyI18n.t === 'function') ? window.PocketlyI18n.t(key, fallback) : fallback;
+                errMsg.innerText = t('lock_pin_incorrect', 'Incorrect PIN. Please try again.');
                 errMsg.style.display = 'block';
             }
 
@@ -348,19 +355,27 @@
     // --- SETUP MODAL LOGIC ---
     function openPinSetup(title = 'Set 4-Digit PIN') {
         setupStep = 1;
-        isChangingPin = (title.includes('Change') || title.includes('Ganti'));
+        isChangingPin = (title.includes('Change') || title.includes('Ganti') || title.includes('변경') || title.includes('変更'));
         firstEnteredSetupPin = '';
         currentSetupPin = '';
         updateSetupDots();
+
+        const t = (key, fallback) => (window.PocketlyI18n && typeof window.PocketlyI18n.t === 'function') ? window.PocketlyI18n.t(key, fallback) : fallback;
 
         const titleEl = document.getElementById('pinSetupTitle');
         const descEl = document.getElementById('pinSetupDesc');
         const errEl = document.getElementById('setupPinErrorMsg');
         const modal = document.getElementById('pinSetupModal');
+        const cancelBtn = document.getElementById('btnCancelPinSetup');
 
-        if (titleEl) titleEl.innerText = title;
-        if (descEl) descEl.innerText = 'Enter 4 digits for your security PIN.';
+        if (titleEl) {
+            titleEl.innerText = isChangingPin 
+                ? t('pin_change_title', 'Change 4-Digit PIN') 
+                : t('pin_setup_title', 'Create 4-Digit PIN');
+        }
+        if (descEl) descEl.innerText = t('pin_setup_sub', 'Enter 4 digits for your security PIN.');
         if (errEl) errEl.style.display = 'none';
+        if (cancelBtn) cancelBtn.innerText = t('btn_cancel', 'Cancel');
 
         if (modal) modal.classList.add('show');
     }
@@ -393,7 +408,8 @@
                     currentSetupPin = '';
                     updateSetupDots();
                     const descEl = document.getElementById('pinSetupDesc');
-                    if (descEl) descEl.innerText = 'Re-enter your 4-digit PIN to confirm.';
+                    const t = (key, fallback) => (window.PocketlyI18n && typeof window.PocketlyI18n.t === 'function') ? window.PocketlyI18n.t(key, fallback) : fallback;
+                    if (descEl) descEl.innerText = t('pin_confirm_sub', 'Re-enter your 4-digit PIN to confirm.');
                 }, 200);
             } else if (setupStep === 2) {
                 // Step 2 complete -> Match check
@@ -421,8 +437,9 @@
                 } else {
                     const errEl = document.getElementById('setupPinErrorMsg');
                     const dots = document.getElementById('setupPinDotsContainer');
+                    const t = (key, fallback) => (window.PocketlyI18n && typeof window.PocketlyI18n.t === 'function') ? window.PocketlyI18n.t(key, fallback) : fallback;
                     if (errEl) {
-                        errEl.innerText = 'PIN confirmation does not match.';
+                        errEl.innerText = t('pin_mismatch_error', 'PIN confirmation does not match.');
                         errEl.style.display = 'block';
                     }
                     if (dots) dots.classList.add('shake');
@@ -451,6 +468,20 @@
         const modal = document.getElementById('forgotPinModal');
         const passInput = document.getElementById('forgotPinPasswordInput');
         const errMsg = document.getElementById('forgotPinErrorMsg');
+        const t = (key, fallback) => (window.PocketlyI18n && typeof window.PocketlyI18n.t === 'function') ? window.PocketlyI18n.t(key, fallback) : fallback;
+
+        if (modal) {
+            const titleEl = modal.querySelector('h2');
+            const subEl = modal.querySelector('p');
+            const btnVerify = document.getElementById('btnVerifyAndResetPin');
+            const btnSignOut = document.getElementById('btnForgotPinSignOut');
+            if (titleEl) titleEl.innerText = t('forgot_pin_title', 'Forgot PIN?');
+            if (subEl) subEl.innerText = t('forgot_pin_sub', 'Verify your account password to reset your PIN, or sign out to log in again.');
+            if (btnVerify) btnVerify.innerText = t('btn_verify_reset_pin', 'Verify & Reset PIN');
+            if (btnSignOut) {
+                btnSignOut.innerHTML = `<i class="fa-solid fa-arrow-right-from-bracket"></i> ${t('btn_signout_relogin', 'Sign Out & Re-login')}`;
+            }
+        }
 
         if (passInput) passInput.value = '';
         if (errMsg) {
@@ -476,10 +507,12 @@
         const errMsg = document.getElementById('forgotPinErrorMsg');
         const btnVerify = document.getElementById('btnVerifyAndResetPin');
         const password = passInput ? passInput.value.trim() : '';
+        const t = (key, fallback) => (window.PocketlyI18n && typeof window.PocketlyI18n.t === 'function') ? window.PocketlyI18n.t(key, fallback) : fallback;
+        const translate = (txt) => (window.PocketlyI18n && typeof window.PocketlyI18n.translateText === 'function') ? window.PocketlyI18n.translateText(txt) : txt;
 
         if (!password) {
             if (errMsg) {
-                errMsg.innerText = 'Please enter your account password.';
+                errMsg.innerText = translate('Please enter your account password.');
                 errMsg.style.display = 'block';
             }
             return;
@@ -488,7 +521,7 @@
         if (errMsg) errMsg.style.display = 'none';
         if (btnVerify) {
             btnVerify.disabled = true;
-            btnVerify.innerText = 'Verifying...';
+            btnVerify.innerText = translate('Verifying password...');
         }
 
         try {
@@ -514,18 +547,18 @@
             console.error('[AppLock] Password verification failed:', err);
             if (errMsg) {
                 if (err.code === 'auth/wrong-password' || err.code === 'auth/invalid-credential') {
-                    errMsg.innerText = 'Incorrect account password. Please try again.';
+                    errMsg.innerText = translate('Incorrect password. Please try again.');
                 } else if (err.message === 'NO_USER') {
-                    errMsg.innerText = 'No active session found. Please sign out and log in again.';
+                    errMsg.innerText = translate('Session expired. Please logout and login again.');
                 } else {
-                    errMsg.innerText = 'Verification failed. You can choose "Sign Out & Re-login" below.';
+                    errMsg.innerText = translate('Incorrect password. Please try again.');
                 }
                 errMsg.style.display = 'block';
             }
         } finally {
             if (btnVerify) {
                 btnVerify.disabled = false;
-                btnVerify.innerText = 'Verify & Reset PIN';
+                btnVerify.innerText = t('btn_verify_reset_pin', 'Verify & Reset PIN');
             }
         }
     }
