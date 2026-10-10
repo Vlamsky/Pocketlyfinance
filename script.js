@@ -2208,7 +2208,7 @@ window.getScopedExportTransactions = function() {
             });
             const sLbl = (window.PocketlyI18n && typeof window.PocketlyI18n.formatMonthYear === 'function') ? window.PocketlyI18n.formatMonthYear(sYm) : formatYmEng(sYm);
             const eLbl = (window.PocketlyI18n && typeof window.PocketlyI18n.formatMonthYear === 'function') ? window.PocketlyI18n.formatMonthYear(eYm) : formatYmEng(eYm);
-            periodLabel = `${sLbl} — ${eLbl}`;
+            periodLabel = `${sLbl} - ${eLbl}`;
             fileSuffix = `${sYm}_to_${eYm}`;
             const sParts = sYm.split('-');
             const eParts = eYm.split('-');
@@ -2373,7 +2373,11 @@ async function ensurePoppinsFont(doc) {
                 const toB64 = (buf) => {
                     let binary = '';
                     const bytes = new Uint8Array(buf);
-                    for (let i = 0; i < bytes.byteLength; i++) binary += String.fromCharCode(bytes[i]);
+                    const len = bytes.byteLength;
+                    const chunkSize = 0x8000;
+                    for (let i = 0; i < len; i += chunkSize) {
+                        binary += String.fromCharCode.apply(null, bytes.subarray(i, Math.min(i + chunkSize, len)));
+                    }
                     return window.btoa(binary);
                 };
                 regB64 = toB64(regBuf);
@@ -2397,6 +2401,898 @@ async function ensurePoppinsFont(doc) {
     return fontName;
 }
 
+// Convert ArrayBuffer to Base64 in safe chunks
+function arrayBufferToBase64(buffer) {
+    let binary = '';
+    const bytes = new Uint8Array(buffer);
+    const len = bytes.byteLength;
+    const chunkSize = 0x8000;
+    for (let i = 0; i < len; i += chunkSize) {
+        binary += String.fromCharCode.apply(null, bytes.subarray(i, Math.min(i + chunkSize, len)));
+    }
+    return window.btoa(binary);
+}
+
+// Dynamic multi-language font loader for jsPDF
+async function ensurePdfFontForLanguage(doc, lang) {
+    window._POCKETLY_FONT_CACHE = window._POCKETLY_FONT_CACHE || {};
+
+    const FONT_MAP = {
+        ja: {
+            url: 'https://cdn.jsdelivr.net/fontsource/fonts/noto-sans-jp@latest/japanese-400-normal.ttf',
+            file: 'NotoSansJP.ttf',
+            name: 'NotoSansJP'
+        },
+        ko: {
+            url: 'https://cdn.jsdelivr.net/fontsource/fonts/noto-sans-kr@latest/korean-400-normal.ttf',
+            file: 'NotoSansKR.ttf',
+            name: 'NotoSansKR'
+        },
+        zh: {
+            url: 'https://cdn.jsdelivr.net/fontsource/fonts/noto-sans-sc@latest/chinese-simplified-400-normal.ttf',
+            file: 'NotoSansSC.ttf',
+            name: 'NotoSansSC'
+        },
+        ar: {
+            url: 'https://cdn.jsdelivr.net/fontsource/fonts/noto-sans-arabic@latest/arabic-400-normal.ttf',
+            file: 'NotoSansArabic.ttf',
+            name: 'NotoSansArabic'
+        },
+        ru: {
+            url: 'https://cdn.jsdelivr.net/fontsource/fonts/roboto@latest/cyrillic-400-normal.ttf',
+            file: 'RobotoCyrillic.ttf',
+            name: 'RobotoCyrillic'
+        }
+    };
+
+    const cfg = FONT_MAP[lang];
+    if (cfg) {
+        let b64 = window._POCKETLY_FONT_CACHE[lang];
+        if (!b64) {
+            try {
+                const res = await fetch(cfg.url);
+                if (res.ok) {
+                    const buf = await res.arrayBuffer();
+                    b64 = arrayBufferToBase64(buf);
+                    window._POCKETLY_FONT_CACHE[lang] = b64;
+                }
+            } catch (err) {
+                console.warn(`Could not fetch custom PDF font for ${lang}:`, err);
+            }
+        }
+        if (b64 && doc) {
+            try {
+                doc.addFileToVFS(cfg.file, b64);
+                doc.addFont(cfg.file, cfg.name, 'normal');
+                doc.addFont(cfg.file, cfg.name, 'bold');
+                return cfg.name;
+            } catch (err) {
+                console.warn(`Could not register custom font ${cfg.name}:`, err);
+            }
+        }
+    }
+
+    // Default to Poppins for Latin languages (en, id, es, fr, de, pt, nl)
+    return await ensurePoppinsFont(doc);
+}
+
+// Complete PDF Internationalization (12 Languages)
+const PDF_I18N = {
+    statementTitle: {
+        en: "Personal Financial Statement",
+        id: "Laporan Keuangan Pribadi",
+        es: "Estado Financiero Personal",
+        fr: "État Financier Personnel",
+        de: "Persönlicher Finanzbericht",
+        ja: "個人財務諸表",
+        ko: "개인 재무 보고서",
+        zh: "个人财务报表",
+        ar: "البيان المالي الشخصي",
+        pt: "Relatório Financeiro Pessoal",
+        ru: "Личный финансовый отчет",
+        nl: "Persoonlijk Financieel Overzicht"
+    },
+    account: {
+        en: "Account",
+        id: "Akun",
+        es: "Cuenta",
+        fr: "Compte",
+        de: "Konto",
+        ja: "アカウント",
+        ko: "계정",
+        zh: "账户",
+        ar: "الحساب",
+        pt: "Conta",
+        ru: "Аккаунт",
+        nl: "Rekening"
+    },
+    period: {
+        en: "Period",
+        id: "Periode",
+        es: "Período",
+        fr: "Période",
+        de: "Zeitraum",
+        ja: "対象期間",
+        ko: "기간",
+        zh: "期间",
+        ar: "الفترة",
+        pt: "Período",
+        ru: "Период",
+        nl: "Periode"
+    },
+    generated: {
+        en: "Generated",
+        id: "Dibuat",
+        es: "Generado",
+        fr: "Généré",
+        de: "Erstellt",
+        ja: "作成日時",
+        ko: "생성일",
+        zh: "生成于",
+        ar: "تم الإنشاء",
+        pt: "Gerado",
+        ru: "Создано",
+        nl: "Gegenereerd"
+    },
+    totalIncome: {
+        en: "TOTAL INCOME",
+        id: "TOTAL PEMASUKAN",
+        es: "INGRESOS TOTALES",
+        fr: "REVENUS TOTAUX",
+        de: "GESAMTEINNAHMEN",
+        ja: "総収入",
+        ko: "총 수입",
+        zh: "总收入",
+        ar: "إجمالي الدخل",
+        pt: "RECEITA TOTAL",
+        ru: "ОБЩИЙ ДОХОД",
+        nl: "TOTALE INKOMSTEN"
+    },
+    verifiedCredits: {
+        en: "{n} verified credit(s)",
+        id: "{n} pemasukan terverifikasi",
+        es: "{n} ingreso(s) verificado(s)",
+        fr: "{n} crédit(s) vérifié(s)",
+        de: "{n} verifizierte Buchung(en)",
+        ja: "{n} 件の入金記録",
+        ko: "{n} 건의 입금 기록",
+        zh: "{n} 笔已验证收入",
+        ar: "{n} عملية إيداع موثقة",
+        pt: "{n} crédito(s) verificado(s)",
+        ru: "{n} подтвержд. поступлений",
+        nl: "{n} geverifieerde bijschrijving(en)"
+    },
+    totalExpenses: {
+        en: "TOTAL EXPENSES",
+        id: "TOTAL PENGELUARAN",
+        es: "GASTOS TOTALES",
+        fr: "DÉPENSES TOTALES",
+        de: "GESAMTAUSGABEN",
+        ja: "総支出",
+        ko: "총 지출",
+        zh: "总支出",
+        ar: "إجمالي المصروفات",
+        pt: "DESPESAS TOTAIS",
+        ru: "ОБЩИЕ РАСХОДЫ",
+        nl: "TOTALE UITGAVEN"
+    },
+    dailyAvg: {
+        en: "Avg. {amt} / day",
+        id: "Rata-rata {amt} / hari",
+        es: "Prom. {amt} / día",
+        fr: "Moy. {amt} / jour",
+        de: "Durchschn. {amt} / Tag",
+        ja: "平均 {amt} / 日",
+        ko: "일평균 {amt}",
+        zh: "日均 {amt}",
+        ar: "متوسط {amt} / يوم",
+        pt: "Média {amt} / dia",
+        ru: "Ср. {amt} / день",
+        nl: "Gem. {amt} / dag"
+    },
+    netSavings: {
+        en: "NET SAVINGS ({pct}%)",
+        id: "TABUNGAN BERSIH ({pct}%)",
+        es: "AHORRO NETO ({pct}%)",
+        fr: "ÉPARGNE NETTE ({pct}%)",
+        de: "NETTO-ERSPARNIS ({pct}%)",
+        ja: "純貯蓄額 ({pct}%)",
+        ko: "순저축액 ({pct}%)",
+        zh: "净储蓄 ({pct}%)",
+        ar: "صافي المدخرات ({pct}%)",
+        pt: "ECONOMIA LÍQUIDA ({pct}%)",
+        ru: "ЧИСТЫЕ НАКОПЛЕНИЯ ({pct}%)",
+        nl: "NETTO BESPARING ({pct}%)"
+    },
+    incomeSaved: {
+        en: "{pct}% of income saved",
+        id: "{pct}% pendapatan tersimpan",
+        es: "{pct}% de ingresos ahorrados",
+        fr: "{pct}% des revenus épargnés",
+        de: "{pct}% des Einkommens gespart",
+        ja: "収入の {pct}% を貯蓄",
+        ko: "수입의 {pct}% 저축",
+        zh: "储蓄率达到 {pct}%",
+        ar: "تم ادخار {pct}% من الدخل",
+        pt: "{pct}% da renda economizada",
+        ru: "{pct}% дохода сохранено",
+        nl: "{pct}% van inkomsten gespaard"
+    },
+    deficitDetected: {
+        en: "Deficit flow detected",
+        id: "Arus defisit terdeteksi",
+        es: "Flujo deficitario detectado",
+        fr: "Flux déficitaire détecté",
+        de: "Defizit festgestellt",
+        ja: "赤字フローが検出されました",
+        ko: "적자 흐름 감지됨",
+        zh: "检测到支出赤字",
+        ar: "تم اكتشاف عجز مالي",
+        pt: "Fluxo deficitário detectado",
+        ru: "Обнаружен дефицит",
+        nl: "Tekort geconstateerd"
+    },
+    cashHealthStatus: {
+        en: "Cash Health Status",
+        id: "Status Kesehatan Kas",
+        es: "Estado de Salud Financiera",
+        fr: "État de Santé Financière",
+        de: "Finanzieller Gesundheitsstatus",
+        ja: "財務健全ステータス",
+        ko: "재무 건전성 상태",
+        zh: "财务健康状况",
+        ar: "حالة الصحة المالية",
+        pt: "Status da Saúde Financeira",
+        ru: "Статус финансового здоровья",
+        nl: "Financiële Gezondheid"
+    },
+    savingsRetention: {
+        en: "Savings Retention",
+        id: "Retensi Tabungan",
+        es: "Retención de Ahorros",
+        fr: "Rétention d'Épargne",
+        de: "Sparquote",
+        ja: "貯蓄維持率",
+        ko: "저축 유지율",
+        zh: "储蓄留存率",
+        ar: "معدل الاحتفاظ بالمدخرات",
+        pt: "Retenção de Economias",
+        ru: "Удержание накоплений",
+        nl: "Spaarretentie"
+    },
+    activePeriod: {
+        en: "Active Period",
+        id: "Periode Aktif",
+        es: "Período Activo",
+        fr: "Période Active",
+        de: "Aktiver Zeitraum",
+        ja: "対象日数",
+        ko: "활동 기간",
+        zh: "统计周期",
+        ar: "الفترة النشطة",
+        pt: "Período Ativo",
+        ru: "Активный период",
+        nl: "Actieve Periode"
+    },
+    daysSuffix: {
+        en: "{n} Days",
+        id: "{n} Hari",
+        es: "{n} Días",
+        fr: "{n} Jours",
+        de: "{n} Tage",
+        ja: "{n} 日間",
+        ko: "{n} 일",
+        zh: "{n} 天",
+        ar: "{n} أيام",
+        pt: "{n} Dias",
+        ru: "{n} дн.",
+        nl: "{n} Dagen"
+    },
+    ratings: {
+        optimal: {
+            en: "Optimal Discipline",
+            id: "Disiplin Optimal",
+            es: "Disciplina Óptima",
+            fr: "Discipline Optimale",
+            de: "Optimale Disziplin",
+            ja: "極めて優秀な規律",
+            ko: "최적의 절제력",
+            zh: "极佳自律",
+            ar: "انضباط ممتاز",
+            pt: "Disciplina Ideal",
+            ru: "Отличная дисциплина",
+            nl: "Optimale Discipline"
+        },
+        balanced: {
+            en: "Balanced Pace",
+            id: "Keseimbangan Baik",
+            es: "Ritmo Equilibrado",
+            fr: "Rythme Équilibré",
+            de: "Ausgewogener Rhythmus",
+            ja: "バランス良好",
+            ko: "균형 잡힌 페이스",
+            zh: "稳健平衡",
+            ar: "وتيرة متوازنة",
+            pt: "Ritmo Equilibrado",
+            ru: "Хороший баланс",
+            nl: "Evenwichtig Tempo"
+        },
+        caution: {
+            en: "Caution Advised",
+            id: "Perlu Kehati-hatian",
+            es: "Precaución Sugerida",
+            fr: "Prudence Recommandée",
+            de: "Vorsicht Geraten",
+            ja: "支出に注意",
+            ko: "주의 필요",
+            zh: "建议审慎",
+            ar: "الحذر مطلوب",
+            pt: "Cautela Recomendada",
+            ru: "Требуется осторожность",
+            nl: "Voorzichtigheid Geboden"
+        },
+        action: {
+            en: "Action Required",
+            id: "Perlu Evaluasi",
+            es: "Acción Requerida",
+            fr: "Action Requise",
+            de: "Handlungsbedarf",
+            ja: "早急な見直し推奨",
+            ko: "조치 필요",
+            zh: "急需调整",
+            ar: "يتطلب اتخاذ إجراء",
+            pt: "Ação Necessária",
+            ru: "Требуются меры",
+            nl: "Actie Vereist"
+        }
+    },
+    sec1Title: {
+        en: "1. Spending Breakdown by Category",
+        id: "1. Rincian Pengeluaran berdasarkan Kategori",
+        es: "1. Desglose de Gastos por Categoría",
+        fr: "1. Répartition des Dépenses par Catégorie",
+        de: "1. Ausgabenaufschlüsselung nach Kategorie",
+        ja: "1. カテゴリ別支出内訳",
+        ko: "1. 카테고리별 지출 내역",
+        zh: "1. 分类支出明细",
+        ar: "1. تفاصيل النفقات حسب الفئة",
+        pt: "1. Detalhamento de Gastos por Categoria",
+        ru: "1. Структура расходов по категориям",
+        nl: "1. Uitgavenoverzicht per Categorie"
+    },
+    sec1Subtitle: {
+        en: "Distribution of outgoing expenses categorized for this statement period",
+        id: "Distribusi pengeluaran yang dikelompokkan selama periode laporan ini",
+        es: "Distribución de gastos clasificados para este período del estado",
+        fr: "Distribution des dépenses classées pour cette période de relevé",
+        de: "Verteilung der Ausgaben kategorisiert für diesen Berichtszeitraum",
+        ja: "当対象期間におけるカテゴリ別の支出配分",
+        ko: "해당 보고 기간 동안 분류된 지출 항목 분포",
+        zh: "统计周期内按类别分类的资金支出分布",
+        ar: "توزيع المصروفات المصنفة خلال فترة هذا الكشف",
+        pt: "Distribuição das despesas categorizadas para este período do relatório",
+        ru: "Распределение расходов по категориям за отчетный период",
+        nl: "Verdeling van de uitgaven gecategoriseerd voor deze periode"
+    },
+    tableHeadCat: {
+        en: ["Category", "Amount Spent", "% of Total", "Budget Status"],
+        id: ["Kategori", "Jumlah Terpakai", "% dari Total", "Status Anggaran"],
+        es: ["Categoría", "Monto Gastado", "% del Total", "Estado de Presupuesto"],
+        fr: ["Catégorie", "Montant Dépensé", "% du Total", "Statut du Budget"],
+        de: ["Kategorie", "Ausgegebener Betrag", "% von Gesamt", "Budgetstatus"],
+        ja: ["カテゴリ", "支出金額", "全体割合", "予算状況"],
+        ko: ["카테고리", "지출액", "전체 비율", "예산 상태"],
+        zh: ["类别", "支出金额", "占比", "预算状态"],
+        ar: ["الفئة", "المبلغ المصروف", "% من الإجمالي", "حالة الميزانية"],
+        pt: ["Categoria", "Valor Gasto", "% do Total", "Status do Orçamento"],
+        ru: ["Категория", "Сумма расходов", "% от итога", "Статус бюджета"],
+        nl: ["Categorie", "Besteed Bedrag", "% van Totaal", "Budgetstatus"]
+    },
+    statusNormal: {
+        en: "Normal (<20%)",
+        id: "Wajar (<20%)",
+        es: "Normal (<20%)",
+        fr: "Normal (<20%)",
+        de: "Normal (<20%)",
+        ja: "標準的 (<20%)",
+        ko: "적정 (<20%)",
+        zh: "正常 (<20%)",
+        ar: "طبيعي (<20%)",
+        pt: "Normal (<20%)",
+        ru: "В норме (<20%)",
+        nl: "Normaal (<20%)"
+    },
+    statusModerate: {
+        en: "Moderate (20-35%)",
+        id: "Moderat (20-35%)",
+        es: "Moderado (20-35%)",
+        fr: "Modéré (20-35%)",
+        de: "Moderat (20-35%)",
+        ja: "中程度 (20-35%)",
+        ko: "보통 (20-35%)",
+        zh: "中等 (20-35%)",
+        ar: "متوسط (20-35%)",
+        pt: "Moderado (20-35%)",
+        ru: "Умеренно (20-35%)",
+        nl: "Gematigd (20-35%)"
+    },
+    statusHigh: {
+        en: "High Share (>35%)",
+        id: "Porsi Tinggi (>35%)",
+        es: "Proporción Alta (>35%)",
+        fr: "Part Élevée (>35%)",
+        de: "Hoher Anteil (>35%)",
+        ja: "高比率 (>35%)",
+        ko: "높은 비중 (>35%)",
+        zh: "偏高占比 (>35%)",
+        ar: "نسبة عالية (>35%)",
+        pt: "Alta Parcela (>35%)",
+        ru: "Высокая доля (>35%)",
+        nl: "Hoog Aandeel (>35%)"
+    },
+    noCategorizedExpenses: {
+        en: "No Categorized Expenses",
+        id: "Tidak Ada Pengeluaran",
+        es: "Sin Gastos Categorizados",
+        fr: "Aucune Dépense Catégorisée",
+        de: "Keine kategorisierten Ausgaben",
+        ja: "記録された支出はありません",
+        ko: "분류된 지출 없음",
+        zh: "暂无分类支出",
+        ar: "لا توجد نفقات مصنفة",
+        pt: "Sem Despesas Categorizadas",
+        ru: "Нет категорий расходов",
+        nl: "Geen gecategoriseerde uitgaven"
+    },
+    totalExpensesRow: {
+        en: "Total Expenses",
+        id: "Total Pengeluaran",
+        es: "Gastos Totales",
+        fr: "Dépenses Totales",
+        de: "Gesamtausgaben",
+        ja: "支出合計",
+        ko: "총 지출액",
+        zh: "总支出",
+        ar: "إجمالي النفقات",
+        pt: "Total de Despesas",
+        ru: "Всего расходов",
+        nl: "Totale Uitgaven"
+    },
+    sustainablyFunded: {
+        en: "Sustainably Funded",
+        id: "Terdanai Aman",
+        es: "Financiado Sosteniblemente",
+        fr: "Financé Durablement",
+        de: "Nachhaltig Finanziert",
+        ja: "収支黒字で安全",
+        ko: "안정적 충당",
+        zh: "资金充裕安全",
+        ar: "تمويل مستدام",
+        pt: "Financiado com Segurança",
+        ru: "Устойчивый баланс",
+        nl: "Duurzaam Gefinancierd"
+    },
+    exceedsIncome: {
+        en: "Exceeds Income",
+        id: "Melebihi Pemasukan",
+        es: "Excede los Ingresos",
+        fr: "Dépasse les Revenus",
+        de: "Übersteigt Einnahmen",
+        ja: "収入を超過",
+        ko: "수입 초과",
+        zh: "超出当期收入",
+        ar: "يتجاوز الدخل",
+        pt: "Excede a Renda",
+        ru: "Превышает доход",
+        nl: "Overschrijdt Inkomsten"
+    },
+    sec2Title: {
+        en: "2. Financial Health Assessment & Action Plan",
+        id: "2. Evaluasi Kesehatan Finansial & Rencana Aksi",
+        es: "2. Evaluación de Salud Financiera y Plan de Acción",
+        fr: "2. Évaluation de la Santé Financière et Plan d'Action",
+        de: "2. Finanzielle Bewertung & Aktionsplan",
+        ja: "2. 財務健全度評価とアクションプラン",
+        ko: "2. 재무 건전성 평가 및 실행 계획",
+        zh: "2. 财务健康评估与行动建议",
+        ar: "2. تقييم الصحة المالية وخطة العمل",
+        pt: "2. Avaliação de Saúde Financeira e Plano de Ação",
+        ru: "2. Оценка финансового здоровья и план действий",
+        nl: "2. Financiële Gezondheidsbeoordeling & Actieplan"
+    },
+    sec2Subtitle: {
+        en: "Personalized takeaways and practical next steps tailored to your monthly cash flow",
+        id: "Wawasan khusus dan langkah praktis yang disesuaikan dengan arus kas Anda",
+        es: "Conclusiones personalizadas y pasos prácticos adaptados a tu flujo de caja",
+        fr: "Points clés personnalisés et étapes pratiques adaptées à votre trésorerie",
+        de: "Personalisierte Erkenntnisse und praktische Schritte für Ihren Cashflow",
+        ja: "あなたの収支パターンに合わせた実践的なインサイトと次の一歩",
+        ko: "월간 현금 흐름에 맞춘 맞춤형 분석 및 실천 단계",
+        zh: "根据您的收支现金流定制的个性化见解与实用行动建议",
+        ar: "رؤى مخصصة وخطوات عملية مصممة وفقا لتدفقك النقدي الشهري",
+        pt: "Insights personalizados e passos práticos adaptados ao seu fluxo de caixa",
+        ru: "Персональные выводы и практические шаги на основе ваших финансов",
+        nl: "Persoonlijke inzichten en praktische vervolgstappen voor uw cashflow"
+    },
+    narrativeExcellent: {
+        en: "Outstanding run in {period}! You kept {pct}% of your income tucked away, finishing with a net cash surplus of {net}. Your main outflow was {cat} ({catPct}% of spend), but your strong financial discipline kept you comfortably in the green.",
+        id: "Pencapaian luar biasa di {period}! Anda berhasil menyisihkan {pct}% pendapatan, menghasilkan surplus bersih {net}. Pengeluaran terbesar adalah {cat} ({catPct}% dari belanja), namun kedisiplinan keuangan Anda membuat posisi tetap aman.",
+        es: "¡Excelente desempeño en {period}! Guardaste el {pct}% de tus ingresos, logrando un superávit neto de {net}. El gasto principal fue {cat} ({catPct}% del total), pero tu disciplina financiera te mantuvo en terreno positivo.",
+        fr: "Excellente gestion en {period} ! Vous avez conservé {pct}% de vos revenus, avec un surplus net de {net}. La dépense principale a été {cat} ({catPct}% du total), mais votre rigueur vous maintient dans le vert.",
+        de: "Hervorragende Leistung im {period}! Sie haben {pct}% Ihres Einkommens gespart und einen Nettoüberschuss von {net} erzielt. Größter Posten war {cat} ({catPct}% der Ausgaben), doch Ihre Disziplin hält Sie klar im Plus.",
+        ja: "{period}は素晴らしい成果でした！収入の{pct}%を手元に残し、{net}の純剰余金を確保しました。主な支出は{cat}（支出の{catPct}%）でしたが、優れた規律により健全な黒字を維持しています。",
+        ko: "{period} 동안 탁월한 성과를 거두었습니다! 수입의 {pct}%를 저축하여 {net}의 순 흑자를 기록했습니다. 주요 지출은 {cat}(지출의 {catPct}%)이었으나, 뛰어난 재정 절제력으로 안전하게 흑자를 유지했습니다.",
+        zh: "{period} 表现非常出色！您留存了 {pct}% 的当期收入，实现了 {net} 的净资金盈余。最大单项支出为 {cat}（占支出的 {catPct}%），良好的财务自律让您的资产稳步增长。",
+        ar: "أداء متميز في {period}! لقد ادخرت {pct}% من دخلك محققا فائضا صافيا قدره {net}. كانت النفقات الرئيسية في {cat} ({catPct}% من الإنفاق)، لكن انضباطك المالي أبقى ميزانيتك بأمان تام.",
+        pt: "Excelente desempenho em {period}! Você guardou {pct}% da sua renda, alcançando um superávit líquido de {net}. O maior gasto foi {cat} ({catPct}% do total), mas sua disciplina manteve você no azul com folga.",
+        ru: "Отличный результат за {period}! Вы сохранили {pct}% дохода с чистым профицитом {net}. Основные траты пришлись на категорию {cat} ({catPct}% расходов), но строгая дисциплина помогла остаться в надежном плюсе.",
+        nl: "Uitstekend resultaat in {period}! U heeft {pct}% van uw inkomen behouden met een netto surplus van {net}. De grootste uitgave was {cat} ({catPct}% van de uitgaven), maar uw discipline houdt u ruim in het groen."
+    },
+    narrativeSolid: {
+        en: "Solid financial balance in {period}! You saved {pct}% of what you brought in ({net} net surplus). Your biggest spending went toward {cat} at {catPct}%. With steady habits already working, minor trims can unlock extra cash even faster.",
+        id: "Keseimbangan keuangan yang solid di {period}! Anda menabung {pct}% dari pemasukan (surplus bersih {net}). Pengeluaran terbesar pada {cat} sebesar {catPct}%. Kebiasaan baik Anda sudah terbentuk, sedikit penyesuaian akan mempercepat tabungan.",
+        es: "¡Equilibrio financiero sólido en {period}! Ahorraste el {pct}% de tus ingresos (superávit neto de {net}). El mayor gasto fue {cat} con un {catPct}%. Con estos buenos hábitos, pequeños ajustes liberarán aún más fondos.",
+        fr: "Solide équilibre financier en {period} ! Vous avez épargné {pct}% de vos rentrées (surplus net de {net}). La plus grosse dépense concerne {cat} à {catPct}%. Avec ces bonnes habitudes, de légers ajustements libéreront encore plus de fonds.",
+        de: "Solide finanzielle Balance im {period}! Sie haben {pct}% Ihrer Einnahmen gespart ({net} Nettoüberschuss). Die größte Ausgabe war {cat} mit {catPct}%. Ihre guten Gewohnheiten greifen bereits, kleine Anpassungen sparen noch mehr.",
+        ja: "{period}は安定した健全な財務バランスです！収入の{pct}%を貯蓄に回し（純剰余金 {net}）、最大の支出は{cat}（{catPct}%）でした。良い習慣が定着しており、少しの支出見直しでさらに資金を増やせます。",
+        ko: "{period} 동안 견고한 재정 균형을 유지했습니다! 수입의 {pct}%를 저축했습니다({net} 순 흑자). 최대 지출은 {cat}({catPct}%)이었습니다. 좋은 습관이 자리잡아 작은 조정으로도 더 많은 여유 자금을 확보할 수 있습니다.",
+        zh: "{period} 财务收支非常稳健！您留存了收入的 {pct}%（净盈余 {net}）。支出最多的类别是 {cat}（占比 {catPct}%）。良好的习惯已见成效，微小的优化即可释放更多储备金。",
+        ar: "توازن مالي قوي في {period}! لقد وفرت {pct}% من إجمالي دخلك (فائض صافٍ قدره {net}). كانت أكبر نفقاتك في {cat} بنسبة {catPct}%. مع عاداتك الثابتة، يمكن لتقليص بسيط أن يوفر أموالا إضافية بسرعة.",
+        pt: "Equilíbrio financeiro sólido em {period}! Você economizou {pct}% da sua receita (superávit líquido de {net}). O maior gasto foi em {cat} com {catPct}%. Seus bons hábitos já funcionam bem; pequenos ajustes trarão ainda mais resultados.",
+        ru: "Уверенный финансовый баланс за {period}! Вы отложили {pct}% доходов (чистый профицит {net}). Больше всего ушло на {cat}  -  {catPct}%. Ваши привычки работают стабильно, а точечная оптимизация освободит еще больше средств.",
+        nl: "Solide financiële balans in {period}! U spaarde {pct}% van uw inkomsten (netto surplus van {net}). De grootste kostenpost was {cat} met {catPct}%. Met deze goede gewoontes levert een kleine bijsturing direct extra cash op."
+    },
+    narrativeModest: {
+        en: "You kept things afloat this month with a modest {net} surplus ({pct}% saved). Most outflows went into {cat} ({catPct}%). Giving yourself a bit more buffer next month will give your wallet much more breathing room.",
+        id: "Arus kas tetap terkendali bulan ini dengan surplus {net} ({pct}% tersimpan). Sebagian besar keluar untuk {cat} ({catPct}%). Menyiapkan cadangan sedikit lebih besar bulan depan akan membuat dompet Anda jauh lebih lega.",
+        es: "Mantuviste la estabilidad este mes con un modesto superávit de {net} ({pct}% ahorrado). La mayor salida fue en {cat} ({catPct}%). Darte un poco más de margen el próximo mes te dará mucha más tranquilidad.",
+        fr: "Vous avez maintenu le cap ce mois-ci avec un léger surplus de {net} ({pct}% épargné). La majeure partie des sorties est allée à {cat} ({catPct}%). Prévoir une marge supplémentaire le mois prochain vous apportera un vrai confort.",
+        de: "Sie haben die Finanzen im Plus gehalten mit einem moderaten Überschuss von {net} ({pct}% gespart). Die meisten Ausgaben flossen in {cat} ({catPct}%). Ein etwas größeres Polster nächsten Monat bringt deutliche Entlastung.",
+        ja: "今月は小幅な余剰（{net}、貯蓄率{pct}%）で維持できました。支出の大半は{cat}（{catPct}%）でした。来月は少し余裕を持たせることで、家計にさらに安心感が生まれます。",
+        ko: "이번 달은 {net}의 완만한 흑자(저축률 {pct}%)로 균형을 지켰습니다. 대부분의 지출은 {cat}({catPct}%)에 집중되었습니다. 다음 달에는 완충 여유를 조금 더 확보하면 훨씬 여유로워집니다.",
+        zh: "本周期保持了基本收支平稳，实现了小幅资金盈余 {net}（储蓄率 {pct}%）。主要支出流向了 {cat}（占比 {catPct}%）。下个月适当预留更多缓冲金，财务状况将更加从容。",
+        ar: "حافظت على توازنك المالي هذا الشهر بفائض معتدل قدره {net} ({pct}% مدخرات). ذهب معظم الإنفاق إلى {cat} ({catPct}%). منح نفسك مساحة أمان أكبر الشهر المقبل سيمنحك راحة مالية أكبر.",
+        pt: "Você manteve as contas no azul com um superávit moderado de {net} ({pct}% poupado). A maior parte saiu em {cat} ({catPct}%). Criar uma folga um pouco maior no próximo mês trará muito mais tranquilidade.",
+        ru: "Финансы остались под контролем со скромным профицитом {net} (сохранено {pct}%). Основная доля пришлась на {cat} ({catPct}%). Небольшой дополнительный запас в следующем месяце обеспечит комфортный резерв.",
+        nl: "U hield de balans op peil met een bescheiden overschot van {net} ({pct}% gespaard). Het merendeel ging naar {cat} ({catPct}%). Een iets ruimere buffer volgende maand geeft meteen meer financiële ademruimte."
+    },
+    narrativeDeficit: {
+        en: "Outflows outpaced income by {net} in {period}. Occasional heavy spending cycles happen, especially with {cat} taking up {catPct}% of total costs. The best move now is steadying the ship with a couple of painless spending cuts next month.",
+        id: "Pengeluaran melebihi pemasukan sebesar {net} di {period}. Pengeluaran besar sesekali wajar terjadi, terutama {cat} yang mencapai {catPct}% total biaya. Langkah terbaik sekarang adalah menstabilkan kembali dengan sedikit penghematan bulan depan.",
+        es: "Los gastos superaron a los ingresos por {net} en {period}. Períodos de gastos elevados ocurren, especialmente con {cat} absorbiendo el {catPct}% de los costes. La mejor medida ahora es estabilizar la situación con recortes moderados.",
+        fr: "Les dépenses ont dépassé les revenus de {net} en {period}. Des pics ponctuels peuvent arriver, surtout avec {cat} représentant {catPct}% du total. L'essentiel est de redresser la barre le mois prochain grâce à quelques ajustements ciblés.",
+        de: "Ausgaben überstiegen Einnahmen um {net} im {period}. Phasen erhöhter Ausgaben kommen vor, insbesondere da {cat} {catPct}% ausmachte. Empfohlen wird nun eine Stabilisierung durch moderate Einsparungen im nächsten Monat.",
+        ja: "{period}の支出は収入を{net}上回りました。特に{cat}が支出全体の{catPct}%を占めています。来月は無理のない範囲で支出を見直し、収支バランスを整えましょう。",
+        ko: "{period} 동안 지출이 수입을 {net} 초과했습니다. 특히 {cat} 항목이 전체 비용의 {catPct}%를 차지했습니다. 다음 달에는 부담 없는 범위에서 지출을 조절하여 수지를 안정화하는 것을 권장합니다.",
+        zh: "{period} 的总开支超出了收入 {net}。高支出周期偶有发生，尤其是 {cat} 占据了总支出的 {catPct}%。当下最有效的策略是通过温和精简开支，在下个周期迅速恢复收支平衡。",
+        ar: "تجاوزت المصروفات الدخل بمقدار {net} في {period}. فترات الإنفاق المرتفع واردة أحيانا، خاصة مع استحواذ {cat} على {catPct}% من التكاليف. الحل الأمثل الآن هو إعادة التوازن بخطوات ترشيد بسيطة للشهر المقبل.",
+        pt: "As despesas superaram as receitas em {net} em {period}. Picos esporádicos acontecem, principalmente com {cat} representando {catPct}% dos custos. O melhor passo agora é reequilibrar o caixa com pequenos cortes no próximo mês.",
+        ru: "Расходы превысили доходы на {net} за {period}. Периоды крупных трат случаются, особенно с долей {cat} в {catPct}%. Оптимальный шаг  -  восстановить баланс парой комфортных сокращений расходов в следующем месяце.",
+        nl: "De uitgaven overstegen de inkomsten met {net} in {period}. Periodieke uitschieters komen voor, zeker met {cat} op {catPct}% van de kosten. Breng de situatie volgende maand weer in balans met gerichte besparingen."
+    },
+    stepFoodTitle: {
+        en: "Dial In Your Food & Dining Rhythm", id: "Atur Ritme Makan & Jajan", es: "Ajusta el Ritmo de Alimentación", fr: "Ajustez vos Repas & Sorties", de: "Ernährungs- & Gastro-Ausgaben Optimieren", ja: "食費・外食のリズムを整える", ko: "식비 및 외식 습관 조절하기", zh: "合理规划餐饮与外食开销", ar: "تنظيم ميزانية الطعام والمطاعم", pt: "Ajuste os Gastos com Alimentação", ru: "Оптимизируйте траты на питание", nl: "Eten & Horeca Uitgaven Balanceren"
+    },
+    stepFoodDesc: {
+        en: "Food took {amt} ({pct}% of spend). Swapping just 2-3 outside meals a week for easy home cooking easily frees up {save} next month without feeling restrictive.",
+        id: "Makan & minum mencapai {amt} ({pct}% pengeluaran). Mengganti 2-3 kali makan di luar dengan masak sendiri bisa menghemat {save} bulan depan tanpa terasa berat.",
+        es: "La comida sumó {amt} ({pct}% del gasto). Cambiar solo 2 o 3 comidas fuera por cocina en casa liberará fácilmente {save} el próximo mes sin privaciones.",
+        fr: "L'alimentation a représenté {amt} ({pct}% des dépenses). Cuisiner chez vous 2 ou 3 fois de plus par semaine permet d'économiser facilement {save} le mois prochain.",
+        de: "Essen & Trinken machten {amt} aus ({pct}%). Bereits 2-3 selbst gekochte Mahlzeiten pro Woche sparen nächsten Monat mühelos {save} ein.",
+        ja: "食費は{amt}（支出の{pct}%）でした。週に2〜3回の外食を自炊に替えるだけで、来月無理なく{save}を節約できます。",
+        ko: "식비가 {amt}(지출의 {pct}%)를 차지했습니다. 주 2~3회 외식을 집밥으로 전환하면 다음 달 부담 없이 {save}의 여유 자금을 확보할 수 있습니다.",
+        zh: "餐饮支出达 {amt}（占 {pct}%）。每周只需减少 2 至 3 次外食并亲自下厨，下个月即可轻松省下 {save}。",
+        ar: "استحوذ الطعام على {amt} ({pct}% من الإنفاق). استبدال وجبتين أو 3 خارج المنزل بالطهي المنزلي يوفر {save} الشهر القادم بكل أريحية.",
+        pt: "Alimentação consumiu {amt} ({pct}% do total). Trocar 2 a 3 refeições fora por preparo caseiro na semana pode liberar {save} no próximo mês.",
+        ru: "На еду ушло {amt} ({pct}% расходов). Замена 2–3 приемов пищи вне дома домашней готовкой легко освободит {save} в следующем месяце.",
+        nl: "Eten & drinken bedroeg {amt} ({pct}% van het totaal). Vervang wekelijks 2-3 etentjes buiten de deur om moeiteloos {save} vrij te spelen."
+    },
+    stepShoppingTitle: {
+        en: "Use the 48-Hour Cart Rule", id: "Gunakan Aturan Keranjang 48 Jam", es: "Aplica la Regla de las 48 Horas", fr: "Appliquez la Règle des 48 Heures", de: "Die 48-Stunden-Warenkorb-Regel Nutzen", ja: "48時間カートルールを実践する", ko: "48시간 장바구니 규칙 적용하기", zh: "践行 48 小时购物车冷静期", ar: "تطبيق قاعدة سلة التسوق لـ 48 ساعة", pt: "Use a Regra das 48 Horas no Carrinho", ru: "Правило 48 часов перед покупкой", nl: "Pas de 48-Uurs Winkelmandregel Toe"
+    },
+    stepShoppingDesc: {
+        en: "Shopping totaled {amt}. Before checking out on non-essential items, wait 48 hours. Most impulse desires cool off naturally, leaving more money directly in your pocket.",
+        id: "Belanja mencapai {amt}. Sebelum membeli barang non-esensial, tunggu 48 jam. Keinginan impulsif biasanya mereda dengan sendirinya, menjaga dompet Anda tetap aman.",
+        es: "Las compras sumaron {amt}. Antes de pagar artículos no esenciales, espera 48 horas. La mayoría de compras impulsivas se disipan solas, protegiendo tu dinero.",
+        fr: "Les achats ont totalisé {amt}. Attendez 48 heures avant de finaliser un achat non essentiel. Les envies impulsives s'estompent naturellement.",
+        de: "Einkäufe beliefen sich auf {amt}. Warten Sie vor dem Kauf nicht zwingender Dinge 48 Stunden. Spontane Kaufimpulse verfliegen meist von selbst.",
+        ja: "ショッピングの合計は{amt}でした。不要不急の買い物は48時間置くことで衝動買いが自然と収まり、手元に残る資金が増えます。",
+        ko: "쇼핑 지출이 {amt}에 달했습니다. 비필수품 구매 전 48시간을 기다려보세요. 충동구매 욕구가 자연스럽게 가라앉아 자금을 지킬 수 있습니다.",
+        zh: "购物总计 {amt}。在结算非必需品前请等待 48 小时，冲动消费倾向会自然降温，直接保留更多现金流。",
+        ar: "بلغ إجمالي التسوق {amt}. انتظر 48 ساعة قبل شراء أي غرض غير ضروري، فمعظم الرغبات اللحظية تتلاشى ذاتيا ويبقى المال في جيبك.",
+        pt: "Compras totalizaram {amt}. Antes de comprar itens não essenciais, aguarde 48 horas. Desejos impulsivos costumam esfriar sozinhos, poupando seu dinheiro.",
+        ru: "Покупки составили {amt}. Подождите 48 часов перед оплатой спонтанных товаров. Большинство импульсивных желаний остывает само собой.",
+        nl: "Aankopen bedroegen {amt}. Wacht bij niet-essentiële uitgaven 48 uur. Veel impulsen verdwijnen vanzelf, waardoor u geld in uw zak houdt."
+    },
+    stepTransportTitle: {
+        en: "Streamline Commute & Travel Expenses", id: "Optimalkan Biaya Transportasi", es: "Optimiza Gastos de Transporte y Viajes", fr: "Optimisez vos Déplacements et Trajets", de: "Fahrt- und Pendelkosten Straffen", ja: "交通・移動費を最適化する", ko: "교통 및 이동 비용 최적화하기", zh: "合理优化通勤与出行支出", ar: "تنظيم مصاريف التنقل والمواصلات", pt: "Otimize Gastos com Transporte", ru: "Оптимизируйте транспортные расходы", nl: "Optimaliseer Reiskosten & Vervoer"
+    },
+    stepTransportDesc: {
+        en: "Travel expenses reached {amt} ({pct}%). Bundling weekly errands and reviewing transit pass options can easily shave 10-15% off this category next month.",
+        id: "Transportasi mencapai {amt} ({pct}%). Menggabungkan rute perjalanan atau mengevaluasi opsi tiket langganan dapat menghemat 10-15% pos ini di bulan depan.",
+        es: "El transporte alcanzó {amt} ({pct}%). Agrupar gestiones semanales y revisar abonos de transporte puede ahorrar un 10-15% el próximo mes.",
+        fr: "Les transports ont atteint {amt} ({pct}%). Regrouper vos trajets et comparer les abonnements permet d'économiser facilement 10 à 15% le mois prochain.",
+        de: "Mobilität lag bei {amt} ({pct}%). Erledigungen bündeln und Tarifoptionen prüfen kann die Kosten im nächsten Monat problemlos um 10-15% senken.",
+        ja: "移動費は{amt}（{pct}%）でした。移動のまとめや定期券・交通手段の見直しにより、来月10〜15%の削減が期待できます。",
+        ko: "교통비가 {amt}({pct}%)에 달했습니다. 이동 동선을 묶고 대중교통 정기권 등을 점검하면 다음 달 10~15%를 쉽게 절감할 수 있습니다.",
+        zh: "交通出行开支为 {amt}（占 {pct}%）。合并每周外出行程并评估通票优惠，可在下个月轻松减少 10-15% 的此类支出。",
+        ar: "بلغت تكاليف النقل {amt} ({pct}%). تنظيم المشاوير الأسبوعية ومراجعة خيارات الاشتراكات يخفض هذه الفئة بنسبة 10-15% الشهر القادم.",
+        pt: "Transporte atingiu {amt} ({pct}%). Agrupar deslocamentos e revisar opções de passes pode cortar facilmente de 10% a 15% deste grupo no próximo mês.",
+        ru: "Транспорт составил {amt} ({pct}%). Объединение поездок и ревизия проездных тарифов могут сэкономить 10–15% на этой статье в следующем месяце.",
+        nl: "Vervoer bedroeg {amt} ({pct}%). Combineer ritten en bekijk abonnementsopties om volgende maand gemakkelijk 10-15% te besparen."
+    },
+    stepBillsTitle: {
+        en: "Audit Hidden Recurring Drains", id: "Audit Tagihan & Langganan Rutin", es: "Revisa Gastos Fijos y Suscripciones", fr: "Auditez les Prélèvements Récurrents", de: "Wiederkehrende Fixkosten Überprüfen", ja: "固定費・サブスクリプションを点検する", ko: "고정비 및 정기 구독 점검하기", zh: "排查隐形定期订阅扣款", ar: "مراجعة الاشتراكات والفواتير المتكررة", pt: "Faça uma Auditoria nas Assinaturas", ru: "Проверьте регулярные подписки", nl: "Onderzoek Vaste Lasten & Abonnementen"
+    },
+    stepBillsDesc: {
+        en: "Fixed lifestyle costs took {amt}. Take 5 minutes to audit recurring subscriptions and service plans - canceling just 1 or 2 unused services stops unnecessary monthly leak.",
+        id: "Biaya rutin mencapai {amt}. Luangkan 5 menit memeriksa langganan bulanan - membatalkan 1 atau 2 layanan yang jarang dipakai akan menghentikan kebocoran rutin.",
+        es: "Los costes fijos sumaron {amt}. Revisa 5 minutos tus suscripciones y planes: cancelar solo 1 o 2 servicios sin uso frenará fugas mensuales innecesarias.",
+        fr: "Les coûts récurrents ont pris {amt}. Prenez 5 minutes pour examiner vos abonnements : en résilier un ou deux inutilisés stoppe immédiatement les fuites.",
+        de: "Fixe Kosten lagen bei {amt}. Nehmen Sie sich 5 Minuten für einen Abo-Check: 1-2 ungenutzte Dienste zu kündigen beendet unnötige monatliche Verluste.",
+        ja: "固定費・生活費は{amt}でした。使っていない定期サービスやプランを点検して1〜2個解約するだけで、毎月の無駄な出費を止められます。",
+        ko: "고정 생활비가 {amt}에 달했습니다. 정기 구독 목록을 점검하여 사용하지 않는 서비스 1~2개만 정리해도 불필요한 지출 누수를 막을 수 있습니다.",
+        zh: "固定生活开支为 {amt}。花 5 分钟排查自动续费订阅，取消 1 到 2 项闲置服务，即可立即截断不必要的每月资金流失。",
+        ar: "استهلكت المصاريف الثابتة {amt}. خصص 5 دقائق لمراجعة الاشتراكات المتكررة، فإلغاء خدمة أو اثنتين غير مستخدمتين يوقف الهدر الشهري تماما.",
+        pt: "Custos fixos levaram {amt}. Dedique 5 minutos para auditar assinaturas ativas: cancelar apenas 1 ou 2 serviços não usados estanca vazamentos mensais.",
+        ru: "Фиксированные расходы составили {amt}. Уделите 5 минут ревизии подписок: отмена 1–2 неиспользуемых сервисов моментально остановит утечку денег.",
+        nl: "Vaste lasten kostten {amt}. Neem 5 minuten om abonnementen te controleren: het opzeggen van 1 of 2 ongebruikte diensten stopt direct onnodige lekken."
+    },
+    stepEntertainmentTitle: {
+        en: "Set a Clear Weekend Fun Allowance", id: "Tentukan Kuota Hiburan Akhir Pekan", es: "Define un Presupuesto de Ocio para Finde", fr: "Définissez un Budget Plaisir pour le Week-end", de: "Klares Wochenend-Spaßbudget Festlegen", ja: "週末の娯楽予算をあらかじめ設定する", ko: "주말 여가 예산 상한 설정하기", zh: "设立明确的周末娱乐消费限额", ar: "تحديد ميزانية واضحة للترفيه في عطلة الأسبوع", pt: "Defina uma Cota de Lazer para Fins de Semana", ru: "Выделите лимит на отдых в выходные", nl: "Stel een Vaste Weekend-Uitgavenpot In"
+    },
+    stepEntertainmentDesc: {
+        en: "Leisure spending totaled {amt}. Enjoying your earnings is essential - set a dedicated weekend quota so you can treat yourself freely without budget guilt.",
+        id: "Hiburan mencapai {amt}. Menikmati hasil kerja itu penting - tetapkan kuota khusus agar bisa bersenang-senang tanpa rasa bersalah.",
+        es: "El ocio totalizó {amt}. Disfrutar lo ganado es vital: fija una cuota para el fin de semana y diviértete con total tranquilidad sin culpa.",
+        fr: "Les loisirs ont totalisé {amt}. Profiter de vos gains est essentiel : fixez un montant dédié au week-end pour vous faire plaisir sans culpabiliser.",
+        de: "Freizeit belief sich auf {amt}. Sich etwas zu gönnen ist wichtig: Ein festes Wochenend-Budget erlaubt Genuss ganz ohne schlechtes Gewissen.",
+        ja: "レジャー支出は{amt}でした。楽しみは大切です。週末専用の上限枠を決めることで、罪悪感なく有意義に楽しめます。",
+        ko: "여가 지출이 {amt}였습니다. 보상을 즐기는 것은 중요하므로, 주말 전용 한도를 정해두면 죄책감 없이 자유롭게 즐길 수 있습니다.",
+        zh: "休闲娱乐支出共计 {amt}。享受劳动成果至关重要，设定专属的周末娱乐额度，让您无需为消费感到内疚。",
+        ar: "بلغ إنفاق الترفيه {amt}. الاستمتاع بدخلك أمر ضروري، حدد حصة مخصصة لعطلة نهاية الأسبوع لتكافئ نفسك بحرية ودون أي شعور بالذنب.",
+        pt: "Gastos com lazer somaram {amt}. Aproveitar o que ganha é vital: defina uma cota de fim de semana para se divertir sem culpa orçamentária.",
+        ru: "Развлечения составили {amt}. Наслаждаться доходом важно: задайте фиксированную сумму на выходные, чтобы отдыхать без чувства вины.",
+        nl: "Vrije tijd kostte {amt}. Genieten van uw inkomen is belangrijk: stel een weekendbudget in zodat u zorgeloos en zonder schuldgevoel kunt ontspannen."
+    },
+    stepDefaultTitle: {
+        en: "Put a Friendly Soft Cap on {cat}", id: "Beri Batas Anggaran untuk {cat}", es: "Establece un Límite Flexible para {cat}", fr: "Fixez un Plafond Souple sur {cat}", de: "Setzen Sie ein Budgetlimit für {cat}", ja: "{cat}の支出枠を設定する", ko: "{cat} 지출 목표 한도 설정하기", zh: "为 {cat} 设立适度支出限额", ar: "وضع حد مرن للإنفاق على {cat}", pt: "Defina um Teto Flexível para {cat}", ru: "Установите комфортный лимит на {cat}", nl: "Stel een Zacht Plafond In voor {cat}"
+    },
+    stepDefaultDesc: {
+        en: "{cat} was your biggest cash outflow at {amt} ({pct}%). Setting a target in Pocketly to keep it under {target} frees up extra cash effortlessly.",
+        id: "{cat} adalah pos pengeluaran terbesar ({amt}, {pct}%). Menetapkan target di Pocketly di bawah {target} akan membuka ruang tabungan baru.",
+        es: "{cat} fue tu mayor gasto con {amt} ({pct}%). Poner una meta en Pocketly para mantenerlo bajo {target} liberará dinero sin esfuerzo.",
+        fr: "{cat} a été votre plus grosse sortie avec {amt} ({pct}%). Fixer un objectif dans Pocketly sous {target} libérera du disponible sans effort.",
+        de: "{cat} war der größte Ausgabenposten mit {amt} ({pct}%). Ein Zielwert unter {target} in Pocketly schafft sofort spürbare Erleichterung.",
+        ja: "{cat}が最大の支出（{amt}、{pct}%）でした。Pocketlyで{target}以内を目標に設定すると、無理なく資金の余裕が生まれます。",
+        ko: "{cat} 항목이 최대 지출({amt}, {pct}%)이었습니다. Pocketly에서 {target} 이하로 목표를 정하면 자연스럽게 여유 자금이 형성됩니다.",
+        zh: "{cat} 是最大单项开销，共 {amt}（占 {pct}%）。在 Pocketly 中设定将其控制在 {target} 以内的目标，将轻松省出结余。",
+        ar: "كانت {cat} أكبر تدفق خارج بقيمة {amt} ({pct}%). تحديد هدف في Pocketly لإبقائها دون {target} يوفر فائضا ماليا بسهولة.",
+        pt: "{cat} foi sua maior saída com {amt} ({pct}%). Definir uma meta no Pocketly para mantê-lo abaixo de {target} liberará caixa com facilidade.",
+        ru: "{cat}  -  крупнейшая статья расходов: {amt} ({pct}%). Цель в Pocketly удержать ее ниже {target} легко высвободит средства.",
+        nl: "{cat} was de grootste kostenpost met {amt} ({pct}%). Stel in Pocketly een doel in onder {target} om moeiteloos extra cash te besparen."
+    },
+    stepDeficitTitle: {
+        en: "Run a Quick 7-Day Low-Spend Sprint", id: "Jalankan Tantangan Hemat 7 Hari", es: "Haz un Sprint de 7 Días de Bajo Gasto", fr: "Lancez un Défi de 7 Jours de Dépenses Minimales", de: "Starten Sie einen 7-Tage Spar-Sprint", ja: "7日間の節約スプリントを実施する", ko: "7일간의 지출 다이어트 스프린트", zh: "开展为期 7 天的低消费挑战", ar: "بدء تحدي إنفاق منخفض لمدة 7 أيام", pt: "Faça um Desafio de Baixo Gasto de 7 Dias", ru: "Проведите 7-дневный экономный спринт", nl: "Start een 7-Dagen Spaarchallenge"
+    },
+    stepDeficitDesc: {
+        en: "To shake off the {amt} deficit, pick one upcoming week to stick strictly to essentials. It resets your cash momentum fast and restores balance across your accounts.",
+        id: "Untuk menutup defisit {amt}, pilih satu minggu untuk fokus hanya pada kebutuhan pokok. Ini memulihkan kembali keseimbangan kas Anda dengan cepat.",
+        es: "Para superar el déficit de {amt}, elige una semana para ceñirte solo a lo esencial. Recuperarás el control y la estabilidad en tus cuentas.",
+        fr: "Pour combler le déficit de {amt}, consacrez une semaine prochaine à l'essentiel. Cela rééquilibre rapidement votre trésorerie globale.",
+        de: "Um das Defizit von {amt} auszugleichen, beschränken Sie sich eine Woche lang aufs Wesentliche. Das stellt die finanzielle Balance rasch wieder her.",
+        ja: "{amt}の赤字を解消するため、来週は必需品のみで過ごす期間を作ってみましょう。収支のリズムが迅速に整います。",
+        ko: "{amt}의 적자를 해소하기 위해 다음 주에는 필수 지출에만 집중하는 기간을 가져보세요. 현금 흐름의 균형이 빠르게 회복됩니다.",
+        zh: "为了消除 {amt} 的赤字，选定接下来的一周严格仅支付刚需开销，这将迅速重塑现金流势头并恢复收支平衡。",
+        ar: "لتجاوز عجز {amt}، خصص أسبوعا قادما للتركيز فقط على الأساسيات، فهذا يستعيد توازن التدفق النقدي في حساباتك سريعا.",
+        pt: "Para superar o déficit de {amt}, escolha uma semana para focar apenas no essencial. Isso recupera o ritmo do seu caixa e equilibra as contas.",
+        ru: "Чтобы закрыть дефицит в {amt}, проведите одну неделю строго на базовых тратах. Это быстро вернет баланс вашим счетам.",
+        nl: "Om het tekort van {amt} weg te werken, kiest u één week waarin u alleen de basis betaalt. Zo herstelt u snel het evenwicht op uw rekeningen."
+    },
+    stepLowSaveTitle: {
+        en: "Save First, Spend What Remains", id: "Tabung di Awal, Belanja Sisanya", es: "Ahorra Primero, Gasta lo que Quede", fr: "Épargnez d'Abord, Dépensez le Reste", de: "Zuerst Sparen, den Rest Ausgeben", ja: "「先取り貯蓄」を徹底する", ko: "먼저 저축하고 남은 돈으로 지출하기", zh: "先存后花，锁定第一笔储蓄", ar: "ادخر أولا ثم أنفق ما تبقى", pt: "Poupe Primeiro, Gaste o que Restar", ru: "Сначала откладывайте, потом тратьте", nl: "Spaar Eerst, Geef de Rest Uit"
+    },
+    stepLowSaveDesc: {
+        en: "Instead of saving whatever happens to be left over, transfer {amt} (10%) right on payday. Treating savings like a bill changes the whole game.",
+        id: "Alih-alih menabung sisa uang di akhir bulan, sisihkan {amt} (10%) langsung saat gajian. Perlakukan tabungan layaknya tagihan wajib.",
+        es: "En lugar de ahorrar lo que sobre, transfiere {amt} (10%) el mismo día de cobro. Tratar el ahorro como un pago obligatorio lo cambia todo.",
+        fr: "Au lieu d'épargner ce qu'il reste, virez {amt} (10%) dès la réception de vos revenus. Traiter l'épargne comme une facture change la donne.",
+        de: "Statt Reste zu sparen, legen Sie {amt} (10%) direkt am Zahltag zurück. Ersparnisse wie eine feste Rechnung zu behandeln verändert alles.",
+        ja: "月末に残った分を貯金するのではなく、給料日にまず{amt}（10%）を別口座へ移動させましょう。習慣が劇的に変わります。",
+        ko: "월말에 남은 돈을 저축하는 대신, 급여일에 {amt}(10%)를 바로 이체하세요. 저축을 고정 청구서처럼 취급하면 결과가 완전히 달라집니다.",
+        zh: "不要等到月末有节余才存钱，发薪日当天立即转出 {amt}（10%）。把储蓄当作第一张必须支付的账单，效果显著。",
+        ar: "بدلا من ادخار ما يتبقى صدفة، حول {amt} (10%) فور استلام دخلك. التعامل مع الادخار كفاتورة واجبة يغير المعادلة تماما.",
+        pt: "Em vez de poupar só o que sobrar, transfira {amt} (10%) logo no dia do pagamento. Tratar a poupança como boleto muda todo o jogo.",
+        ru: "Вместо накопления остатков переводите {amt} (10%) сразу в день дохода. Отношение к сбережениям как к обязательному счету изменит всё.",
+        nl: "Spaar niet alleen wat overblijft, maar maak direct op de betaaldag {amt} (10%) over. Sparen behandelen als een vaste rekening maakt het verschil."
+    },
+    stepHighSaveTitle: {
+        en: "Put That Idle Cash to Work", id: "Optimalkan Dana Menganggur", es: "Pon a Trabajar el Dinero Inactivo", fr: "Faites Travailler votre Trésorerie Oisive", de: "Lassen Sie freies Kapital für sich Arbeiten", ja: "余剰資金を賢く運用する", ko: "유휴 자금을 현명하게 굴리기", zh: "让闲置资金产生持续复利", ar: "استثمار السيولة الفائضة بحكمة", pt: "Coloque o Dinheiro Parado para Render", ru: "Заставьте свободные деньги работать", nl: "Laat Vrij Vermogen voor U Werken"
+    },
+    stepHighSaveDesc: {
+        en: "You accumulated {amt} in surplus funds. Rather than letting it sit idle, consider routing a chunk into high-yield accounts or investments so it compounds on autopilot.",
+        id: "Anda mengumpulkan surplus {amt}. Daripada dibiarkan menganggur, alokasikan sebagian ke instrumen investasi agar berkembang secara otomatis.",
+        es: "Acumulaste {amt} de superávit. En lugar de dejarlo inactivo, destina una parte a cuentas remuneradas o inversiones para que crezca solo.",
+        fr: "Vous avez dégagé {amt} de surplus. Plutôt que de le laisser dormir, placez-en une partie sur des comptes rémunérés ou en investissement.",
+        de: "Sie haben {amt} Überschuss erwirtschaftet. Lassen Sie das Geld nicht ungenutzt liegen, sondern investieren Sie es für automatisches Wachstum.",
+        ja: "{amt}の手元資金が蓄積されました。普通預金に眠らせず、高利回り口座や投資信託への配分を検討して資産形成を加速させましょう。",
+        ko: "{amt}의 잉여 자금을 마련했습니다. 유휴 자금으로 두기보다 고금리 예금이나 투자로 연결하여 복리 효과를 누려보세요.",
+        zh: "您积累了 {amt} 的盈余资金。与其让它闲置，不如将其配置至稳健理财或投资工具中，让财富自动复利增值。",
+        ar: "حققت فائضا ماليا قدره {amt}. بدلا من تركه راكدا، وجه جزءا منه لحسابات ذات عائد أو استثمارات لينمو تلقائيا.",
+        pt: "Você acumulou {amt} de superávit. Em vez de deixar parado, aplique uma parcela em investimentos para render juros compostos.",
+        ru: "Вы накопили профицит {amt}. Вместо хранения на обычном счете направьте часть в накопительные или инвестиционные инструменты.",
+        nl: "U heeft een surplus van {amt} opgebouwd. Laat het niet stilzitten, maar zet een deel weg op hoogrenderende rekeningen of beleggingen."
+    },
+    stepModSaveTitle: {
+        en: "Automate Your Payday Savings Split", id: "Otomatiskan Alokasi Tabungan Gajian", es: "Automatiza tu Ahorro el Día de Pago", fr: "Automatisez votre Épargne le Jour de Paie", de: "Automatisieren Sie den Sparanteil am Zahltag", ja: "給与受取時の自動積立を設定する", ko: "급여일 자동 저축 이체 설정하기", zh: "设置发薪日自动储蓄分流", ar: "أتمتة استقطاع المدخرات يوم الراتب", pt: "Automatize sua Poupança no Pagamento", ru: "Автоматизируйте сбережения в день зарплаты", nl: "Automatiseer Uw Spaarinleg op de Betaaldag"
+    },
+    stepModSaveDesc: {
+        en: "Transfer {amt} (20%) directly into savings the moment income lands. Locking it in early guarantees your savings target without daily effort.",
+        id: "Sisihkan {amt} (20%) langsung ke tabungan saat pemasukan diterima. Otomatisasi menjamin target tercapai tanpa repot.",
+        es: "Transfiere {amt} (20%) directo al ahorro en cuanto entre el dinero. Asegurarlo de inicio garantiza tu meta sin esfuerzo constante.",
+        fr: "Virez {amt} (20%) sur votre épargne dès que le revenu arrive. Ce virement automatique garantit votre objectif sans effort quotidien.",
+        de: "Überweisen Sie {amt} (20%) sofort bei Geldeingang aufs Sparkonto. Das sichert Ihr Sparziel automatisch ohne tägliche Mühe.",
+        ja: "収入が入った直後に{amt}（20%）を自動で貯蓄へ回しましょう。自動化により無理なく目標が達成できます。",
+        ko: "수입이 입금되는 즉시 {amt}(20%)를 저축 계좌로 자동 이체하세요. 초기에 고정하면 매일 신경 쓰지 않아도 목표를 달성할 수 있습니다.",
+        zh: "收入到账后立即自动划转 {amt}（20%）至储蓄账户。提前锁定储蓄份额，无需每日耗费心力即可稳妥达标。",
+        ar: "حول {amt} (20%) مباشرة لحساب التوفير فور وصول الدخل. حجز المبلغ مبكرا يضمن تحقيق هدفك دون جهد يومي.",
+        pt: "Transfira {amt} (20%) para a poupança assim que a renda entrar. Guardar no início garante sua meta sem esforço diário.",
+        ru: "Переводите {amt} (20%) в сбережения сразу при поступлении дохода. Это гарантирует достижение финансовой цели без лишних усилий.",
+        nl: "Maak {amt} (20%) direct over naar spaargeld zodra het inkomen binnenkomt. Dit garandeert uw doel zonder dagelijkse moeite."
+    },
+    stepBufferTitle: {
+        en: "Build a Starter Peace-of-Mind Buffer", id: "Bangun Dana Darurat Pemula", es: "Crea un Fondo Básico de Emergencia", fr: "Constituez un Matelas de Sécurité Initial", de: "Bauen Sie ein Starter-Notfallpolster Auf", ja: "安心のための初期バッファーを作る", ko: "초기 비상 안심 자금 마련하기", zh: "建立基础应急安全储备金", ar: "بناء صندوق طوارئ أولي للشعور بالأمان", pt: "Construa uma Reserva Inicial de Emergência", ru: "Создайте стартовую подушку безопасности", nl: "Bouw een Eerste Veiligheidsbuffer Op"
+    },
+    stepBufferDesc: {
+        en: "Start small: aim for a quick {amt} starter cushion. Even a 2-week emergency reserve protects you from unexpected expenses without resorting to debt.",
+        id: "Mulai dari target terjangkau: kumpulkan dana darurat awal sebesar {amt}. Cadangan 2 minggu melindungi Anda dari pengeluaran mendadak.",
+        es: "Empieza poco a poco: apunta a un colchón inicial de {amt}. Una reserva de solo 2 semanas te protege ante imprevistos sin endeudarte.",
+        fr: "Commencez petit : visez un premier coussin de {amt}. Même une réserve de 2 semaines vous protège des imprévus sans recourir à l'emprunt.",
+        de: "Fangen Sie klein an: Ein erstes Polster von {amt} reicht schon. Selbst eine 2-Wochen-Reserve schützt vor Schulden bei Überraschungen.",
+        ja: "まずは小さく：{amt}の準備金を目標にしましょう。2週間分の生活防衛資金があるだけで不意の出費にも安心です。",
+        ko: "작게 시작하세요: {amt}의 초기 비상금을 목표로 삼으세요. 2주 치의 예비 자금만으로도 빚 없이 예상치 못한 지출에 대비할 수 있습니다.",
+        zh: "从小处着手：先建立一个 {amt} 的应急小金库。哪怕仅有 2 周的生活预备金，也能在意外支出发生时免于负债。",
+        ar: "ابدأ خطوة بخطوة: استهدف وسادة أمان أولية بقيمة {amt}. احتياطي أسبوعين فقط يحميك من المصاريف المفاجئة دون اللجوء للديون.",
+        pt: "Comece pequeno: mire numa reserva inicial de {amt}. Mesmo uma reserva para 2 semanas protege você de imprevistos sem contrair dívidas.",
+        ru: "Начните с малого: ориентируйтесь на стартовый резерв в {amt}. Запас даже на 2 недели защитит от непредвиденных трат без долгов.",
+        nl: "Begin klein: mik op een startbuffer van {amt}. Zelfs een reserve voor 2 weken beschermt u tegen onverwachte kosten zonder schulden."
+    },
+    stepBuffer3mTitle: {
+        en: "Grow Toward Your 3-Month Safety Cushion", id: "Capai Dana Cadangan 3 Bulan", es: "Avanza hacia tu Colchón de 3 Meses", fr: "Développez votre Réserve de 3 Mois", de: "Auf ein 3-Monats-Sicherheitspolster Hinarbeiten", ja: "3ヶ月分の生活防衛資金を目指す", ko: "3개월 치 생활 방어 자금 완성하기", zh: "稳步积累 3 个月生活安全垫", ar: "الوصول لاحتياطي أمان يكفي لـ 3 أشهر", pt: "Caminhe para sua Reserva de 3 Meses", ru: "Стремитесь к 3-месячной подушке безопасности", nl: "Groei Naar Uw 3-Maanden Veiligheidsbuffer"
+    },
+    stepBuffer3mDesc: {
+        en: "Your recommended 3-month living buffer is {amt}. Channeling half your monthly surplus will have you fully covered and financially resilient in no time.",
+        id: "Target dana darurat 3 bulan hidup Anda adalah {amt}. Mengalokasikan separuh surplus bulanan akan membuat keuangan Anda sangat aman.",
+        es: "Tu fondo recomendado para 3 meses es {amt}. Destinar la mitad de tu superávit mensual te brindará una gran solidez financiera en poco tiempo.",
+        fr: "Votre coussin de précaution recommandé de 3 mois est de {amt}. Y consacrer la moitié de votre surplus vous rendra serein rapidement.",
+        de: "Ihr empfohlenes 3-Monats-Polster beträgt {amt}. Die Hälfte des monatlichen Überschusses dorthin zu leiten sorgt für schnelle finanzielle Resilienz.",
+        ja: "推奨される3ヶ月分の生活防衛資金は{amt}です。毎月の余剰金の半分を充てることで、早期に盤石な安心感が手に入ります。",
+        ko: "권장하는 3개월 치 생활 방어 자금은 {amt}입니다. 매월 흑자의 절반을 적립하면 머지않아 든든한 재정적 안정성을 확보하게 됩니다.",
+        zh: "建议准备的 3 个月生活缓冲金为 {amt}。将每月盈余的一半注入其中，很快便能构建起坚韧的家庭财务防线。",
+        ar: "احتياطي الأمان الموصى به لـ 3 أشهر هو {amt}. توجيه نصف فائضك الشهري إليه سيمنحك استقرارا ومرونة مالية في وقت قياسي.",
+        pt: "Sua reserva recomendada para 3 meses é de {amt}. Destinar metade do seu superávit mensal trará tranquilidade financeira rapidamente.",
+        ru: "Рекомендуемый 3-месячный резерв составляет {amt}. Направление половины ежемесячного профицита обеспечит полную устойчивость.",
+        nl: "Uw aanbevolen 3-maandenbuffer is {amt}. Als u de helft van uw maandelijkse overschot hierin steekt, bent u in een mum van tijd financieel weerbaar."
+    },
+    footerConfidential: {
+        en: "Pocketly Personal Finance Statement  |  Confidential  |  Period: {period}",
+        id: "Laporan Keuangan Pribadi Pocketly  |  Rahasia  |  Periode: {period}",
+        es: "Estado Financiero Personal Pocketly  |  Confidencial  |  Período: {period}",
+        fr: "Relevé Financier Personnel Pocketly  |  Confidentiel  |  Période : {period}",
+        de: "Pocketly Persönlicher Finanzbericht  |  Vertraulich  |  Zeitraum: {period}",
+        ja: "Pocketly 個人財務諸表  |  社外秘  |  対象期間: {period}",
+        ko: "Pocketly 개인 재무 보고서  |  대외비  |  기간: {period}",
+        zh: "Pocketly 个人财务报表  |  机密文件  |  周期: {period}",
+        ar: "كشف المالية الشخصية من Pocketly  |  سري  |  الفترة: {period}",
+        pt: "Relatório Financeiro Pessoal Pocketly  |  Confidencial  |  Período: {period}",
+        ru: "Личный финансовый отчет Pocketly  |  Конфиденциально  |  Период: {period}",
+        nl: "Pocketly Persoonlijk Financieel Overzicht  |  Vertrouwelijk  |  Periode: {period}"
+    },
+    pageOf: {
+        en: "Page {i} of {totalPages}",
+        id: "Halaman {i} dari {totalPages}",
+        es: "Página {i} de {totalPages}",
+        fr: "Page {i} sur {totalPages}",
+        de: "Seite {i} von {totalPages}",
+        ja: "{i} / {totalPages} ページ",
+        ko: "{i} / {totalPages} 페이지",
+        zh: "第 {i} 页 / 共 {totalPages} 页",
+        ar: "صفحة {i} من {totalPages}",
+        pt: "Página {i} de {totalPages}",
+        ru: "Стр. {i} из {totalPages}",
+        nl: "Pagina {i} van {totalPages}"
+    },
+    p2Title: {
+        en: "Transaction History Ledger",
+        id: "Buku Besar Riwayat Transaksi",
+        es: "Libro de Historial de Transacciones",
+        fr: "Grand Livre d'Historique des Transactions",
+        de: "Transaktionshistorie & Hauptbuch",
+        ja: "取引履歴台帳",
+        ko: "거래 내역 원장",
+        zh: "交易历史明细账",
+        ar: "سجل تاريخ المعاملات",
+        pt: "Livro de Histórico de Transações",
+        ru: "Журнал истории транзакций",
+        nl: "Transactiegeschiedenis Grootboek"
+    },
+    p2Recorded: {
+        en: "{n} Transactions Recorded",
+        id: "{n} Transaksi Tercatat",
+        es: "{n} Transacciones Registradas",
+        fr: "{n} Transactions Enregistrées",
+        de: "{n} Transaktionen Erfasst",
+        ja: "{n} 件の取引を記録",
+        ko: "{n} 건의 거래 기록됨",
+        zh: "已记录 {n} 笔交易",
+        ar: "تم تسجيل {n} معاملة",
+        pt: "{n} Transações Registradas",
+        ru: "Записано транзакций: {n}",
+        nl: "{n} Transacties Vastgelegd"
+    },
+    p2Summary: {
+        en: "Income: +{inc}   |   Expenses: -{exp}   |   Net: {net}",
+        id: "Pemasukan: +{inc}   |   Pengeluaran: -{exp}   |   Bersih: {net}",
+        es: "Ingresos: +{inc}   |   Gastos: -{exp}   |   Neto: {net}",
+        fr: "Revenus : +{inc}   |   Dépenses : -{exp}   |   Net : {net}",
+        de: "Einnahmen: +{inc}   |   Ausgaben: -{exp}   |   Netto: {net}",
+        ja: "収入: +{inc}   |   支出: -{exp}   |   純収支: {net}",
+        ko: "수입: +{inc}   |   지출: -{exp}   |   순액: {net}",
+        zh: "收入: +{inc}   |   支出: -{exp}   |   净额: {net}",
+        ar: "الدخل: +{inc}   |   المصروفات: -{exp}   |   الصافي: {net}",
+        pt: "Receita: +{inc}   |   Despesas: -{exp}   |   Líquido: {net}",
+        ru: "Доход: +{inc}   |   Расход: -{exp}   |   Итог: {net}",
+        nl: "Inkomsten: +{inc}   |   Uitgaven: -{exp}   |   Netto: {net}"
+    },
+    p2TableHead: {
+        en: ["Date", "Description", "Category", "Account", "Amount"],
+        id: ["Tanggal", "Keterangan", "Kategori", "Akun", "Jumlah"],
+        es: ["Fecha", "Descripción", "Categoría", "Cuenta", "Monto"],
+        fr: ["Date", "Description", "Catégorie", "Compte", "Montant"],
+        de: ["Datum", "Beschreibung", "Kategorie", "Konto", "Betrag"],
+        ja: ["日付", "取引詳細", "カテゴリ", "口座", "金額"],
+        ko: ["날짜", "내용", "카테고리", "계좌", "금액"],
+        zh: ["日期", "描述", "类别", "账户", "金额"],
+        ar: ["التاريخ", "الوصف", "الفئة", "الحساب", "المبلغ"],
+        pt: ["Data", "Descrição", "Categoria", "Conta", "Valor"],
+        ru: ["Дата", "Описание", "Категория", "Счет", "Сумма"],
+        nl: ["Datum", "Omschrijving", "Categorie", "Rekening", "Bedrag"]
+    },
+    preparingPdf: {
+        en: "Preparing PDF...",
+        id: "Menyiapkan PDF...",
+        es: "Preparando PDF...",
+        fr: "Préparation du PDF...",
+        de: "PDF wird vorbereitet...",
+        ja: "PDFを準備中...",
+        ko: "PDF 준비 중...",
+        zh: "正在生成 PDF...",
+        ar: "جارٍ تجهيز ملف PDF...",
+        pt: "Preparando PDF...",
+        ru: "Подготовка PDF...",
+        nl: "PDF voorbereiden..."
+    }
+};
+
+function getPdfText(key, lang, fallback) {
+    if (PDF_I18N[key] && PDF_I18N[key][lang]) {
+        return PDF_I18N[key][lang];
+    }
+    if (PDF_I18N[key] && PDF_I18N[key]['en']) {
+        return PDF_I18N[key]['en'];
+    }
+    return fallback || '';
+}
+
+function formatPdfTemplate(str, params) {
+    if (!str) return '';
+    let result = str;
+    for (const [k, v] of Object.entries(params || {})) {
+        result = result.replaceAll('{' + k + '}', v);
+    }
+    return result;
+}
+
 window.generateExportPdf = async function() {
     if (typeof rawTransactions === 'undefined' || rawTransactions.length === 0) {
         showAlert("No transactions recorded yet in Pocketly.", true);
@@ -2414,10 +3310,18 @@ window.generateExportPdf = async function() {
         return;
     }
 
+    const activeLang = (typeof PocketlyI18n !== 'undefined' && PocketlyI18n.getCurrentLanguage)
+        ? PocketlyI18n.getCurrentLanguage()
+        : 'en';
+    const activeLocale = (typeof PocketlyI18n !== 'undefined' && PocketlyI18n.getCurrentLocale)
+        ? PocketlyI18n.getCurrentLocale()
+        : (currentLocale || 'en-US');
+
     const btnGenerate = document.getElementById('btnConfirmGeneratePdf');
+    const prepPdfText = (PDF_I18N.preparingPdf && PDF_I18N.preparingPdf[activeLang]) || 'Preparing PDF...';
     if (btnGenerate) {
         btnGenerate.disabled = true;
-        btnGenerate.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> <span>Preparing PDF...</span>`;
+        btnGenerate.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> <span>${prepPdfText}</span>`;
     }
 
     try {
@@ -2428,9 +3332,9 @@ window.generateExportPdf = async function() {
             format: 'a4'
         });
 
-        // Ensure Poppins font & Pocketly logo are loaded
+        // Ensure font matching active language & Pocketly logo are loaded
         const [activeFont, logoDataUrl] = await Promise.all([
-            ensurePoppinsFont(doc),
+            ensurePdfFontForLanguage(doc, activeLang),
             getPocketlyLogoDataUrl()
         ]);
 
@@ -2444,7 +3348,7 @@ window.generateExportPdf = async function() {
             : "Pocketly User";
         const currencyCode = currentCurrency || 'IDR';
 
-        // Helper for formatting money in PDF
+        // Helper for formatting money in PDF with active locale
         const formatPdfMoney = (num) => {
             const meta = (typeof CURRENCY_META !== 'undefined' && CURRENCY_META[currencyCode]) 
                 ? CURRENCY_META[currencyCode] 
@@ -2454,7 +3358,7 @@ window.generateExportPdf = async function() {
                 : 1;
             const converted = Number(num || 0) * rate;
             try {
-                return new Intl.NumberFormat(currentLocale || meta.locale || 'en-US', {
+                return new Intl.NumberFormat(activeLocale || meta.locale || 'en-US', {
                     style: 'currency',
                     currency: currencyCode,
                     minimumFractionDigits: meta.decimals || 0,
@@ -2465,15 +3369,21 @@ window.generateExportPdf = async function() {
             }
         };
 
-        // Helper to format date cleanly: "26 Jan 2026"
+        // Helper to format date according to active language/locale
         const formatTableDate = (dStr) => {
             if (!dStr) return '-';
             try {
                 const parts = dStr.split('-');
                 if (parts.length === 3) {
-                    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-                    const m = parseInt(parts[1], 10) - 1;
-                    return `${parts[2]} ${months[m] || parts[1]} ${parts[0]}`;
+                    const year = parseInt(parts[0], 10);
+                    const month = parseInt(parts[1], 10) - 1;
+                    const day = parseInt(parts[2], 10);
+                    const d = new Date(year, month, day);
+                    return d.toLocaleDateString(activeLocale, {
+                        year: 'numeric',
+                        month: 'short',
+                        day: 'numeric'
+                    });
                 }
             } catch (e) {}
             return dStr;
@@ -2533,18 +3443,20 @@ window.generateExportPdf = async function() {
 
         healthScore = Math.min(100, Math.max(15, healthScore));
 
-        let healthRating = 'Optimal Discipline';
+        let healthRatingKey = 'optimal';
         if (healthScore >= 75) {
-            healthRating = 'Optimal Discipline';
+            healthRatingKey = 'optimal';
         } else if (healthScore >= 55) {
-            healthRating = 'Balanced Pace';
+            healthRatingKey = 'balanced';
         } else if (healthScore >= 40) {
-            healthRating = 'Caution Advised';
+            healthRatingKey = 'caution';
         } else {
-            healthRating = 'Action Required';
+            healthRatingKey = 'action';
         }
+        const healthRating = (PDF_I18N.ratings[healthRatingKey] && PDF_I18N.ratings[healthRatingKey][activeLang]) 
+            || PDF_I18N.ratings[healthRatingKey]['en'];
 
-        const todayFormatted = new Date().toLocaleDateString('en-US', { day: '2-digit', month: 'short', year: 'numeric' });
+        const todayFormatted = new Date().toLocaleDateString(activeLocale, { day: 'numeric', month: 'short', year: 'numeric' });
         const cleanRefSuffix = fileSuffix.replace(/[^A-Za-z0-9]/g, '').slice(0, 8) || 'MAIN';
         const statementId = `PKT-${cleanRefSuffix}-${Math.floor(1000 + Math.random() * 9000)}`;
 
@@ -2572,18 +3484,22 @@ window.generateExportPdf = async function() {
         doc.setFont(activeFont, "normal");
         doc.setFontSize(8.5);
         doc.setTextColor(100, 116, 139); // slate-500
-        doc.text("Personal Financial Statement", brandStartX, 24);
+        doc.text(getPdfText('statementTitle', activeLang, "Personal Financial Statement"), brandStartX, 24);
 
         // Header Right Metadata
+        const accountLabel = getPdfText('account', activeLang, 'Account');
+        const periodHeaderLabel = getPdfText('period', activeLang, 'Period');
+        const generatedLabel = getPdfText('generated', activeLang, 'Generated');
+
         doc.setFont(activeFont, "bold");
         doc.setFontSize(8.5);
         doc.setTextColor(15, 23, 42);
-        doc.text(`Account: ${userName}`, marginX + contentWidth, 19, { align: 'right' });
+        doc.text(`${accountLabel}: ${userName}`, marginX + contentWidth, 19, { align: 'right' });
 
         doc.setFont(activeFont, "normal");
         doc.setFontSize(8);
         doc.setTextColor(100, 116, 139);
-        doc.text(`Period: ${periodLabel}  |  Generated: ${todayFormatted}`, marginX + contentWidth, 24, { align: 'right' });
+        doc.text(`${periodHeaderLabel}: ${periodLabel}  |  ${generatedLabel}: ${todayFormatted}`, marginX + contentWidth, 24, { align: 'right' });
 
         // Hairline Divider
         doc.setDrawColor(226, 232, 240); // slate-200
@@ -2625,27 +3541,34 @@ window.generateExportPdf = async function() {
             doc.text(subtext, x + 5, kpiY + 19);
         };
 
+        const incomeSubtitle = formatPdfTemplate(getPdfText('verifiedCredits', activeLang, "{n} verified credit(s)"), { n: incomeCount });
         renderKpiCard(
             marginX,
-            "TOTAL INCOME",
+            getPdfText('totalIncome', activeLang, "TOTAL INCOME"),
             `+ ${formatPdfMoney(totalIncome)}`,
-            `${incomeCount} verified credit(s)`,
+            incomeSubtitle,
             [5, 150, 105] // emerald
         );
 
+        const expenseSubtitle = formatPdfTemplate(getPdfText('dailyAvg', activeLang, "Avg. {amt} / day"), { amt: formatPdfMoney(dailyBurnRate) });
         renderKpiCard(
             marginX + kpiW + kpiGap,
-            "TOTAL EXPENSES",
+            getPdfText('totalExpenses', activeLang, "TOTAL EXPENSES"),
             `- ${formatPdfMoney(totalExpense)}`,
-            `Avg. ${formatPdfMoney(dailyBurnRate)} / day`,
+            expenseSubtitle,
             [220, 38, 38] // rose
         );
 
+        const savingsTitle = formatPdfTemplate(getPdfText('netSavings', activeLang, "NET SAVINGS ({pct}%)"), { pct: savingsRate });
+        const savingsSubtitle = isNetPositive
+            ? formatPdfTemplate(getPdfText('incomeSaved', activeLang, "{pct}% of income saved"), { pct: savingsRate })
+            : getPdfText('deficitDetected', activeLang, "Deficit flow detected");
+
         renderKpiCard(
             marginX + (kpiW + kpiGap) * 2,
-            `NET SAVINGS (${savingsRate}%)`,
+            savingsTitle,
             `${isNetPositive ? '+ ' : ''}${formatPdfMoney(netCashFlow)}`,
-            isNetPositive ? `${savingsRate}% of income saved` : "Deficit flow detected",
+            savingsSubtitle,
             isNetPositive ? [37, 99, 235] : [220, 38, 38] // blue or rose
         );
 
@@ -2656,49 +3579,68 @@ window.generateExportPdf = async function() {
         doc.setFont(activeFont, "bold");
         doc.setFontSize(7.5);
         doc.setTextColor(51, 65, 85);
+
+        const statusLabel = getPdfText('cashHealthStatus', activeLang, 'Cash Health Status');
+        const retentionLabel = getPdfText('savingsRetention', activeLang, 'Savings Retention');
+        const activePeriodLabel = getPdfText('activePeriod', activeLang, 'Active Period');
+        const daysLabel = formatPdfTemplate(getPdfText('daysSuffix', activeLang, '{n} Days'), { n: daysInPeriod });
+
         doc.text(
-            `Cash Health Status: ${healthRating} (${healthScore}/100)   •   Savings Retention: ${savingsRate}%   •   Active Period: ${daysInPeriod} Days`,
+            `${statusLabel}: ${healthRating} (${healthScore}/100)   •   ${retentionLabel}: ${savingsRate}%   •   ${activePeriodLabel}: ${daysLabel}`,
             marginX + (contentWidth / 2),
             stripY + 4.5,
             { align: 'center' }
         );
 
         // --- 3. SECTION 1: SPENDING BREAKDOWN BY CATEGORY ---
-        // Placed first sequentially: Ordinary users want to see where their money went right after the total
         const s1TitleY = 69;
         doc.setFont(activeFont, "bold");
         doc.setFontSize(10);
         doc.setTextColor(15, 23, 42);
-        doc.text("1. Spending Breakdown by Category", marginX, s1TitleY);
+        doc.text(getPdfText('sec1Title', activeLang, "1. Spending Breakdown by Category"), marginX, s1TitleY);
 
         doc.setFont(activeFont, "normal");
         doc.setFontSize(7.5);
         doc.setTextColor(100, 116, 139);
-        doc.text("Distribution of outgoing expenses categorized for this statement period", marginX, s1TitleY + 4.5);
+        doc.text(getPdfText('sec1Subtitle', activeLang, "Distribution of outgoing expenses categorized for this statement period"), marginX, s1TitleY + 4.5);
 
-        const catRows = sortedCats.slice(0, 5).map(([cat, amt]) => {
+        const catRows = sortedCats.slice(0, 5).map(([rawCat, amt]) => {
             const numPct = totalExpense > 0 ? (amt / totalExpense) * 100 : 0;
             const pctStr = numPct.toFixed(1) + "%";
-            let status = "Normal (<20%)";
-            if (numPct > 35) status = "High Share (>35%)";
-            else if (numPct > 20) status = "Moderate (20-35%)";
-            return [cat, formatPdfMoney(amt), pctStr, status];
+            let status = getPdfText('statusNormal', activeLang, "Normal (<20%)");
+            if (numPct > 35) status = getPdfText('statusHigh', activeLang, "High Share (>35%)");
+            else if (numPct > 20) status = getPdfText('statusModerate', activeLang, "Moderate (20-35%)");
+
+            const translatedCat = (typeof PocketlyI18n !== 'undefined' && PocketlyI18n.translateCategory)
+                ? PocketlyI18n.translateCategory(rawCat)
+                : rawCat;
+
+            return [translatedCat, formatPdfMoney(amt), pctStr, status];
         });
 
         if (catRows.length === 0) {
-            catRows.push(["No Categorized Expenses", formatPdfMoney(0), "0.0%", "Normal (<20%)"]);
+            catRows.push([
+                getPdfText('noCategorizedExpenses', activeLang, "No Categorized Expenses"),
+                formatPdfMoney(0),
+                "0.0%",
+                getPdfText('statusNormal', activeLang, "Normal (<20%)")
+            ]);
         }
 
         // Summary row
         catRows.push([
-            "Total Expenses",
+            getPdfText('totalExpensesRow', activeLang, "Total Expenses"),
             formatPdfMoney(totalExpense),
             "100.0%",
-            isNetPositive ? "Sustainably Funded" : "Exceeds Income"
+            isNetPositive 
+                ? getPdfText('sustainablyFunded', activeLang, "Sustainably Funded") 
+                : getPdfText('exceedsIncome', activeLang, "Exceeds Income")
         ]);
 
+        const tableCatHead = PDF_I18N.tableHeadCat[activeLang] || PDF_I18N.tableHeadCat['en'];
+
         doc.autoTable({
-            head: [["Category", "Amount Spent", "% of Total", "Budget Status"]],
+            head: [tableCatHead],
             body: catRows,
             startY: s1TitleY + 7.5,
             margin: { left: marginX, right: marginX },
@@ -2736,28 +3678,31 @@ window.generateExportPdf = async function() {
                         data.cell.styles.textColor = [15, 23, 42];
                     }
                 }
-                // Status color
-                if (data.column.index === 3 && data.section === 'body') {
-                    const txt = String(data.cell.raw || '');
-                    if (txt.includes('High')) data.cell.styles.textColor = [220, 38, 38];
-                    else if (txt.includes('Normal')) data.cell.styles.textColor = [5, 150, 105];
-                    else if (txt.includes('Moderate')) data.cell.styles.textColor = [37, 99, 235];
+                // Status color based on numeric calculation
+                if (data.column.index === 3 && data.section === 'body' && data.row.index < catRows.length - 1) {
+                    const rowData = sortedCats[data.row.index];
+                    if (rowData) {
+                        const amt = rowData[1];
+                        const numPct = totalExpense > 0 ? (amt / totalExpense) * 100 : 0;
+                        if (numPct > 35) data.cell.styles.textColor = [220, 38, 38];
+                        else if (numPct > 20) data.cell.styles.textColor = [37, 99, 235];
+                        else data.cell.styles.textColor = [5, 150, 105];
+                    }
                 }
             }
         });
 
         // --- 4. SECTION 2: FINANCIAL HEALTH ASSESSMENT & ACTION PLAN ---
-        // Dynamically follows the category table with customized, friendly non-template guidance
         const s2TitleY = doc.lastAutoTable.finalY + 7;
         doc.setFont(activeFont, "bold");
         doc.setFontSize(10);
         doc.setTextColor(15, 23, 42);
-        doc.text("2. Financial Health Assessment & Action Plan", marginX, s2TitleY);
+        doc.text(getPdfText('sec2Title', activeLang, "2. Financial Health Assessment & Action Plan"), marginX, s2TitleY);
 
         doc.setFont(activeFont, "normal");
         doc.setFontSize(7.5);
         doc.setTextColor(100, 116, 139);
-        doc.text("Personalized takeaways and practical next steps tailored to your monthly cash flow", marginX, s2TitleY + 4.5);
+        doc.text(getPdfText('sec2Subtitle', activeLang, "Personalized takeaways and practical next steps tailored to your monthly cash flow"), marginX, s2TitleY + 4.5);
 
         const card2Y = s2TitleY + 7.5;
         const card2H = 58;
@@ -2766,20 +3711,47 @@ window.generateExportPdf = async function() {
         doc.setLineWidth(0.3);
         doc.roundedRect(marginX, card2Y, contentWidth, card2H, 2.5, 2.5, 'FD');
 
-        // Dynamic Narrative Generator (Contextual & Non-Baku)
-        const topName = topCat ? String(topCat[0]).trim() : 'General Expenses';
+        // Dynamic Narrative Generator (Contextual & Localized)
+        const rawTopName = topCat ? String(topCat[0]).trim() : 'General Expenses';
+        const topName = (typeof PocketlyI18n !== 'undefined' && PocketlyI18n.translateCategory)
+            ? PocketlyI18n.translateCategory(rawTopName)
+            : rawTopName;
         const topAmt = topCat ? topCat[1] : 0;
-        const topLower = topName.toLowerCase();
+        const topLower = rawTopName.toLowerCase();
 
         let narrativeOverview = "";
         if (savingsRate >= 35) {
-            narrativeOverview = `Outstanding run in ${periodLabel}! You kept ${savingsRate}% of your income tucked away, finishing with a net cash surplus of ${formatPdfMoney(netCashFlow)}. Your main outflow was ${topName} (${topCatPercent}% of spend), but your strong financial discipline kept you comfortably in the green.`;
+            narrativeOverview = formatPdfTemplate(getPdfText('narrativeExcellent', activeLang), {
+                period: periodLabel,
+                pct: savingsRate,
+                net: formatPdfMoney(netCashFlow),
+                cat: topName,
+                catPct: topCatPercent
+            });
         } else if (savingsRate >= 15) {
-            narrativeOverview = `Solid financial balance in ${periodLabel}! You saved ${savingsRate}% of what you brought in (${formatPdfMoney(netCashFlow)} net surplus). Your biggest spending went toward ${topName} at ${topCatPercent}%. With steady habits already working, minor trims can unlock extra cash even faster.`;
+            narrativeOverview = formatPdfTemplate(getPdfText('narrativeSolid', activeLang), {
+                period: periodLabel,
+                pct: savingsRate,
+                net: formatPdfMoney(netCashFlow),
+                cat: topName,
+                catPct: topCatPercent
+            });
         } else if (savingsRate >= 0) {
-            narrativeOverview = `You kept things afloat this month with a modest ${formatPdfMoney(netCashFlow)} surplus (${savingsRate}% saved). Most outflows went into ${topName} (${topCatPercent}%). Giving yourself a bit more buffer next month will give your wallet much more breathing room.`;
+            narrativeOverview = formatPdfTemplate(getPdfText('narrativeModest', activeLang), {
+                period: periodLabel,
+                pct: savingsRate,
+                net: formatPdfMoney(netCashFlow),
+                cat: topName,
+                catPct: topCatPercent
+            });
         } else {
-            narrativeOverview = `Outflows outpaced income by ${formatPdfMoney(Math.abs(netCashFlow))} in ${periodLabel}. Occasional heavy spending cycles happen, especially with ${topName} taking up ${topCatPercent}% of total costs. The best move now is steadying the ship with a couple of painless spending cuts next month.`;
+            narrativeOverview = formatPdfTemplate(getPdfText('narrativeDeficit', activeLang), {
+                period: periodLabel,
+                pct: savingsRate,
+                net: formatPdfMoney(Math.abs(netCashFlow)),
+                cat: topName,
+                catPct: topCatPercent
+            });
         }
 
         doc.setFont(activeFont, "normal");
@@ -2793,50 +3765,80 @@ window.generateExportPdf = async function() {
         doc.setLineWidth(0.2);
         doc.line(marginX + 6, card2Y + 13.5, marginX + contentWidth - 6, card2Y + 13.5);
 
-        // 3 Dynamic, Non-Template Action Steps Tailored to Actual Context
+        // 3 Dynamic Action Steps Tailored to Actual Context & Localized
         let dynamicStep1 = { title: "", desc: "" };
         if (topLower.includes('food') || topLower.includes('dining') || topLower.includes('makan') || topLower.includes('restaurant') || topLower.includes('cafe') || topLower.includes('grocer')) {
-            dynamicStep1.title = "Dial In Your Food & Dining Rhythm";
-            dynamicStep1.desc = `Food took ${formatPdfMoney(topAmt)} (${topCatPercent}% of spend). Swapping just 2-3 outside meals a week for easy home cooking easily frees up ${formatPdfMoney(Math.round(topAmt * 0.2))} next month without feeling restrictive.`;
+            dynamicStep1.title = getPdfText('stepFoodTitle', activeLang);
+            dynamicStep1.desc = formatPdfTemplate(getPdfText('stepFoodDesc', activeLang), {
+                amt: formatPdfMoney(topAmt),
+                pct: topCatPercent,
+                save: formatPdfMoney(Math.round(topAmt * 0.2))
+            });
         } else if (topLower.includes('shop') || topLower.includes('belanja') || topLower.includes('fashion') || topLower.includes('cloth') || topLower.includes('elec') || topLower.includes('hobby')) {
-            dynamicStep1.title = "Use the 48-Hour Cart Rule";
-            dynamicStep1.desc = `Shopping totaled ${formatPdfMoney(topAmt)}. Before checking out on non-essential items, wait 48 hours. Most impulse desires cool off naturally, leaving more money directly in your pocket.`;
+            dynamicStep1.title = getPdfText('stepShoppingTitle', activeLang);
+            dynamicStep1.desc = formatPdfTemplate(getPdfText('stepShoppingDesc', activeLang), {
+                amt: formatPdfMoney(topAmt)
+            });
         } else if (topLower.includes('trans') || topLower.includes('travel') || topLower.includes('fuel') || topLower.includes('bensin') || topLower.includes('ride') || topLower.includes('vehicle')) {
-            dynamicStep1.title = "Streamline Commute & Travel Expenses";
-            dynamicStep1.desc = `Travel expenses reached ${formatPdfMoney(topAmt)} (${topCatPercent}%). Bundling weekly errands and reviewing transit pass options can easily shave 10-15% off this category next month.`;
+            dynamicStep1.title = getPdfText('stepTransportTitle', activeLang);
+            dynamicStep1.desc = formatPdfTemplate(getPdfText('stepTransportDesc', activeLang), {
+                amt: formatPdfMoney(topAmt),
+                pct: topCatPercent
+            });
         } else if (topLower.includes('bill') || topLower.includes('util') || topLower.includes('rent') || topLower.includes('sewa') || topLower.includes('housing') || topLower.includes('cicilan') || topLower.includes('tagihan')) {
-            dynamicStep1.title = "Audit Hidden Recurring Drains";
-            dynamicStep1.desc = `Fixed lifestyle costs took ${formatPdfMoney(topAmt)}. Take 5 minutes to audit recurring subscriptions and service plans—canceling just 1 or 2 unused services stops unnecessary monthly leak.`;
+            dynamicStep1.title = getPdfText('stepBillsTitle', activeLang);
+            dynamicStep1.desc = formatPdfTemplate(getPdfText('stepBillsDesc', activeLang), {
+                amt: formatPdfMoney(topAmt)
+            });
         } else if (topLower.includes('entert') || topLower.includes('hiburan') || topLower.includes('game') || topLower.includes('movie') || topLower.includes('leisure')) {
-            dynamicStep1.title = "Set a Clear Weekend Fun Allowance";
-            dynamicStep1.desc = `Leisure spending totaled ${formatPdfMoney(topAmt)}. Enjoying your earnings is essential—set a dedicated weekend quota so you can treat yourself freely without budget guilt.`;
+            dynamicStep1.title = getPdfText('stepEntertainmentTitle', activeLang);
+            dynamicStep1.desc = formatPdfTemplate(getPdfText('stepEntertainmentDesc', activeLang), {
+                amt: formatPdfMoney(topAmt)
+            });
         } else {
-            dynamicStep1.title = `Put a Friendly Soft Cap on ${topName}`;
-            dynamicStep1.desc = `${topName} was your biggest cash outflow at ${formatPdfMoney(topAmt)} (${topCatPercent}%). Setting a target in Pocketly to keep it under ${formatPdfMoney(Math.round(topAmt * 0.85))} frees up extra cash effortlessly.`;
+            dynamicStep1.title = formatPdfTemplate(getPdfText('stepDefaultTitle', activeLang), { cat: topName });
+            dynamicStep1.desc = formatPdfTemplate(getPdfText('stepDefaultDesc', activeLang), {
+                cat: topName,
+                amt: formatPdfMoney(topAmt),
+                pct: topCatPercent,
+                target: formatPdfMoney(Math.round(topAmt * 0.85))
+            });
         }
 
         let dynamicStep2 = { title: "", desc: "" };
         if (savingsRate < 0) {
-            dynamicStep2.title = "Run a Quick 7-Day Low-Spend Sprint";
-            dynamicStep2.desc = `To shake off the ${formatPdfMoney(Math.abs(netCashFlow))} deficit, pick one upcoming week to stick strictly to essentials. It resets your cash momentum fast and restores balance across your accounts.`;
+            dynamicStep2.title = getPdfText('stepDeficitTitle', activeLang);
+            dynamicStep2.desc = formatPdfTemplate(getPdfText('stepDeficitDesc', activeLang), {
+                amt: formatPdfMoney(Math.abs(netCashFlow))
+            });
         } else if (savingsRate < 15) {
-            dynamicStep2.title = "Save First, Spend What Remains";
-            dynamicStep2.desc = `Instead of saving whatever happens to be left over, transfer ${formatPdfMoney(Math.round(totalIncome * 0.1))} (10%) right on payday. Treating savings like a bill changes the whole game.`;
+            dynamicStep2.title = getPdfText('stepLowSaveTitle', activeLang);
+            dynamicStep2.desc = formatPdfTemplate(getPdfText('stepLowSaveDesc', activeLang), {
+                amt: formatPdfMoney(Math.round(totalIncome * 0.1))
+            });
         } else if (savingsRate >= 35) {
-            dynamicStep2.title = "Put That Idle Cash to Work";
-            dynamicStep2.desc = `You accumulated ${formatPdfMoney(netCashFlow)} in surplus funds. Rather than letting it sit idle, consider routing a chunk into high-yield accounts or investments so it compounds on autopilot.`;
+            dynamicStep2.title = getPdfText('stepHighSaveTitle', activeLang);
+            dynamicStep2.desc = formatPdfTemplate(getPdfText('stepHighSaveDesc', activeLang), {
+                amt: formatPdfMoney(netCashFlow)
+            });
         } else {
-            dynamicStep2.title = "Automate Your Payday Savings Split";
-            dynamicStep2.desc = `Transfer ${formatPdfMoney(Math.round(totalIncome * 0.2))} (20%) directly into savings the moment income lands. Locking it in early guarantees your savings target without daily effort.`;
+            dynamicStep2.title = getPdfText('stepModSaveTitle', activeLang);
+            dynamicStep2.desc = formatPdfTemplate(getPdfText('stepModSaveDesc', activeLang), {
+                amt: formatPdfMoney(Math.round(totalIncome * 0.2))
+            });
         }
 
         let dynamicStep3 = { title: "", desc: "" };
         if (savingsRate < 10) {
-            dynamicStep3.title = "Build a Starter Peace-of-Mind Buffer";
-            dynamicStep3.desc = `Start small: aim for a quick ${formatPdfMoney(Math.round(totalExpense * 0.5))} starter cushion. Even a 2-week emergency reserve protects you from unexpected expenses without resorting to debt.`;
+            dynamicStep3.title = getPdfText('stepBufferTitle', activeLang);
+            dynamicStep3.desc = formatPdfTemplate(getPdfText('stepBufferDesc', activeLang), {
+                amt: formatPdfMoney(Math.round(totalExpense * 0.5))
+            });
         } else {
-            dynamicStep3.title = "Grow Toward Your 3-Month Safety Cushion";
-            dynamicStep3.desc = `Your recommended 3-month living buffer is ${formatPdfMoney(totalExpense * 3)}. Channeling half your monthly surplus will have you fully covered and financially resilient in no time.`;
+            dynamicStep3.title = getPdfText('stepBuffer3mTitle', activeLang);
+            dynamicStep3.desc = formatPdfTemplate(getPdfText('stepBuffer3mDesc', activeLang), {
+                amt: formatPdfMoney(totalExpense * 3)
+            });
         }
 
         let actY = card2Y + 16.5;
@@ -2870,14 +3872,15 @@ window.generateExportPdf = async function() {
         drawActionStep("3", dynamicStep3.title, dynamicStep3.desc);
 
         // Page 1 Footer
+        const footerConfText = formatPdfTemplate(getPdfText('footerConfidential', activeLang), { period: periodLabel });
         doc.setDrawColor(226, 232, 240);
         doc.setLineWidth(0.2);
         doc.line(marginX, pageHeight - 10, marginX + contentWidth, pageHeight - 10);
         doc.setFont(activeFont, "normal");
         doc.setFontSize(7.5);
         doc.setTextColor(148, 163, 184);
-        doc.text(`Pocketly Personal Finance Statement  |  Confidential  |  Period: ${periodLabel}`, marginX, pageHeight - 6);
-        doc.text("Page 1 of 2", marginX + contentWidth, pageHeight - 6, { align: 'right' });
+        doc.text(footerConfText, marginX, pageHeight - 6);
+        doc.text(formatPdfTemplate(getPdfText('pageOf', activeLang), { i: 1, totalPages: 2 }), marginX + contentWidth, pageHeight - 6, { align: 'right' });
 
         // ==========================================
         // PAGE 2+: DETAILED TRANSACTION HISTORY LEDGER
@@ -2896,18 +3899,23 @@ window.generateExportPdf = async function() {
         doc.setFont(activeFont, "bold");
         doc.setFontSize(14);
         doc.setTextColor(15, 23, 42);
-        doc.text("Transaction History Ledger", p2TitleX, 20);
+        doc.text(getPdfText('p2Title', activeLang, "Transaction History Ledger"), p2TitleX, 20);
 
         doc.setFont(activeFont, "normal");
         doc.setFontSize(8.5);
         doc.setTextColor(100, 116, 139);
-        doc.text(`${periodLabel}  |  ${scoped.length} Transactions Recorded`, p2TitleX, 24.5);
+        const p2Sub = `${periodLabel}  |  ${formatPdfTemplate(getPdfText('p2Recorded', activeLang), { n: scoped.length })}`;
+        doc.text(p2Sub, p2TitleX, 24.5);
 
         // Header Right Quick Summary
         doc.setFont(activeFont, "bold");
         doc.setFontSize(8);
         doc.setTextColor(51, 65, 85);
-        const p2Summary = `Income: +${formatPdfMoney(totalIncome)}   |   Expenses: -${formatPdfMoney(totalExpense)}   |   Net: ${isNetPositive ? '+' : ''}${formatPdfMoney(netCashFlow)}`;
+        const p2Summary = formatPdfTemplate(getPdfText('p2Summary', activeLang), {
+            inc: formatPdfMoney(totalIncome),
+            exp: formatPdfMoney(totalExpense),
+            net: `${isNetPositive ? '+' : ''}${formatPdfMoney(netCashFlow)}`
+        });
         doc.text(p2Summary, marginX + contentWidth, 21, { align: 'right' });
 
         // Hairline Divider
@@ -2927,7 +3935,10 @@ window.generateExportPdf = async function() {
             const sign = rawType === 'income' ? '+ ' : (rawType === 'transfer' ? '' : '- ');
             const amtStr = `${sign}${formatPdfMoney(t.amount)}`;
             const descStr = t.desc || '-';
-            const catStr = t.category || 'Others';
+            const catName = t.category || 'Others';
+            const catStr = (typeof PocketlyI18n !== 'undefined' && PocketlyI18n.translateCategory)
+                ? PocketlyI18n.translateCategory(catName)
+                : catName;
 
             transRows.push([
                 dateFormatted,
@@ -2939,8 +3950,10 @@ window.generateExportPdf = async function() {
             ]);
         });
 
+        const p2Head = PDF_I18N.p2TableHead[activeLang] || PDF_I18N.p2TableHead['en'];
+
         doc.autoTable({
-            head: [["Date", "Description", "Category", "Account", "Amount"]],
+            head: [p2Head],
             body: transRows,
             startY: 32,
             margin: { left: marginX, right: marginX, bottom: 15 },
@@ -2962,7 +3975,7 @@ window.generateExportPdf = async function() {
             },
             columnStyles: {
                 0: { cellWidth: 24, halign: 'center' },
-                1: { cellWidth: 58 }, // generous width for readable descriptions
+                1: { cellWidth: 58 },
                 2: { cellWidth: 32, fontStyle: 'bold', textColor: [15, 23, 42] },
                 3: { cellWidth: 30, textColor: [100, 116, 139] },
                 4: { cellWidth: 38, halign: 'right', fontStyle: 'bold' }
@@ -2994,8 +4007,8 @@ window.generateExportPdf = async function() {
             doc.setFont(activeFont, "normal");
             doc.setFontSize(7.5);
             doc.setTextColor(148, 163, 184);
-            doc.text(`Pocketly Personal Finance Statement  |  Confidential  |  Period: ${periodLabel}`, marginX, pageHeight - 6);
-            doc.text(`Page ${i} of ${totalPages}`, marginX + contentWidth, pageHeight - 6, { align: 'right' });
+            doc.text(footerConfText, marginX, pageHeight - 6);
+            doc.text(formatPdfTemplate(getPdfText('pageOf', activeLang), { i: i, totalPages: totalPages }), marginX + contentWidth, pageHeight - 6, { align: 'right' });
         }
 
         // Save file with clean filename
@@ -3010,7 +4023,10 @@ window.generateExportPdf = async function() {
     } finally {
         if (btnGenerate) {
             btnGenerate.disabled = false;
-            btnGenerate.innerHTML = `<i class="fa-solid fa-file-arrow-down"></i> <span>Download Statement PDF</span>`;
+            const dlText = (typeof PocketlyI18n !== 'undefined' && PocketlyI18n.t)
+                ? PocketlyI18n.t('btn_download_statement', 'Download Statement PDF')
+                : 'Download Statement PDF';
+            btnGenerate.innerHTML = `<i class="fa-solid fa-file-arrow-down"></i> <span>${dlText}</span>`;
         }
     }
 };
