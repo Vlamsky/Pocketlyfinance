@@ -22,7 +22,7 @@
     <link
         href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Outfit:wght@400;500;600;700;800;900&family=Plus+Jakarta+Sans:ital,wght@0,300..800;1,300..800&display=swap"
         rel="stylesheet">
-    <link rel="stylesheet" href="style.css?v=9.8">
+    <link rel="stylesheet" href="style.css?v=9.9">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
@@ -72,6 +72,78 @@
             }
         }, 8000);
     </script>
+
+    <!-- Fullscreen App Lock Screen Overlay -->
+    <div id="appLockScreen" class="app-lock-overlay" style="display: none;">
+        <div class="app-lock-content">
+            <div class="app-lock-brand">
+                <img src="logo-new.png" alt="Pocketly Logo" class="app-lock-logo">
+                <h2 class="app-lock-title">Pocketly Secure</h2>
+                <p class="app-lock-subtitle" id="appLockPromptText">Masukkan 4 digit PIN untuk membuka</p>
+            </div>
+
+            <div class="pin-dots-container" id="pinDotsContainer" aria-label="Status PIN">
+                <div class="pin-dot" id="pdot0"></div>
+                <div class="pin-dot" id="pdot1"></div>
+                <div class="pin-dot" id="pdot2"></div>
+                <div class="pin-dot" id="pdot3"></div>
+            </div>
+
+            <p class="pin-error-msg" id="pinErrorMsg" style="display: none;">PIN salah. Silakan coba lagi.</p>
+
+            <div class="pin-keypad">
+                <button type="button" class="pin-key-btn" data-key="1">
+                    <span class="pin-key-num">1</span>
+                    <span class="pin-key-sub">&nbsp;</span>
+                </button>
+                <button type="button" class="pin-key-btn" data-key="2">
+                    <span class="pin-key-num">2</span>
+                    <span class="pin-key-sub">ABC</span>
+                </button>
+                <button type="button" class="pin-key-btn" data-key="3">
+                    <span class="pin-key-num">3</span>
+                    <span class="pin-key-sub">DEF</span>
+                </button>
+
+                <button type="button" class="pin-key-btn" data-key="4">
+                    <span class="pin-key-num">4</span>
+                    <span class="pin-key-sub">GHI</span>
+                </button>
+                <button type="button" class="pin-key-btn" data-key="5">
+                    <span class="pin-key-num">5</span>
+                    <span class="pin-key-sub">JKL</span>
+                </button>
+                <button type="button" class="pin-key-btn" data-key="6">
+                    <span class="pin-key-num">6</span>
+                    <span class="pin-key-sub">MNO</span>
+                </button>
+
+                <button type="button" class="pin-key-btn" data-key="7">
+                    <span class="pin-key-num">7</span>
+                    <span class="pin-key-sub">PQRS</span>
+                </button>
+                <button type="button" class="pin-key-btn" data-key="8">
+                    <span class="pin-key-num">8</span>
+                    <span class="pin-key-sub">TUV</span>
+                </button>
+                <button type="button" class="pin-key-btn" data-key="9">
+                    <span class="pin-key-num">9</span>
+                    <span class="pin-key-sub">WXYZ</span>
+                </button>
+
+                <button type="button" class="pin-key-btn aux-btn" id="btnBiometricUnlock" title="Biometric Unlock" aria-label="Biometric Unlock">
+                    <i class="fa-solid fa-fingerprint"></i>
+                </button>
+                <button type="button" class="pin-key-btn" data-key="0">
+                    <span class="pin-key-num">0</span>
+                    <span class="pin-key-sub">&nbsp;</span>
+                </button>
+                <button type="button" class="pin-key-btn aux-btn" id="btnPinBackspace" title="Hapus" aria-label="Backspace">
+                    <i class="fa-solid fa-delete-left"></i>
+                </button>
+            </div>
+        </div>
+    </div>
 
     <!-- Custom Alert Notification Modal -->
     <div id="customAlert" class="custom-modal">
@@ -902,8 +974,42 @@
                         </div>
 
                         <!-- Settings: Security -->
-                        <div class="settings-group-label">Security</div>
+                        <div class="settings-group-label">Security & Privacy</div>
                         <div class="settings-list">
+                            <div class="settings-row">
+                                <div class="set-icon bg-blue"><i class="fa-solid fa-shield-halved"></i></div>
+                                <div class="set-text">
+                                    <h4>App Lock (PIN 4-Digit)</h4>
+                                </div>
+                                <div class="set-action">
+                                    <label class="switch">
+                                        <input type="checkbox" id="appLockToggle">
+                                        <span class="slider round"></span>
+                                    </label>
+                                </div>
+                            </div>
+
+                            <div class="settings-row" id="rowChangePin" style="display: none; cursor: pointer;">
+                                <div class="set-icon bg-purple"><i class="fa-solid fa-hashtag"></i></div>
+                                <div class="set-text">
+                                    <h4>Change PIN Passcode</h4>
+                                </div>
+                                <div class="set-action"><i class="fa-solid fa-chevron-right"></i></div>
+                            </div>
+
+                            <div class="settings-row" id="rowBiometric" style="display: none;">
+                                <div class="set-icon bg-green"><i class="fa-solid fa-fingerprint"></i></div>
+                                <div class="set-text">
+                                    <h4>Biometric Unlock (Face / Fingerprint)</h4>
+                                </div>
+                                <div class="set-action">
+                                    <label class="switch">
+                                        <input type="checkbox" id="biometricLockToggle">
+                                        <span class="slider round"></span>
+                                    </label>
+                                </div>
+                            </div>
+
                             <div class="settings-row" id="btnChangePass">
                                 <div class="set-icon bg-orange"><i class="fa-solid fa-key"></i></div>
                                 <div class="set-text">
@@ -2311,8 +2417,45 @@
         </div>
     </div>
 
+    <!-- Modal: PIN Setup & Change -->
+    <div id="pinSetupModal" class="modal" role="dialog" aria-modal="true" onclick="if(event.target === this) { if(window.PocketlyAppLock && window.PocketlyAppLock.closeSetup) { window.PocketlyAppLock.closeSetup(); } }">
+        <div class="modal-content" style="max-width: 360px; text-align: center;">
+            <button type="button" class="close-btn" id="btnClosePinSetup" aria-label="Close modal"><i class="fa-solid fa-xmark"></i></button>
+            <div style="width: 48px; height: 48px; border-radius: 50%; background: var(--blue-accent-light); color: var(--primary-color); display: flex; align-items: center; justify-content: center; margin: 0 auto 14px auto; font-size: 1.3rem;">
+                <i class="fa-solid fa-shield-halved"></i>
+            </div>
+            <h2 id="pinSetupTitle" style="font-size: 1.25rem; font-weight: 700; margin-bottom: 6px;">Set 4-Digit PIN</h2>
+            <p id="pinSetupDesc" style="color: var(--text-grey); font-size: 0.86rem; margin-bottom: 18px;">Masukkan 4 angka untuk PIN keamanan Anda.</p>
+
+            <div class="pin-dots-container" id="setupPinDotsContainer" style="margin-bottom: 16px;">
+                <div class="pin-dot" id="sdot0"></div>
+                <div class="pin-dot" id="sdot1"></div>
+                <div class="pin-dot" id="sdot2"></div>
+                <div class="pin-dot" id="sdot3"></div>
+            </div>
+
+            <p class="pin-error-msg" id="setupPinErrorMsg" style="display: none; margin-bottom: 14px;">PIN konfirmasi tidak cocok.</p>
+
+            <div class="pin-keypad compact-keypad">
+                <button type="button" class="pin-key-btn compact" data-skey="1">1</button>
+                <button type="button" class="pin-key-btn compact" data-skey="2">2</button>
+                <button type="button" class="pin-key-btn compact" data-skey="3">3</button>
+                <button type="button" class="pin-key-btn compact" data-skey="4">4</button>
+                <button type="button" class="pin-key-btn compact" data-skey="5">5</button>
+                <button type="button" class="pin-key-btn compact" data-skey="6">6</button>
+                <button type="button" class="pin-key-btn compact" data-skey="7">7</button>
+                <button type="button" class="pin-key-btn compact" data-skey="8">8</button>
+                <button type="button" class="pin-key-btn compact" data-skey="9">9</button>
+                <button type="button" class="pin-key-btn compact aux-btn" id="btnCancelPinSetup">Batal</button>
+                <button type="button" class="pin-key-btn compact" data-skey="0">0</button>
+                <button type="button" class="pin-key-btn compact aux-btn" id="btnSetupBackspace"><i class="fa-solid fa-delete-left"></i></button>
+            </div>
+        </div>
+    </div>
+
     <!-- Scripts -->
     <script src="audio-haptics.js?v=1.0"></script>
+    <script src="app-lock.js?v=1.0"></script>
     <script src="poppins-font.js"></script>
     <script type="module" src="script.js?v=10.9"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
