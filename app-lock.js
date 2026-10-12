@@ -232,6 +232,12 @@
             currentEnteredPin = '';
             lastBackgroundTimestamp = 0;
             updateLockDots();
+
+            if (window.__pendingShortcutAction && typeof window.handleNativeShortcutAction === 'function') {
+                const act = window.__pendingShortcutAction;
+                window.__pendingShortcutAction = null;
+                setTimeout(() => window.handleNativeShortcutAction(act), 120);
+            }
         }, 280);
     }
 

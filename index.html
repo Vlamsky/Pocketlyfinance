@@ -1730,6 +1730,9 @@
             </main>
         </div>
 
+        <!-- Floating Backdrop Dismiss Layer (Transparent Full Screen) -->
+        <div class="fab-speed-dial-backdrop" id="fabBackdrop" onclick="toggleFabSpeedDial(false)"></div>
+
         <!-- 3. MOBILE FLOATING GLASS DOCK (BOTTOM NAV) - Inside appScreen -->
         <nav class="bottom-glass-dock" id="mobileBottomNav">
             <a href="#" class="b-nav-item active" data-target="dashboard"
@@ -1741,15 +1744,10 @@
                 <i class="fa-solid fa-receipt"></i>
             </a>
             <div class="b-nav-fab-wrapper">
-                <!-- Floating Radial Glassmorphism Menu with Dotted Arc Trajectory -->
+                <!-- Floating Radial Glassmorphism Menu -->
                 <div class="fab-speed-dial-menu arc-radial-glass-menu" id="fabSpeedDialMenu">
-                    <!-- Smooth Dotted Arc Trajectory Line -->
-                    <svg class="arc-trajectory-svg" viewBox="-120 -120 240 120" fill="none">
-                        <path class="arc-trajectory-path" d="M -84 -37.4 A 92 92 0 0 1 84 -37.4" />
-                    </svg>
-
                     <!-- 1. Red Floating Button with Up-Arrow (Leftmost) -->
-                    <button type="button" class="arc-glass-orb orb-expense" onclick="triggerSpeedDialAction('expense')" title="Catat Pengeluaran" aria-label="Catat Pengeluaran">
+                    <button type="button" class="arc-glass-orb orb-expense" data-action="expense" onclick="triggerSpeedDialAction('expense')" title="Catat Pengeluaran" aria-label="Catat Pengeluaran">
                         <div class="orb-glass-ring">
                             <div class="orb-inner-badge rose">
                                 <i class="fa-solid fa-arrow-up"></i>
@@ -1758,7 +1756,7 @@
                     </button>
 
                     <!-- 2. Green Floating Button with Down-Arrow (Mid-Left) -->
-                    <button type="button" class="arc-glass-orb orb-income" onclick="triggerSpeedDialAction('income')" title="Catat Pemasukan" aria-label="Catat Pemasukan">
+                    <button type="button" class="arc-glass-orb orb-income" data-action="income" onclick="triggerSpeedDialAction('income')" title="Catat Pemasukan" aria-label="Catat Pemasukan">
                         <div class="orb-glass-ring">
                             <div class="orb-inner-badge emerald">
                                 <i class="fa-solid fa-arrow-down"></i>
@@ -1767,7 +1765,7 @@
                     </button>
 
                     <!-- 3. Purple Floating Button with Hand Holding Coin (Mid-Right) -->
-                    <button type="button" class="arc-glass-orb orb-debt" onclick="triggerSpeedDialAction('debt')" title="Catat Hutang/Piutang" aria-label="Catat Hutang/Piutang">
+                    <button type="button" class="arc-glass-orb orb-debt" data-action="debt" onclick="triggerSpeedDialAction('debt')" title="Catat Hutang/Piutang" aria-label="Catat Hutang/Piutang">
                         <div class="orb-glass-ring">
                             <div class="orb-inner-badge purple">
                                 <i class="fa-solid fa-hand-holding-dollar"></i>
@@ -1776,7 +1774,7 @@
                     </button>
 
                     <!-- 4. Orange Floating Button with Camera (Rightmost) -->
-                    <button type="button" class="arc-glass-orb orb-scan" onclick="triggerSpeedDialAction('scan')" title="Pindai Struk Belanja" aria-label="Pindai Struk Belanja">
+                    <button type="button" class="arc-glass-orb orb-scan" data-action="scan" onclick="triggerSpeedDialAction('scan')" title="Pindai Struk Belanja" aria-label="Pindai Struk Belanja">
                         <div class="orb-glass-ring">
                             <div class="orb-inner-badge amber">
                                 <i class="fa-solid fa-camera"></i>
@@ -1785,11 +1783,8 @@
                     </button>
                 </div>
 
-                <!-- Subtle Dark Overlay Backdrop over blurred background -->
-                <div class="fab-speed-dial-backdrop" id="fabBackdrop" onclick="toggleFabSpeedDial(false)"></div>
-
                 <button class="btn-hero-fab" id="mobileAddFab" type="button"
-                    onclick="toggleFabSpeedDial()" title="Quick Actions" aria-label="Menu Tambah Cepat">
+                    title="Tambah Transaksi (Tahan untuk opsi lainnya)" aria-label="Tambah Transaksi Baru">
                     <i class="fa-solid fa-plus" id="mobileFabIcon"></i>
                 </button>
             </div>

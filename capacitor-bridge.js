@@ -233,12 +233,20 @@
     // 6. Native Android Local Notifications Bridge
     window.PocketlyNativeNotification = {
         isAvailable: function() {
+            if (window.AndroidNative && typeof window.AndroidNative.showNotification === 'function') {
+                return true;
+            }
             return !!(window.Capacitor && (typeof window.Capacitor.isPluginAvailable === 'function' ? window.Capacitor.isPluginAvailable('LocalNotifications') : (window.Capacitor.Plugins && window.Capacitor.Plugins.LocalNotifications)));
         },
         getPlugin: function() {
             return (window.Capacitor && window.Capacitor.Plugins) ? window.Capacitor.Plugins.LocalNotifications : null;
         },
         checkPermission: async function() {
+            if (window.AndroidNative && typeof window.AndroidNative.isNotificationPermissionGranted === 'function') {
+                try {
+                    return window.AndroidNative.isNotificationPermissionGranted() ? 'granted' : 'denied';
+                } catch (e) {}
+            }
             const plugin = this.getPlugin();
             if (!plugin) return null;
             try {
@@ -250,40 +258,77 @@
             }
         },
         requestPermission: async function() {
-            const plugin = this.getPlugin();
-            if (!plugin) return false;
-            try {
-                const result = await plugin.requestPermissions();
-                return !!(result && result.display === 'granted');
-            } catch (e) {
-                console.warn('[NativeNotification] requestPermissions error:', e);
-                return false;
+            let isGranted = false;
+            if (window.AndroidNative && typeof window.AndroidNative.requestNotificationPermission === 'function') {
+                try {
+                    window.AndroidNative.requestNotificationPermission();
+                } catch (e) {}
             }
+            const plugin = this.getPlugin();
+            if (plugin) {
+                try {
+                    const result = await plugin.requestPermissions();
+                    if (result && result.display === 'granted') isGranted = true;
+                } catch (e) {
+                    console.warn('[NativeNotification] requestPermissions error:', e);
+                }
+            }
+            if (window.AndroidNative && typeof window.AndroidNative.isNotificationPermissionGranted === 'function') {
+                try {
+                    if (window.AndroidNative.isNotificationPermissionGranted()) isGranted = true;
+                } catch (e) {}
+            }
+            return isGranted;
         },
         schedule: async function(title, body, id = null, extra = {}) {
-            const plugin = this.getPlugin();
-            if (!plugin) return false;
-            try {
-                const notifId = (typeof id === 'number' && !isNaN(id)) ? id : (Math.floor(Math.random() * 899999) + 100000);
-                await plugin.schedule({
-                    notifications: [
-                        {
-                            title: title,
-                            body: body || '',
-                            id: notifId,
-                            schedule: { at: new Date(Date.now() + 150) },
-                            sound: 'beep.wav',
-                            smallIcon: 'ic_launcher',
-                            iconColor: '#2563eb',
-                            extra: extra
-                        }
-                    ]
-                });
-                return true;
-            } catch (e) {
-                console.warn('[NativeNotification] schedule error:', e);
-                return false;
+            const notifId = (typeof id === 'number' && !isNaN(id)) ? id : (Math.floor(Math.random() * 899999) + 100000);
+
+            // A. Direct Native Android Framework API (Highest reliability, 100% working on all Android versions)
+            if (window.AndroidNative && typeof window.AndroidNative.showNotification === 'function') {
+                try {
+                    window.AndroidNative.showNotification(title, body || '', notifId);
+                    return true;
+                } catch (e) {
+                    console.warn('[NativeNotification] AndroidNative showNotification warning:', e);
+                }
             }
+
+            // B. Capacitor LocalNotifications Plugin Fallback
+            const plugin = this.getPlugin();
+            if (plugin) {
+                try {
+                    // Create high-importance notification channel
+                    if (typeof plugin.createChannel === 'function') {
+                        await plugin.createChannel({
+                            id: 'pocketly_alerts_channel',
+                            name: 'Notifikasi Pocketly',
+                            description: 'Peringatan dan pengingat finansial',
+                            importance: 5,
+                            visibility: 1,
+                            vibration: true
+                        }).catch(() => {});
+                    }
+
+                    await plugin.schedule({
+                        notifications: [
+                            {
+                                title: title,
+                                body: body || '',
+                                id: notifId,
+                                channelId: 'pocketly_alerts_channel',
+                                schedule: { at: new Date(Date.now() + 100) },
+                                smallIcon: 'ic_notification',
+                                iconColor: '#2563eb',
+                                extra: extra
+                            }
+                        ]
+                    });
+                    return true;
+                } catch (e) {
+                    console.warn('[NativeNotification] schedule error:', e);
+                }
+            }
+            return false;
         }
     };
 
@@ -300,30 +345,122 @@
         }
     } catch (e) {}
 
-    // 7. App URL & Launcher Shortcuts listener
-    try {
-        if (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.App) {
-            window.Capacitor.Plugins.App.addListener('appUrlOpen', (data) => {
+    // 7. Universal App Launcher Shortcuts & Deep Links Engine
+    window.handleNativeShortcutAction = function(action) {
+        if (!action) return;
+        console.log('[Pocketly Bridge] Triggering launcher shortcut action:', action);
+
+        function executeAction() {
+            // Check if App Lock is currently blocking the screen
+            const lockScreen = document.getElementById('appLockScreen');
+            if (lockScreen && lockScreen.style.display !== 'none' && !lockScreen.classList.contains('unlocking')) {
+                window.__pendingShortcutAction = action;
+                return;
+            }
+
+            // Close active speed dial menu if open
+            if (typeof window.toggleFabSpeedDial === 'function') {
+                window.toggleFabSpeedDial(false);
+            }
+
+            if (action === 'new_expense' || action === 'expense') {
+                if (typeof window.openQuickTransaction === 'function') {
+                    window.openQuickTransaction('expense');
+                } else {
+                    const openBtn = document.getElementById('openTransModalBtn');
+                    if (openBtn) openBtn.click();
+                }
+            } else if (action === 'new_income' || action === 'income') {
+                if (typeof window.openQuickTransaction === 'function') {
+                    window.openQuickTransaction('income');
+                } else {
+                    const openBtn = document.getElementById('openTransModalBtn');
+                    if (openBtn) openBtn.click();
+                }
+            } else if (action === 'debts' || action === 'debt') {
+                if (typeof window.switchPage === 'function') {
+                    window.switchPage('debts');
+                }
+                setTimeout(() => {
+                    if (typeof window.openDebtModal === 'function') {
+                        window.openDebtModal();
+                    } else if (typeof window.openQuickDebt === 'function') {
+                        window.openQuickDebt();
+                    }
+                }, 220);
+            } else if (action === 'scan') {
+                if (typeof window.openReceiptScannerModal === 'function') {
+                    window.openReceiptScannerModal();
+                }
+            }
+        }
+
+        if (window.__pocketlyAppReady) {
+            setTimeout(executeAction, 180);
+        } else {
+            window.__pendingShortcutAction = action;
+            const pollReady = setInterval(() => {
+                if (window.__pocketlyAppReady) {
+                    clearInterval(pollReady);
+                    setTimeout(executeAction, 220);
+                }
+            }, 80);
+            setTimeout(() => clearInterval(pollReady), 4500);
+        }
+    };
+
+    // Check pending shortcut from AndroidNative or Capacitor on launch
+    function checkInitialShortcuts() {
+        if (window.__pendingShortcutAction) {
+            const act = window.__pendingShortcutAction;
+            window.__pendingShortcutAction = null;
+            window.handleNativeShortcutAction(act);
+            return;
+        }
+
+        if (window.AndroidNative && typeof window.AndroidNative.getPendingShortcutAction === 'function') {
+            try {
+                const act = window.AndroidNative.getPendingShortcutAction();
+                if (act) {
+                    window.handleNativeShortcutAction(act);
+                    return;
+                }
+            } catch (e) {}
+        }
+
+        if (App && typeof App.getLaunchUrl === 'function') {
+            App.getLaunchUrl().then(ret => {
+                if (ret && ret.url) {
+                    try {
+                        const parsed = new URL(ret.url);
+                        const act = parsed.searchParams.get('action');
+                        if (act) window.handleNativeShortcutAction(act);
+                    } catch (err) {}
+                }
+            }).catch(() => {});
+        }
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', () => setTimeout(checkInitialShortcuts, 250));
+    } else {
+        setTimeout(checkInitialShortcuts, 250);
+    }
+
+    // App URL listener for background resume
+    if (App) {
+        try {
+            App.addListener('appUrlOpen', (data) => {
                 if (data && data.url) {
                     try {
                         const parsed = new URL(data.url);
-                        const action = parsed.searchParams.get('action');
-                        if (action) {
-                            setTimeout(() => {
-                                if (action === 'new_expense' && typeof window.openQuickTransaction === 'function') {
-                                    window.openQuickTransaction('expense');
-                                } else if (action === 'new_income' && typeof window.openQuickTransaction === 'function') {
-                                    window.openQuickTransaction('income');
-                                } else if (action === 'debts' && typeof window.switchPage === 'function') {
-                                    window.switchPage('debts');
-                                } else if (action === 'scan' && typeof window.openReceiptScannerModal === 'function') {
-                                    window.openReceiptScannerModal();
-                                }
-                            }, 350);
+                        const act = parsed.searchParams.get('action');
+                        if (act) {
+                            window.handleNativeShortcutAction(act);
                         }
                     } catch (err) {}
                 }
             });
-        }
-    } catch (e) {}
+        } catch (e) {}
+    }
 })();

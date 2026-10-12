@@ -1,6 +1,10 @@
 package com.pocketly.app;
 
 import android.Manifest;
+import android.app.NotificationChannel;
+import android.app.NotificationManager;
+import android.app.PendingIntent;
+import android.content.Context;
 import android.content.ContentValues;
 import android.content.Intent;
 import android.content.pm.PackageManager;
@@ -22,6 +26,7 @@ import androidx.biometric.BiometricPrompt;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import androidx.core.content.FileProvider;
+import androidx.core.app.NotificationCompat;
 import androidx.core.view.WindowCompat;
 import androidx.core.view.WindowInsetsControllerCompat;
 import com.getcapacitor.BridgeActivity;
@@ -33,6 +38,7 @@ import java.util.concurrent.Executor;
 public class MainActivity extends BridgeActivity {
 
     private static final int PERMISSION_REQUEST_MIC = 201;
+    private String pendingShortcutAction = null;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -47,8 +53,49 @@ public class MainActivity extends BridgeActivity {
         // Request Microphone permission if not already granted
         checkAndRequestMicPermission();
 
+        // Handle Launcher Shortcut Intent if app launched via shortcut
+        handleShortcutIntent(getIntent());
+
         // Configure WebView (disable scrollbars, register JavascriptInterface)
         configureWebView();
+    }
+
+    @Override
+    protected void onNewIntent(Intent intent) {
+        super.onNewIntent(intent);
+        setIntent(intent);
+        handleShortcutIntent(intent);
+    }
+
+    private void handleShortcutIntent(Intent intent) {
+        if (intent == null) return;
+        String action = null;
+        if (intent.hasExtra("action")) {
+            action = intent.getStringExtra("action");
+        }
+        if ((action == null || action.isEmpty()) && intent.getData() != null) {
+            Uri data = intent.getData();
+            action = data.getQueryParameter("action");
+        }
+        if (action != null && !action.isEmpty()) {
+            this.pendingShortcutAction = action;
+            dispatchShortcutActionToWeb(action);
+        }
+    }
+
+    private void dispatchShortcutActionToWeb(final String action) {
+        runOnUiThread(() -> {
+            try {
+                if (getBridge() != null && getBridge().getWebView() != null) {
+                    getBridge().getWebView().evaluateJavascript(
+                        "(function(){ if (typeof window.handleNativeShortcutAction === 'function') { window.handleNativeShortcutAction('" + action + "'); } else { window.__pendingShortcutAction = '" + action + "'; } })();",
+                        null
+                    );
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        });
     }
 
     @Override
@@ -62,6 +109,9 @@ public class MainActivity extends BridgeActivity {
                     "(function(){ var isDark = document.body.classList.contains('dark-mode') || (localStorage.getItem('theme') === 'dark'); if (window.AndroidNative && window.AndroidNative.setSystemBarTheme) window.AndroidNative.setSystemBarTheme(isDark); })();",
                     null
                 );
+            }
+            if (pendingShortcutAction != null && !pendingShortcutAction.isEmpty()) {
+                dispatchShortcutActionToWeb(pendingShortcutAction);
             }
         } catch (Exception e) {
             e.printStackTrace();
@@ -167,11 +217,103 @@ public class MainActivity extends BridgeActivity {
         }
     }
 
+    public boolean checkNotificationPermission() {
+        if (Build.VERSION.SDK_INT >= 33) {
+            return ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS)
+                == PackageManager.PERMISSION_GRANTED;
+        }
+        return true;
+    }
+
+    public void requestNotificationPermission() {
+        if (Build.VERSION.SDK_INT >= 33) {
+            if (ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS)
+                != PackageManager.PERMISSION_GRANTED) {
+                ActivityCompat.requestPermissions(
+                    this,
+                    new String[]{Manifest.permission.POST_NOTIFICATIONS},
+                    202
+                );
+            }
+        }
+    }
+
+    public void showNativeNotification(final String title, final String body, final int notifId) {
+        runOnUiThread(() -> {
+            try {
+                NotificationManager notificationManager =
+                    (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+                if (notificationManager == null) return;
+
+                String channelId = "pocketly_alerts_channel";
+
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                    NotificationChannel channel = new NotificationChannel(
+                        channelId,
+                        "Notifikasi Pocketly",
+                        NotificationManager.IMPORTANCE_HIGH
+                    );
+                    channel.setDescription("Peringatan dan pengingat finansial Pocketly");
+                    channel.enableLights(true);
+                    channel.enableVibration(true);
+                    channel.setShowBadge(true);
+                    notificationManager.createNotificationChannel(channel);
+                }
+
+                Intent intent = new Intent(this, MainActivity.class);
+                intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+                PendingIntent pendingIntent = PendingIntent.getActivity(
+                    this,
+                    notifId > 0 ? notifId : 101,
+                    intent,
+                    PendingIntent.FLAG_UPDATE_CURRENT | (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M ? PendingIntent.FLAG_IMMUTABLE : 0)
+                );
+
+                NotificationCompat.Builder builder =
+                    new NotificationCompat.Builder(this, channelId)
+                        .setSmallIcon(R.drawable.ic_notification)
+                        .setContentTitle(title)
+                        .setContentText(body)
+                        .setStyle(new NotificationCompat.BigTextStyle().bigText(body))
+                        .setPriority(NotificationCompat.PRIORITY_HIGH)
+                        .setDefaults(NotificationCompat.DEFAULT_ALL)
+                        .setAutoCancel(true)
+                        .setContentIntent(pendingIntent);
+
+                notificationManager.notify(notifId > 0 ? notifId : (int) System.currentTimeMillis(), builder.build());
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        });
+    }
+
     public class AndroidNativeInterface {
 
         @JavascriptInterface
         public boolean isNative() {
             return true;
+        }
+
+        @JavascriptInterface
+        public String getPendingShortcutAction() {
+            String act = pendingShortcutAction;
+            pendingShortcutAction = null;
+            return act != null ? act : "";
+        }
+
+        @JavascriptInterface
+        public boolean isNotificationPermissionGranted() {
+            return MainActivity.this.checkNotificationPermission();
+        }
+
+        @JavascriptInterface
+        public void requestNotificationPermission() {
+            runOnUiThread(() -> MainActivity.this.requestNotificationPermission());
+        }
+
+        @JavascriptInterface
+        public void showNotification(final String title, final String body, final int notifId) {
+            MainActivity.this.showNativeNotification(title, body, notifId);
         }
 
         @JavascriptInterface

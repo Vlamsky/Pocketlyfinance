@@ -7790,7 +7790,7 @@ body.dark-mode .btn-delete-cat:hover {
     border-radius: var(--radius-pill);
     padding: 6px 10px;
     box-shadow: 0 12px 36px -4px rgba(0, 0, 0, 0.16), 0 2px 8px rgba(0, 0, 0, 0.06);
-    z-index: 990;
+    z-index: 997;
     align-items: center;
     justify-content: space-around;
 }
@@ -11030,21 +11030,24 @@ body.dark-mode .notif-empty-box {
     transform: none !important;
 }
 
-/* 1. Subtle dark overlay with gentle blur over background cards */
+/* 1. Subtle overlay without blur over background cards */
 .fab-speed-dial-backdrop {
     position: fixed;
     inset: 0;
-    background: rgba(15, 23, 42, 0.38);
-    backdrop-filter: blur(6px);
-    -webkit-backdrop-filter: blur(6px);
-    z-index: 996;
+    background: rgba(15, 23, 42, 0.18);
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    z-index: 992;
     opacity: 0;
     pointer-events: none;
-    transition: opacity 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+    transition: opacity 0.24s cubic-bezier(0.16, 1, 0.3, 1);
 }
 .fab-speed-dial-backdrop.active {
     opacity: 1;
     pointer-events: auto;
+}
+body.dark-mode .fab-speed-dial-backdrop {
+    background: rgba(0, 0, 0, 0.28);
 }
 
 /* 2. Menu Container anchored at FAB center */
@@ -11111,7 +11114,10 @@ body.dark-mode .arc-trajectory-path {
 }
 .fab-speed-dial-menu.active .arc-glass-orb {
     opacity: 1;
-    pointer-events: auto;
+    pointer-events: auto !important;
+}
+.arc-glass-orb * {
+    pointer-events: none;
 }
 
 /* 5. Precise Positions along the Trajectory Arc */
@@ -11132,16 +11138,14 @@ body.dark-mode .arc-trajectory-path {
     transition-delay: 0.06s;
 }
 
-/* 6. Frosted Glassmorphism Outer Ring */
+/* 6. High-Contrast Outer Ring */
 .orb-glass-ring {
     width: 100%;
     height: 100%;
     border-radius: 50%;
-    background: rgba(255, 255, 255, 0.38);
-    backdrop-filter: blur(14px);
-    -webkit-backdrop-filter: blur(14px);
-    border: 1.5px solid rgba(255, 255, 255, 0.68);
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12), inset 0 1px 1.5px rgba(255, 255, 255, 0.85);
+    background: rgba(255, 255, 255, 0.92);
+    border: 1.5px solid rgba(255, 255, 255, 1);
+    box-shadow: 0 8px 22px rgba(0, 0, 0, 0.18), inset 0 1px 1.5px rgba(255, 255, 255, 0.95);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -11149,9 +11153,9 @@ body.dark-mode .arc-trajectory-path {
                 box-shadow 0.22s ease;
 }
 body.dark-mode .orb-glass-ring {
-    background: rgba(255, 255, 255, 0.2);
-    border-color: rgba(255, 255, 255, 0.38);
-    box-shadow: 0 10px 28px rgba(0, 0, 0, 0.36), inset 0 1px 1px rgba(255, 255, 255, 0.5);
+    background: rgba(30, 41, 59, 0.92);
+    border-color: rgba(255, 255, 255, 0.3);
+    box-shadow: 0 10px 26px rgba(0, 0, 0, 0.45), inset 0 1px 1px rgba(255, 255, 255, 0.3);
 }
 .arc-glass-orb:hover .orb-glass-ring,
 .arc-glass-orb:focus-visible .orb-glass-ring {

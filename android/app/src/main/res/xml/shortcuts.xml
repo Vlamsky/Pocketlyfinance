@@ -10,7 +10,9 @@
             android:action="android.intent.action.VIEW"
             android:targetPackage="com.pocketly.app"
             android:targetClass="com.pocketly.app.MainActivity"
-            android:data="https://pocketly.app/?action=new_expense" />
+            android:data="https://pocketly.app/?action=new_expense">
+            <extra android:name="action" android:value="new_expense" />
+        </intent>
         <categories android:name="android.shortcut.conversation" />
     </shortcut>
     <shortcut
@@ -23,7 +25,9 @@
             android:action="android.intent.action.VIEW"
             android:targetPackage="com.pocketly.app"
             android:targetClass="com.pocketly.app.MainActivity"
-            android:data="https://pocketly.app/?action=new_income" />
+            android:data="https://pocketly.app/?action=new_income">
+            <extra android:name="action" android:value="new_income" />
+        </intent>
         <categories android:name="android.shortcut.conversation" />
     </shortcut>
     <shortcut
@@ -36,7 +40,9 @@
             android:action="android.intent.action.VIEW"
             android:targetPackage="com.pocketly.app"
             android:targetClass="com.pocketly.app.MainActivity"
-            android:data="https://pocketly.app/?action=debts" />
+            android:data="https://pocketly.app/?action=debts">
+            <extra android:name="action" android:value="debts" />
+        </intent>
         <categories android:name="android.shortcut.conversation" />
     </shortcut>
 </shortcuts>

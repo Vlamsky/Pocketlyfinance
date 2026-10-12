@@ -12776,9 +12776,9 @@ window.PocketlyNotification = {
 
     sendPushNotification(title, options = {}) {
         const prefs = this.getPreferences();
-        if (!prefs.systemNotif) return;
+        if (!options.force && !prefs.systemNotif) return;
 
-        // 1. Native Android Local Notifications (Capacitor)
+        // 1. Native Android Local Notifications (Capacitor & Direct AndroidNative)
         if (window.PocketlyNativeNotification && window.PocketlyNativeNotification.isAvailable()) {
             try {
                 window.PocketlyNativeNotification.schedule(title, options.body || '', options.id, options);
@@ -12813,7 +12813,7 @@ window.PocketlyNotification = {
         }
     },
 
-    sendTestNotification() {
+    async sendTestNotification() {
         const lang = (window.PocketlyI18n && typeof window.PocketlyI18n.getCurrentLanguage === 'function')
             ? window.PocketlyI18n.getCurrentLanguage()
             : 'id';
@@ -12827,9 +12827,20 @@ window.PocketlyNotification = {
                 : 'Pocketly notification system is working smoothly and ready for alerts!');
         const toastMsg = isZh ? '测试通知已发送。' : (isId ? 'Notifikasi uji coba telah dikirim.' : 'Test notification sent.');
 
+        // Auto-aktifkan preferensi systemNotif jika izin sistem Android sudah diberikan
+        if (window.PocketlyNativeNotification && window.PocketlyNativeNotification.isAvailable()) {
+            try {
+                const perm = await window.PocketlyNativeNotification.checkPermission();
+                if (perm === 'granted') {
+                    this.savePreference('systemNotif', true);
+                }
+            } catch (e) {}
+        }
+
         this.sendPushNotification(testTitle, {
             body: testBody,
-            tag: 'test_notification_' + Date.now()
+            tag: 'test_notification_' + Date.now(),
+            force: true
         });
         if (typeof showAlert === 'function') {
             showAlert(toastMsg, false);
@@ -13542,6 +13553,158 @@ window.triggerSpeedDialAction = function(action) {
         window.openReceiptScannerModal();
     }
 };
+
+// Setup Single-Tap (Add Record) vs Long-Press (Speed Dial Radial Shortcuts) on mobileAddFab
+(function setupMobileFabInteractions() {
+    function initFab() {
+        const fabBtn = document.getElementById('mobileAddFab');
+        const menu = document.getElementById('fabSpeedDialMenu');
+        if (!fabBtn) return;
+
+        let longPressTimer = null;
+        let isLongPressTriggered = false;
+        let touchStartX = 0;
+        let touchStartY = 0;
+        let lastTouchEndTime = 0;
+        const LONG_PRESS_THRESHOLD = 400; // ms
+
+        function startLongPressTimer(x, y) {
+            isLongPressTriggered = false;
+            touchStartX = x;
+            touchStartY = y;
+            clearTimeout(longPressTimer);
+            longPressTimer = setTimeout(() => {
+                isLongPressTriggered = true;
+                if (navigator.vibrate) {
+                    try { navigator.vibrate(45); } catch (_) {}
+                }
+                if (window.PocketlyAudio && typeof window.PocketlyAudio.playHapticFeedback === 'function') {
+                    window.PocketlyAudio.playHapticFeedback('medium');
+                }
+                window.toggleFabSpeedDial(true);
+            }, LONG_PRESS_THRESHOLD);
+        }
+
+        function cancelLongPressTimer() {
+            if (longPressTimer) {
+                clearTimeout(longPressTimer);
+                longPressTimer = null;
+            }
+        }
+
+        function handleFabSingleTap() {
+            const isMenuOpen = menu && menu.classList.contains('active');
+            if (isMenuOpen) {
+                window.toggleFabSpeedDial(false);
+            } else {
+                const openBtn = document.getElementById('openTransModalBtn');
+                if (openBtn) {
+                    openBtn.click();
+                } else if (typeof window.openQuickTransaction === 'function') {
+                    window.openQuickTransaction();
+                } else {
+                    const modal = document.getElementById('transactionModal');
+                    if (modal) modal.classList.add('show');
+                }
+            }
+        }
+
+        // Mobile Touch Handlers
+        fabBtn.addEventListener('touchstart', (e) => {
+            if (e.touches.length > 1) return;
+            const touch = e.touches[0];
+            startLongPressTimer(touch.clientX, touch.clientY);
+        }, { passive: true });
+
+        fabBtn.addEventListener('touchmove', (e) => {
+            if (!longPressTimer) return;
+            const touch = e.touches[0];
+            const dist = Math.hypot(touch.clientX - touchStartX, touch.clientY - touchStartY);
+            if (dist > 12) {
+                cancelLongPressTimer();
+            }
+        }, { passive: true });
+
+        fabBtn.addEventListener('touchend', (e) => {
+            cancelLongPressTimer();
+            lastTouchEndTime = Date.now();
+
+            if (isLongPressTriggered) {
+                e.preventDefault();
+                isLongPressTriggered = false;
+                return;
+            }
+
+            e.preventDefault();
+            handleFabSingleTap();
+        });
+
+        fabBtn.addEventListener('touchcancel', () => {
+            cancelLongPressTimer();
+            isLongPressTriggered = false;
+        });
+
+        // Desktop Mouse Handlers
+        fabBtn.addEventListener('mousedown', (e) => {
+            if (Date.now() - lastTouchEndTime < 600) return;
+            if (e.button !== 0) return;
+            startLongPressTimer(e.clientX, e.clientY);
+        });
+
+        fabBtn.addEventListener('mousemove', (e) => {
+            if (!longPressTimer) return;
+            const dist = Math.hypot(e.clientX - touchStartX, e.clientY - touchStartY);
+            if (dist > 10) {
+                cancelLongPressTimer();
+            }
+        });
+
+        fabBtn.addEventListener('mouseup', () => {
+            cancelLongPressTimer();
+        });
+
+        fabBtn.addEventListener('mouseleave', () => {
+            cancelLongPressTimer();
+        });
+
+        fabBtn.addEventListener('click', (e) => {
+            if (Date.now() - lastTouchEndTime < 600) {
+                e.preventDefault();
+                return;
+            }
+            if (isLongPressTriggered) {
+                isLongPressTriggered = false;
+                e.preventDefault();
+                return;
+            }
+            handleFabSingleTap();
+        });
+
+        // Pastikan setiap tombol orb pintasan merespons instan pada sentuhan mobile (touch)
+        const orbs = document.querySelectorAll('.arc-glass-orb');
+        orbs.forEach(orb => {
+            orb.addEventListener('touchend', (e) => {
+                e.stopPropagation();
+                const action = orb.getAttribute('data-action') || (
+                    orb.classList.contains('orb-expense') ? 'expense' :
+                    orb.classList.contains('orb-income') ? 'income' :
+                    orb.classList.contains('orb-debt') ? 'debt' :
+                    orb.classList.contains('orb-scan') ? 'scan' : null
+                );
+                if (action && typeof window.triggerSpeedDialAction === 'function') {
+                    e.preventDefault();
+                    window.triggerSpeedDialAction(action);
+                }
+            });
+        });
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initFab);
+    } else {
+        initFab();
+    }
+})();
 
 window.openQuickTransaction = function(type) {
     const openBtn = document.getElementById('openTransModalBtn');
