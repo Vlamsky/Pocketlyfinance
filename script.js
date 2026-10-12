@@ -12627,6 +12627,48 @@ window.PocketlyNotification = {
         const isZh = lang === 'zh';
         const isId = lang === 'id';
 
+        // 1. Native Android Local Notifications (Capacitor)
+        if (window.PocketlyNativeNotification && window.PocketlyNativeNotification.isAvailable()) {
+            try {
+                const granted = await window.PocketlyNativeNotification.requestPermission();
+                window.__nativeNotifPerm = granted ? 'granted' : 'denied';
+                this.savePreference('systemNotif', granted);
+                this.syncSettingsUI();
+
+                if (granted) {
+                    if (typeof showAlert === 'function') {
+                        const grantedMsg = isZh
+                            ? '系统通知权限已开启！'
+                            : (isId ? 'Izin notifikasi Android berhasil diaktifkan!' : 'Android notification permission enabled successfully!');
+                        showAlert(grantedMsg, false);
+                    }
+                    const welcomeTitle = isZh ? 'Pocketly 财务' : 'Pocketly Finance';
+                    const welcomeBody = isZh
+                        ? '系统通知已激活。当预算达到上限或款项到期时，您将收到实时提醒。'
+                        : (isId
+                            ? 'Notifikasi sistem aktif. Anda akan menerima peringatan penting batas anggaran dan hutang secara real-time.'
+                            : 'System notifications active. You will receive real-time alerts for budget limits and debt due dates.');
+                    this.sendPushNotification(welcomeTitle, {
+                        body: welcomeBody,
+                        tag: 'welcome_notif'
+                    });
+                    return true;
+                } else {
+                    if (typeof showAlert === 'function') {
+                        const deniedMsg = isZh
+                            ? '未授予通知权限。请在系统设置中允许Pocketly发送通知。'
+                            : (isId ? 'Izin notifikasi tidak diberikan. Harap aktifkan izin di Pengaturan Android.' : 'Notification permission was denied. Please enable it in Android Settings.');
+                        showAlert(deniedMsg, true);
+                    }
+                    return false;
+                }
+            } catch (err) {
+                console.error('[Notification] Native permission request error:', err);
+                return false;
+            }
+        }
+
+        // 2. Standard Web Notifications API Fallback
         if (!('Notification' in window)) {
             if (typeof showAlert === 'function') {
                 const unsupportedMsg = isZh
@@ -12674,10 +12716,22 @@ window.PocketlyNotification = {
     },
 
     sendPushNotification(title, options = {}) {
-        if (!('Notification' in window)) return;
-        if (Notification.permission !== 'granted') return;
         const prefs = this.getPreferences();
         if (!prefs.systemNotif) return;
+
+        // 1. Native Android Local Notifications (Capacitor)
+        if (window.PocketlyNativeNotification && window.PocketlyNativeNotification.isAvailable()) {
+            try {
+                window.PocketlyNativeNotification.schedule(title, options.body || '', options.id, options);
+                return;
+            } catch (e) {
+                console.warn('[Notification] Native push schedule warning:', e);
+            }
+        }
+
+        // 2. Standard Web Notifications API Fallback
+        if (!('Notification' in window)) return;
+        if (Notification.permission !== 'granted') return;
 
         try {
             const n = new Notification(title, {
@@ -13060,7 +13114,14 @@ window.PocketlyNotification = {
         const iconBox = document.getElementById('statPushIconBox');
         const statusSub = document.getElementById('statNotifPushSub');
 
-        if (!('Notification' in window)) {
+        let perm = 'default';
+        if (window.__nativeNotifPerm) {
+            perm = window.__nativeNotifPerm;
+        } else if (window.PocketlyNativeNotification && window.PocketlyNativeNotification.isAvailable()) {
+            perm = 'default';
+        } else if ('Notification' in window) {
+            perm = Notification.permission;
+        } else {
             if (badge) badge.innerText = this._t('notif_push_unsupported', 'Push: N/A');
             if (dot) dot.className = 'metric-dot red';
             if (quickBtn) quickBtn.style.display = 'none';
@@ -13068,18 +13129,17 @@ window.PocketlyNotification = {
             return;
         }
 
-        const perm = Notification.permission;
         if (perm === 'granted') {
             if (badge) badge.innerText = this._t('notif_push_active', 'Push: Aktif');
             if (dot) dot.className = 'metric-dot green';
             if (quickBtn) quickBtn.style.display = 'none';
-            if (statusSub) statusSub.innerText = this._t('notif_status_active_inapp', 'Browser & in-app');
+            if (statusSub) statusSub.innerText = this._t('notif_status_active_inapp', 'Sistem & in-app');
             if (iconBox) iconBox.className = 'notif-ov-icon-box bg-green';
         } else if (perm === 'denied') {
             if (badge) badge.innerText = this._t('notif_push_disabled', 'Push: Mati');
             if (dot) dot.className = 'metric-dot red';
             if (quickBtn) quickBtn.style.display = 'none';
-            if (statusSub) statusSub.innerText = this._t('notif_status_inapp_only', 'Izin browser ditolak');
+            if (statusSub) statusSub.innerText = this._t('notif_status_inapp_only', 'Izin ditolak');
             if (iconBox) iconBox.className = 'notif-ov-icon-box bg-red';
         } else {
             if (badge) badge.innerText = this._t('notif_push_enable', 'Aktifkan Push');
@@ -13158,7 +13218,7 @@ window.PocketlyNotification = {
 
         // Trigger push notification for unread high priority items not yet sent in session
         const prefs = this.getPreferences();
-        if (prefs.systemNotif && 'Notification' in window && Notification.permission === 'granted') {
+        if (prefs.systemNotif && ((window.PocketlyNativeNotification && window.PocketlyNativeNotification.isAvailable()) || ('Notification' in window && Notification.permission === 'granted'))) {
             unreadList.forEach(item => {
                 if ((item.priority === 'danger' || item.priority === 'warning') && !this.sentSystemNotifIds.has(item.id)) {
                     this.sentSystemNotifIds.add(item.id);
@@ -13293,16 +13353,30 @@ window.PocketlyNotification = {
 
         this.updatePushStatusBadge();
 
-        const statusText = document.getElementById('settingsNotifStatusText');
-        if (statusText) {
-            if ('Notification' in window && Notification.permission === 'granted') {
-                statusText.innerText = this._t('notif_status_active_inapp', 'Aktif (Browser & In-App)');
-            } else if ('Notification' in window && Notification.permission === 'denied') {
+        const updateStatusText = (perm) => {
+            const statusText = document.getElementById('settingsNotifStatusText');
+            if (!statusText) return;
+            if (perm === 'granted') {
+                statusText.innerText = this._t('notif_status_active_inapp', 'Aktif (Sistem & In-App)');
+            } else if (perm === 'denied') {
                 statusText.innerText = this._t('notif_status_inapp_only', 'Hanya In-App (Browser diblokir)');
             } else {
                 statusText.innerText = this._t('notif_status_inapp_active', 'In-App aktif');
             }
+        };
+
+        if (window.PocketlyNativeNotification && window.PocketlyNativeNotification.isAvailable()) {
+            window.PocketlyNativeNotification.checkPermission().then(status => {
+                if (status) {
+                    window.__nativeNotifPerm = (status === 'granted') ? 'granted' : (status === 'denied' ? 'denied' : 'default');
+                    this.updatePushStatusBadge();
+                    updateStatusText(window.__nativeNotifPerm);
+                }
+            }).catch(() => {});
         }
+
+        const perm = window.__nativeNotifPerm || (('Notification' in window) ? Notification.permission : 'default');
+        updateStatusText(perm);
     }
 };
 

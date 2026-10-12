@@ -229,4 +229,74 @@
             console.warn('[Capacitor Bridge] Failed to register backButton listener', e);
         }
     }
+
+    // 6. Native Android Local Notifications Bridge
+    window.PocketlyNativeNotification = {
+        isAvailable: function() {
+            return !!(window.Capacitor && (typeof window.Capacitor.isPluginAvailable === 'function' ? window.Capacitor.isPluginAvailable('LocalNotifications') : (window.Capacitor.Plugins && window.Capacitor.Plugins.LocalNotifications)));
+        },
+        getPlugin: function() {
+            return (window.Capacitor && window.Capacitor.Plugins) ? window.Capacitor.Plugins.LocalNotifications : null;
+        },
+        checkPermission: async function() {
+            const plugin = this.getPlugin();
+            if (!plugin) return null;
+            try {
+                const status = await plugin.checkPermissions();
+                return status ? status.display : null;
+            } catch (e) {
+                console.warn('[NativeNotification] checkPermissions error:', e);
+                return null;
+            }
+        },
+        requestPermission: async function() {
+            const plugin = this.getPlugin();
+            if (!plugin) return false;
+            try {
+                const result = await plugin.requestPermissions();
+                return !!(result && result.display === 'granted');
+            } catch (e) {
+                console.warn('[NativeNotification] requestPermissions error:', e);
+                return false;
+            }
+        },
+        schedule: async function(title, body, id = null, extra = {}) {
+            const plugin = this.getPlugin();
+            if (!plugin) return false;
+            try {
+                const notifId = (typeof id === 'number' && !isNaN(id)) ? id : (Math.floor(Math.random() * 899999) + 100000);
+                await plugin.schedule({
+                    notifications: [
+                        {
+                            title: title,
+                            body: body || '',
+                            id: notifId,
+                            schedule: { at: new Date(Date.now() + 150) },
+                            sound: 'beep.wav',
+                            smallIcon: 'ic_launcher',
+                            iconColor: '#2563eb',
+                            extra: extra
+                        }
+                    ]
+                });
+                return true;
+            } catch (e) {
+                console.warn('[NativeNotification] schedule error:', e);
+                return false;
+            }
+        }
+    };
+
+    // Register tap listener for LocalNotifications
+    try {
+        if (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.LocalNotifications) {
+            window.Capacitor.Plugins.LocalNotifications.addListener('localNotificationActionPerformed', () => {
+                if (typeof window.navigateToNotifications === 'function') {
+                    window.navigateToNotifications();
+                } else if (typeof window.switchPage === 'function') {
+                    window.switchPage('notifications');
+                }
+            });
+        }
+    } catch (e) {}
 })();
