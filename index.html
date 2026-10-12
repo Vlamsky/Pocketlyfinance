@@ -585,18 +585,51 @@
                                     </button>
                                 </div>
 
-                                <div class="debt-summary-widget glass-effect-card" onclick="switchPage('debts')"
-                                    style="cursor: pointer;">
-                                    <div class="widget-row">
-                                        <div class="widget-item receivable">
-                                            <span class="widget-label"><i class="fa-solid fa-arrow-down"></i> <span
-                                                    data-i18n="lent_receivable">Lent (Receivable)</span></span>
-                                            <h4 id="dashDebtReceivable">Rp0</h4>
+                                <!-- Premium Dual Cards Grid -->
+                                <div class="dash-debt-dual-container" onclick="switchPage('debts')" style="cursor: pointer;">
+                                    <div class="dash-debt-dual-grid">
+                                        <!-- Card 1: Lent (Receivable) -->
+                                        <div class="dash-debt-card lent-card">
+                                            <div class="ddc-top">
+                                                <div class="ddc-icon-badge emerald">
+                                                    <i class="fa-solid fa-hand-holding-dollar"></i>
+                                                </div>
+                                                <div class="ddc-trend-indicator emerald">
+                                                    <i class="fa-solid fa-arrow-down"></i>
+                                                </div>
+                                            </div>
+                                            <div class="ddc-body">
+                                                <span class="ddc-sublabel" data-i18n="lent_receivable">Lent (Receivable)</span>
+                                                <h4 id="dashDebtReceivable" class="ddc-amount">Rp0</h4>
+                                            </div>
                                         </div>
-                                        <div class="widget-item payable">
-                                            <span class="widget-label"><i class="fa-solid fa-arrow-up"></i> <span
-                                                    data-i18n="borrowed_payable">Borrowed (Payable)</span></span>
-                                            <h4 id="dashDebtPayable">Rp0</h4>
+
+                                        <!-- Card 2: Borrowed (Payable) -->
+                                        <div class="dash-debt-card borrowed-card">
+                                            <div class="ddc-top">
+                                                <div class="ddc-icon-badge rose">
+                                                    <i class="fa-solid fa-money-bill-transfer"></i>
+                                                </div>
+                                                <div class="ddc-trend-indicator rose">
+                                                    <i class="fa-solid fa-arrow-up"></i>
+                                                </div>
+                                            </div>
+                                            <div class="ddc-body">
+                                                <span class="ddc-sublabel" data-i18n="borrowed_payable">Borrowed (Payable)</span>
+                                                <h4 id="dashDebtPayable" class="ddc-amount">Rp0</h4>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Net Position Strip -->
+                                    <div class="dash-debt-net-strip">
+                                        <div class="ddn-left">
+                                            <span class="ddn-dot neutral" id="dashDebtNetDot"></span>
+                                            <span class="ddn-label" id="dashDebtNetLabel">Net Position</span>
+                                        </div>
+                                        <div class="ddn-right">
+                                            <span class="ddn-value" id="dashDebtNetValue">Rp0</span>
+                                            <i class="fa-solid fa-chevron-right ddn-arrow"></i>
                                         </div>
                                     </div>
                                 </div>

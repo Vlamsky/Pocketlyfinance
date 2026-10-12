@@ -2704,38 +2704,247 @@ body.dark-mode .hero-unified-stats .stat-box {
     color: var(--text-grey);
 }
 
-/* Debts Overview Widget */
-.debt-summary-widget {
-    background: var(--card-bg);
-    border: 1px solid var(--border-color);
-    border-radius: var(--radius-lg);
-    padding: 16px 18px;
-    box-shadow: var(--shadow-sm);
-    cursor: pointer;
-}
-.widget-row {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 14px;
-}
-.widget-item {
+/* Debts & Loans Executive Dual Cards (Dashboard) */
+.dash-debt-dual-container {
     display: flex;
     flex-direction: column;
+    gap: 10px;
+    width: 100%;
+    cursor: pointer;
 }
-.widget-label {
-    font-size: 0.78rem;
-    font-weight: 700;
+
+.dash-debt-dual-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+    width: 100%;
+}
+
+.dash-debt-card {
+    position: relative;
+    border-radius: var(--radius-lg);
+    padding: 15px 16px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    min-height: 104px;
+    transition: transform var(--transition-fast), box-shadow var(--transition-fast), border-color var(--transition-fast);
+    box-shadow: var(--shadow-sm);
+    overflow: hidden;
+}
+
+.dash-debt-card:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+}
+
+/* Card 1: Lent (Receivable) Card */
+.dash-debt-card.lent-card {
+    background: linear-gradient(135deg, rgba(16, 185, 129, 0.09) 0%, rgba(255, 255, 255, 0.95) 100%);
+    border: 1px solid rgba(16, 185, 129, 0.22);
+}
+.dash-debt-card.lent-card:hover {
+    border-color: rgba(16, 185, 129, 0.45);
+}
+body.dark-mode .dash-debt-card.lent-card {
+    background: linear-gradient(135deg, rgba(16, 185, 129, 0.12) 0%, rgba(17, 24, 39, 0.95) 100%);
+    border-color: rgba(16, 185, 129, 0.25);
+}
+
+/* Card 2: Borrowed (Payable) Card */
+.dash-debt-card.borrowed-card {
+    background: linear-gradient(135deg, rgba(239, 68, 68, 0.09) 0%, rgba(255, 255, 255, 0.95) 100%);
+    border: 1px solid rgba(239, 68, 68, 0.22);
+}
+.dash-debt-card.borrowed-card:hover {
+    border-color: rgba(239, 68, 68, 0.45);
+}
+body.dark-mode .dash-debt-card.borrowed-card {
+    background: linear-gradient(135deg, rgba(239, 68, 68, 0.12) 0%, rgba(17, 24, 39, 0.95) 100%);
+    border-color: rgba(239, 68, 68, 0.25);
+}
+
+/* Top Row: Icon Badge & Trend */
+.ddc-top {
     display: flex;
     align-items: center;
-    gap: 5px;
-    margin-bottom: 4px;
+    justify-content: space-between;
+    margin-bottom: 10px;
 }
-.widget-item.receivable .widget-label { color: var(--green); }
-.widget-item.payable .widget-label { color: var(--red); }
-.widget-item h4 {
+
+.ddc-icon-badge {
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.95rem;
+}
+.ddc-icon-badge.emerald {
+    background: rgba(16, 185, 129, 0.16);
+    color: #10b981;
+}
+.ddc-icon-badge.rose {
+    background: rgba(239, 68, 68, 0.16);
+    color: #ef4444;
+}
+
+.ddc-trend-indicator {
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.72rem;
+}
+.ddc-trend-indicator.emerald {
+    background: rgba(16, 185, 129, 0.1);
+    color: #10b981;
+}
+.ddc-trend-indicator.rose {
+    background: rgba(239, 68, 68, 0.1);
+    color: #ef4444;
+}
+
+/* Body: Label & Amount */
+.ddc-body {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+}
+
+.ddc-sublabel {
+    font-size: 0.76rem;
+    font-weight: 600;
+    color: var(--text-grey);
+    letter-spacing: 0.01em;
+}
+
+.ddc-amount {
     font-family: var(--font-display);
     font-size: 1.25rem;
     font-weight: 800;
+    letter-spacing: -0.02em;
+    line-height: 1.2;
+    margin: 0;
+}
+.lent-card .ddc-amount {
+    color: #059669;
+}
+body.dark-mode .lent-card .ddc-amount {
+    color: #34d399;
+}
+.borrowed-card .ddc-amount {
+    color: #dc2626;
+}
+body.dark-mode .borrowed-card .ddc-amount {
+    color: #f87171;
+}
+
+/* Net Position Strip */
+.dash-debt-net-strip {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    padding: 8px 14px;
+    font-size: 0.8rem;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.02);
+    transition: background-color var(--transition-fast), border-color var(--transition-fast);
+}
+.dash-debt-dual-container:hover .dash-debt-net-strip {
+    border-color: var(--primary-color);
+}
+body.dark-mode .dash-debt-net-strip {
+    background: var(--card-bg-elevated);
+}
+
+.ddn-left {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.ddn-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    display: inline-block;
+}
+.ddn-dot.green {
+    background: #10b981;
+    box-shadow: 0 0 6px rgba(16, 185, 129, 0.5);
+}
+.ddn-dot.red {
+    background: #ef4444;
+    box-shadow: 0 0 6px rgba(239, 68, 68, 0.5);
+}
+.ddn-dot.neutral {
+    background: var(--text-muted);
+}
+
+.ddn-label {
+    font-weight: 600;
+    color: var(--text-grey);
+    font-size: 0.78rem;
+}
+
+.ddn-right {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.ddn-value {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 0.85rem;
+}
+.ddn-value.text-green {
+    color: #10b981;
+}
+.ddn-value.text-red {
+    color: #ef4444;
+}
+.ddn-value.text-neutral {
+    color: var(--text-dark);
+}
+
+.ddn-arrow {
+    font-size: 0.68rem;
+    color: var(--text-muted);
+    transition: transform var(--transition-fast);
+}
+.dash-debt-dual-container:hover .ddn-arrow {
+    transform: translateX(2px);
+    color: var(--primary-color);
+}
+
+@media (max-width: 860px) {
+    .dash-debt-dual-grid {
+        gap: 10px;
+    }
+    .dash-debt-card {
+        padding: 12px 13px;
+        min-height: 94px;
+    }
+    .ddc-icon-badge {
+        width: 30px;
+        height: 30px;
+        font-size: 0.88rem;
+    }
+    .ddc-sublabel {
+        font-size: 0.72rem;
+    }
+    .ddc-amount {
+        font-size: 1.12rem;
+    }
+    .dash-debt-net-strip {
+        padding: 7px 12px;
+    }
 }
 
 /* Debts & Loans - Summary Widget Only on Dashboard (List is viewed inside Debts menu) */

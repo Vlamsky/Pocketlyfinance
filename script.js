@@ -10929,6 +10929,28 @@ function renderDebtTracker() {
     const dashPayable = document.getElementById('dashDebtPayable');
     if (dashReceivable) dashReceivable.innerText = formatRupiah(receivable);
     if (dashPayable) dashPayable.innerText = formatRupiah(payable);
+
+    const dashNetValue = document.getElementById('dashDebtNetValue');
+    const dashNetDot = document.getElementById('dashDebtNetDot');
+    const dashNetLabel = document.getElementById('dashDebtNetLabel');
+    if (dashNetValue) {
+        const net = receivable - payable;
+        dashNetValue.innerText = (net > 0 ? '+' : '') + formatRupiah(net);
+        dashNetValue.className = 'ddn-value ' + (net > 0 ? 'text-green' : (net < 0 ? 'text-red' : 'text-neutral'));
+        if (dashNetDot) {
+            dashNetDot.className = 'ddn-dot ' + (net > 0 ? 'green' : (net < 0 ? 'red' : 'neutral'));
+        }
+        if (dashNetLabel) {
+            const currentLang = localStorage.getItem('pocketly_lang') || 'en';
+            if (net > 0) {
+                dashNetLabel.innerText = currentLang === 'id' ? 'Surplus Piutang (Net)' : (currentLang === 'zh' ? '净盈余 (应收)' : 'Net Surplus (Receivable)');
+            } else if (net < 0) {
+                dashNetLabel.innerText = currentLang === 'id' ? 'Defisit Hutang (Net)' : (currentLang === 'zh' ? '净负债 (应付)' : 'Net Deficit (Payable)');
+            } else {
+                dashNetLabel.innerText = currentLang === 'id' ? 'Posisi Seimbang' : (currentLang === 'zh' ? '收支平衡' : 'Net Balanced');
+            }
+        }
+    }
     if (typeof renderDashboardActiveDebts === 'function') renderDashboardActiveDebts();
 
     let filtered = rawDebts.filter((debt) => {
