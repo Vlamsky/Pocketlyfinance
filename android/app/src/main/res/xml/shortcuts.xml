@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<shortcuts xmlns:android="http://schemas.android.com/apk/res/android">
+    <shortcut
+        android:shortcutId="new_expense"
+        android:enabled="true"
+        android:icon="@mipmap/ic_launcher"
+        android:shortcutShortLabel="@string/shortcut_new_expense_short"
+        android:shortcutLongLabel="@string/shortcut_new_expense_long">
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:targetPackage="com.pocketly.app"
+            android:targetClass="com.pocketly.app.MainActivity"
+            android:data="https://pocketly.app/?action=new_expense" />
+        <categories android:name="android.shortcut.conversation" />
+    </shortcut>
+    <shortcut
+        android:shortcutId="new_income"
+        android:enabled="true"
+        android:icon="@mipmap/ic_launcher"
+        android:shortcutShortLabel="@string/shortcut_new_income_short"
+        android:shortcutLongLabel="@string/shortcut_new_income_long">
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:targetPackage="com.pocketly.app"
+            android:targetClass="com.pocketly.app.MainActivity"
+            android:data="https://pocketly.app/?action=new_income" />
+        <categories android:name="android.shortcut.conversation" />
+    </shortcut>
+    <shortcut
+        android:shortcutId="debts"
+        android:enabled="true"
+        android:icon="@mipmap/ic_launcher"
+        android:shortcutShortLabel="@string/shortcut_debts_short"
+        android:shortcutLongLabel="@string/shortcut_debts_long">
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:targetPackage="com.pocketly.app"
+            android:targetClass="com.pocketly.app.MainActivity"
+            android:data="https://pocketly.app/?action=debts" />
+        <categories android:name="android.shortcut.conversation" />
+    </shortcut>
+</shortcuts>

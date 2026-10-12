@@ -127,7 +127,22 @@
         },
 
         /**
-         * 4. Toggle Mute
+         * 4. Haptic Scrubbing & Micro Tick
+         */
+        playHapticTick: function() {
+            triggerHaptic(6);
+        },
+
+        playHover: function() {
+            const ctx = getAudioContext();
+            if (!ctx || isMuted) return;
+            const now = ctx.currentTime;
+            playTone(1200, 'sine', now, 0.015, 0.025, 0.0001, 2200);
+            triggerHaptic(5);
+        },
+
+        /**
+         * 5. Toggle Mute
          */
         toggleMute: function() {
             isMuted = !isMuted;

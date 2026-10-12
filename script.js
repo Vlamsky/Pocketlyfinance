@@ -5273,10 +5273,20 @@ function renderDashboardRecentTransactions(data) {
     if (!listContainer) return;
 
     if (!data || data.length === 0) {
+        const lang = localStorage.getItem('pocketly_lang') || 'en';
+        const title = lang === 'id' ? 'Belum Ada Transaksi' : (lang === 'zh' ? '暂无交易记录' : 'No Transactions Yet');
+        const desc = lang === 'id' ? 'Mulai kelola keuangan dengan mencatat pengeluaran atau pemasukan pertamamu.' : (lang === 'zh' ? '记录您的第一笔收支，开启智能财务管理。' : 'Track your first expense or income to start budgeting.');
+        const btnText = lang === 'id' ? '+ Tambah Transaksi' : (lang === 'zh' ? '+ 记一笔' : '+ Add Transaction');
         listContainer.innerHTML = `
-            <div style="text-align:center; padding:30px 10px; color:var(--text-grey);">
-                <i class="fa-solid fa-receipt" style="font-size:2rem; margin-bottom:10px; opacity:0.2;"></i>
-                <p>No recent transactions.</p>
+            <div class="modern-empty-state">
+                <div class="empty-state-icon-box">
+                    <i class="fa-solid fa-receipt"></i>
+                </div>
+                <h4 class="empty-state-title">${title}</h4>
+                <p class="empty-state-desc">${desc}</p>
+                <button type="button" class="btn-primary empty-state-btn" onclick="openQuickTransaction('expense')">
+                    ${btnText}
+                </button>
             </div>`;
         return;
     }
@@ -7598,6 +7608,17 @@ function renderCashFlowChart(data) {
                 mode: 'index',
                 intersect: false,
             },
+            onHover: (event, chartElements) => {
+                if (chartElements && chartElements.length > 0) {
+                    const idx = chartElements[0].index;
+                    if (window.__lastScrubbedIdx !== idx) {
+                        window.__lastScrubbedIdx = idx;
+                        if (window.PocketlyAudio && typeof window.PocketlyAudio.playHapticTick === 'function') {
+                            window.PocketlyAudio.playHapticTick();
+                        }
+                    }
+                }
+            },
             plugins: {
                 legend: { 
                     position: 'top', 
@@ -7605,11 +7626,13 @@ function renderCashFlowChart(data) {
                     labels: { usePointStyle: true, boxWidth: 8, font: { size: 10 } } 
                 },
                 tooltip: {
-                    backgroundColor: 'rgba(30, 41, 59, 0.9)',
+                    backgroundColor: 'rgba(15, 23, 42, 0.94)',
                     titleColor: '#fff',
                     bodyColor: '#fff',
-                    borderColor: 'rgba(255,255,255,0.1)',
-                    borderWidth: 1
+                    borderColor: 'rgba(255,255,255,0.12)',
+                    borderWidth: 1,
+                    padding: 10,
+                    cornerRadius: 10
                 }
             },
             scales: {
@@ -9034,12 +9057,18 @@ if (btnScanReceipt) {
                     } else {
                         showAlert("Receipt scanned. Please review amount and category.", false);
                     }
+                    if (typeof closeReceiptScannerModal === 'function') {
+                        closeReceiptScannerModal();
+                    }
                 }, 50);
             }, 300);
 
         } catch (err) {
             console.error("OCR Error:", err);
             showAlert("Failed to process receipt image.", true);
+            if (typeof closeReceiptScannerModal === 'function') {
+                closeReceiptScannerModal();
+            }
         } finally {
             btnScanReceipt.innerHTML = '<i class="fa-solid fa-camera"></i>';
             if (inputReceiptImage) inputReceiptImage.value = '';
@@ -9049,12 +9078,20 @@ if (btnScanReceipt) {
 
     if (inputReceiptImage) {
         inputReceiptImage.addEventListener('change', (e) => {
-            processReceiptFile(e.target.files[0]);
+            const file = e.target.files[0];
+            if (file) {
+                if (typeof handleScannerImageSelected === 'function') handleScannerImageSelected(file);
+                processReceiptFile(file);
+            }
         });
     }
     if (inputCameraImage) {
         inputCameraImage.addEventListener('change', (e) => {
-            processReceiptFile(e.target.files[0]);
+            const file = e.target.files[0];
+            if (file) {
+                if (typeof handleScannerImageSelected === 'function') handleScannerImageSelected(file);
+                processReceiptFile(file);
+            }
         });
     }
 }
@@ -13457,6 +13494,194 @@ if (document.readyState === 'loading') {
         window.PocketlyNotification.updateCenter();
         window.PocketlyNotification.syncSettingsUI();
     }, 300);
+}
+
+/* ==========================================================================
+   21. SMART SPEED DIAL FAB, SCANNER OCR LASER, OFFLINE & SHORTCUT ENGINES
+   ========================================================================== */
+
+// 1. SMART SPEED DIAL FAB
+window.toggleFabSpeedDial = function(force) {
+    const menu = document.getElementById('fabSpeedDialMenu');
+    const backdrop = document.getElementById('fabBackdrop');
+    const fabBtn = document.getElementById('mobileAddFab');
+    if (!menu || !fabBtn) return;
+
+    const isOpen = (typeof force === 'boolean') ? !force : menu.classList.contains('active');
+    if (!isOpen) {
+        menu.classList.add('active');
+        if (backdrop) backdrop.classList.add('active');
+        fabBtn.classList.add('is-open');
+        if (window.PocketlyAudio && typeof window.PocketlyAudio.playCardTap === 'function') {
+            window.PocketlyAudio.playCardTap();
+        }
+    } else {
+        menu.classList.remove('active');
+        if (backdrop) backdrop.classList.remove('active');
+        fabBtn.classList.remove('is-open');
+    }
+};
+
+window.triggerSpeedDialAction = function(action) {
+    window.toggleFabSpeedDial(false);
+    if (window.PocketlyAudio && typeof window.PocketlyAudio.playCardTap === 'function') {
+        window.PocketlyAudio.playCardTap();
+    }
+
+    if (action === 'expense' || action === 'income') {
+        window.openQuickTransaction(action);
+    } else if (action === 'debt') {
+        window.openQuickDebt();
+    } else if (action === 'scan') {
+        window.openReceiptScannerModal();
+    }
+};
+
+window.openQuickTransaction = function(type) {
+    const openBtn = document.getElementById('openTransModalBtn');
+    if (openBtn) openBtn.click();
+    setTimeout(() => {
+        const typeSelect = document.getElementById('inputType');
+        if (typeSelect && type) {
+            typeSelect.value = type;
+            typeSelect.dispatchEvent(new Event('change'));
+        }
+        const amtInput = document.getElementById('inputAmount');
+        if (amtInput) amtInput.focus();
+    }, 180);
+};
+
+window.openQuickDebt = function() {
+    if (typeof openDebtModal === 'function') {
+        openDebtModal();
+    } else {
+        switchPage('debts');
+    }
+};
+
+// 2. SMART RECEIPT SCANNER & LASER ENGINE
+window.openReceiptScannerModal = function() {
+    const modal = document.getElementById('receiptScannerModal');
+    if (!modal) return;
+    modal.classList.add('active');
+    const img = document.getElementById('scannerPreviewImage');
+    const laser = document.getElementById('scannerLaser');
+    const placeholder = document.getElementById('scannerIdlePlaceholder');
+    const status = document.getElementById('scannerStatusIndicator');
+    if (img) img.style.display = 'none';
+    if (laser) laser.style.display = 'none';
+    if (placeholder) placeholder.style.display = 'flex';
+    if (status) status.style.display = 'none';
+};
+
+window.closeReceiptScannerModal = function() {
+    const modal = document.getElementById('receiptScannerModal');
+    if (modal) modal.classList.remove('active');
+};
+
+window.triggerScanFromCamera = function() {
+    const inputCamera = document.getElementById('inputCameraImage');
+    const inputReceipt = document.getElementById('inputReceiptImage');
+    if (inputCamera) {
+        inputCamera.click();
+    } else if (inputReceipt) {
+        inputReceipt.setAttribute('capture', 'environment');
+        inputReceipt.click();
+    }
+};
+
+window.triggerScanFromGallery = function() {
+    const inputReceipt = document.getElementById('inputReceiptImage');
+    if (inputReceipt) {
+        inputReceipt.removeAttribute('capture');
+        inputReceipt.click();
+    }
+};
+
+// Hook receipt file processing into the Scanner visual modal
+window.handleScannerImageSelected = function(file) {
+    if (!file) return;
+    const img = document.getElementById('scannerPreviewImage');
+    const laser = document.getElementById('scannerLaser');
+    const placeholder = document.getElementById('scannerIdlePlaceholder');
+    const status = document.getElementById('scannerStatusIndicator');
+
+    if (img && placeholder) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            img.src = e.target.result;
+            img.style.display = 'block';
+            placeholder.style.display = 'none';
+            if (laser) laser.style.display = 'block';
+            if (status) status.style.display = 'flex';
+        };
+        reader.readAsDataURL(file);
+    }
+};
+
+// 3. OFFLINE RESILIENCE STATUS BANNER
+function initOfflineEngine() {
+    const banner = document.getElementById('offlineStatusBar');
+    const osbText = document.getElementById('osbText');
+    const osbIcon = document.getElementById('osbIcon');
+    let hideTimer = null;
+
+    function showStatus(isOnline) {
+        if (!banner) return;
+        clearTimeout(hideTimer);
+        banner.className = 'offline-status-bar show ' + (isOnline ? 'online' : 'offline');
+        if (osbIcon) {
+            osbIcon.className = isOnline ? 'fa-solid fa-cloud-arrow-up' : 'fa-solid fa-wifi-slash';
+        }
+        if (osbText) {
+            const lang = localStorage.getItem('pocketly_lang') || 'en';
+            if (isOnline) {
+                osbText.innerText = lang === 'id' ? 'Terhubung Kembali: Data tersinkronisasi' : (lang === 'zh' ? '网络已恢复：数据已同步' : 'Online: Data synchronized');
+            } else {
+                osbText.innerText = lang === 'id' ? 'Mode Offline: Transaksi tersimpan lokal di perangkat' : (lang === 'zh' ? '离线模式：数据已保存在本地设备' : 'Offline Mode: Data saved locally');
+            }
+        }
+        hideTimer = setTimeout(() => {
+            banner.classList.remove('show');
+        }, 3600);
+    }
+
+    window.addEventListener('online', () => showStatus(true));
+    window.addEventListener('offline', () => showStatus(false));
+
+    if (!navigator.onLine) {
+        setTimeout(() => showStatus(false), 1200);
+    }
+}
+
+// 4. ANDROID LAUNCHER SHORTCUTS LISTENER
+function checkLaunchShortcuts() {
+    try {
+        const params = new URLSearchParams(window.location.search);
+        const action = params.get('action');
+        if (!action) return;
+        setTimeout(() => {
+            if (action === 'new_expense') {
+                window.openQuickTransaction('expense');
+            } else if (action === 'new_income') {
+                window.openQuickTransaction('income');
+            } else if (action === 'debts') {
+                switchPage('debts');
+            } else if (action === 'scan') {
+                window.openReceiptScannerModal();
+            }
+        }, 500);
+    } catch (e) {}
+}
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', () => {
+        initOfflineEngine();
+        checkLaunchShortcuts();
+    });
+} else {
+    initOfflineEngine();
+    checkLaunchShortcuts();
 }
 
 

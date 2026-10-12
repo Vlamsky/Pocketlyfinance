@@ -4,4 +4,10 @@
     <string name="title_activity_main">Pocketly</string>
     <string name="package_name">com.pocketly.app</string>
     <string name="custom_url_scheme">com.pocketly.app</string>
+    <string name="shortcut_new_expense_short">Pengeluaran</string>
+    <string name="shortcut_new_expense_long">Catat Pengeluaran Baru</string>
+    <string name="shortcut_new_income_short">Pemasukan</string>
+    <string name="shortcut_new_income_long">Catat Pemasukan Baru</string>
+    <string name="shortcut_debts_short">Hutang/Piutang</string>
+    <string name="shortcut_debts_long">Buka Catatan Hutang &amp; Piutang</string>
 </resources>

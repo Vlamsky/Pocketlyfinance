@@ -299,4 +299,31 @@
             });
         }
     } catch (e) {}
+
+    // 7. App URL & Launcher Shortcuts listener
+    try {
+        if (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.App) {
+            window.Capacitor.Plugins.App.addListener('appUrlOpen', (data) => {
+                if (data && data.url) {
+                    try {
+                        const parsed = new URL(data.url);
+                        const action = parsed.searchParams.get('action');
+                        if (action) {
+                            setTimeout(() => {
+                                if (action === 'new_expense' && typeof window.openQuickTransaction === 'function') {
+                                    window.openQuickTransaction('expense');
+                                } else if (action === 'new_income' && typeof window.openQuickTransaction === 'function') {
+                                    window.openQuickTransaction('income');
+                                } else if (action === 'debts' && typeof window.switchPage === 'function') {
+                                    window.switchPage('debts');
+                                } else if (action === 'scan' && typeof window.openReceiptScannerModal === 'function') {
+                                    window.openReceiptScannerModal();
+                                }
+                            }, 350);
+                        }
+                    } catch (err) {}
+                }
+            });
+        }
+    } catch (e) {}
 })();

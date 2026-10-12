@@ -45,6 +45,14 @@
     <!-- Frosted Glass Mobile Notch Bar (Subtle blur behind clock & battery) -->
     <div class="mobile-notch-blur-bar" aria-hidden="true"></div>
 
+    <!-- Offline Resilience Status Banner -->
+    <div id="offlineStatusBar" class="offline-status-bar" aria-live="polite">
+        <div class="osb-content">
+            <i class="fa-solid fa-wifi-slash" id="osbIcon"></i>
+            <span id="osbText">Mode Offline: Data tersimpan di perangkat</span>
+        </div>
+    </div>
+
     <!-- Minimalist Initial Loader -->
     <div id="initialLoader"
         style="position: fixed; inset: 0; background: var(--bg-color, #f8fafc); z-index: 99999; display: flex; justify-content: center; align-items: center; flex-direction: column; transition: opacity 0.3s ease;">
@@ -1733,9 +1741,39 @@
                 <i class="fa-solid fa-receipt"></i>
             </a>
             <div class="b-nav-fab-wrapper">
-                <button class="btn-hero-fab" id="mobileAddFab"
-                    onclick="document.getElementById('openTransModalBtn').click()" title="Add Transaction">
-                    <i class="fa-solid fa-plus"></i>
+                <!-- Smart Speed Dial Radial Menu -->
+                <div class="fab-speed-dial-menu" id="fabSpeedDialMenu">
+                    <button type="button" class="fab-dial-item item-scan" onclick="triggerSpeedDialAction('scan')" title="Pindai Struk (OCR)">
+                        <span class="fab-dial-label">Scan Struk</span>
+                        <div class="fab-dial-icon amber">
+                            <i class="fa-solid fa-camera"></i>
+                        </div>
+                    </button>
+                    <button type="button" class="fab-dial-item item-debt" onclick="triggerSpeedDialAction('debt')" title="Catat Hutang/Piutang">
+                        <span class="fab-dial-label">Hutang/Piutang</span>
+                        <div class="fab-dial-icon purple">
+                            <i class="fa-solid fa-hand-holding-dollar"></i>
+                        </div>
+                    </button>
+                    <button type="button" class="fab-dial-item item-income" onclick="triggerSpeedDialAction('income')" title="Catat Pemasukan">
+                        <span class="fab-dial-label">Pemasukan</span>
+                        <div class="fab-dial-icon emerald">
+                            <i class="fa-solid fa-arrow-down"></i>
+                        </div>
+                    </button>
+                    <button type="button" class="fab-dial-item item-expense" onclick="triggerSpeedDialAction('expense')" title="Catat Pengeluaran">
+                        <span class="fab-dial-label">Pengeluaran</span>
+                        <div class="fab-dial-icon rose">
+                            <i class="fa-solid fa-arrow-up"></i>
+                        </div>
+                    </button>
+                </div>
+                <!-- Backdrop when speed dial is active -->
+                <div class="fab-speed-dial-backdrop" id="fabBackdrop" onclick="toggleFabSpeedDial(false)"></div>
+
+                <button class="btn-hero-fab" id="mobileAddFab" type="button"
+                    onclick="toggleFabSpeedDial()" title="Quick Actions" aria-label="Menu Tambah Cepat">
+                    <i class="fa-solid fa-plus" id="mobileFabIcon"></i>
                 </button>
             </div>
             <a href="#" class="b-nav-item" data-target="budget" onclick="event.preventDefault(); switchPage('budget')">
@@ -1855,6 +1893,49 @@
                 <button type="submit" class="btn-primary full-width" id="btnSaveTrans" style="margin-top: 10px;"
                     data-i18n="btn_save_transaction">Save Transaction</button>
             </form>
+        </div>
+    </div>
+
+    <!-- Modal: Receipt OCR Scanning Laser & Preview Modal -->
+    <div id="receiptScannerModal" class="modal" role="dialog" aria-modal="true">
+        <div class="modal-content action-sheet-modal-content scanner-modal-content">
+            <div class="action-sheet-header">
+                <div class="action-sheet-icon bg-amber-subtle">
+                    <i class="fa-solid fa-camera"></i>
+                </div>
+                <div class="action-sheet-info">
+                    <h3 data-i18n="ocr_modal_title">Scan Struk Belanja</h3>
+                    <p data-i18n="ocr_modal_subtitle">Ekstraksi otomatis nominal &amp; tanggal</p>
+                </div>
+                <button type="button" class="close-btn" onclick="closeReceiptScannerModal()" aria-label="Close modal">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <div class="scanner-preview-container" id="scannerPreviewBox">
+                <img id="scannerPreviewImage" src="" alt="Preview Struk" class="scanner-preview-img" style="display: none;">
+                <div class="scanner-laser" id="scannerLaser" style="display: none;"></div>
+                <div class="scanner-idle-placeholder" id="scannerIdlePlaceholder">
+                    <div class="scanner-icon-pulse">
+                        <i class="fa-solid fa-receipt"></i>
+                    </div>
+                    <p data-i18n="ocr_instructions">Pilih gambar atau foto struk kasir yang jelas</p>
+                </div>
+            </div>
+
+            <div class="scanner-action-buttons">
+                <button type="button" class="btn-secondary" onclick="triggerScanFromCamera()">
+                    <i class="fa-solid fa-camera"></i> <span data-i18n="btn_open_camera">Kamera</span>
+                </button>
+                <button type="button" class="btn-primary" onclick="triggerScanFromGallery()">
+                    <i class="fa-solid fa-image"></i> <span data-i18n="btn_open_gallery">Pilih Galeri</span>
+                </button>
+            </div>
+
+            <div class="scanner-status-indicator" id="scannerStatusIndicator" style="display: none;">
+                <i class="fa-solid fa-circle-notch fa-spin text-blue"></i>
+                <span id="scannerStatusMsg" data-i18n="ocr_analyzing">Menganalisis struk belanja...</span>
+            </div>
         </div>
     </div>
 
