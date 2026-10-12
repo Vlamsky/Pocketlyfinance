@@ -71,6 +71,12 @@
     }
 
     function triggerHaptic(pattern) {
+        if (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.Haptics) {
+            try {
+                window.Capacitor.Plugins.Haptics.impact({ style: 'LIGHT' });
+                return;
+            } catch (e) {}
+        }
         if (typeof navigator !== 'undefined' && typeof navigator.vibrate === 'function') {
             try {
                 navigator.vibrate(pattern);
@@ -81,15 +87,16 @@
     const PocketlyAudio = {
         /**
          * 1. Success Chime
-         * Dual-tone soft crystalline chime for saved transactions (E6 -> B6).
+         * Triple-tone soft crystalline chime for saved transactions (E6 -> B6 -> E7).
          */
         playSuccessChime: function() {
             const ctx = getAudioContext();
             if (!ctx || isMuted) return;
             const now = ctx.currentTime;
-            playTone(1318.5, 'sine', now, 0.22, 0.10, 0.0001, 2800);
-            playTone(1975.5, 'sine', now + 0.08, 0.36, 0.13, 0.0001, 3200);
-            triggerHaptic([12, 35, 18]);
+            playTone(1318.5, 'sine', now, 0.18, 0.12, 0.0001, 3000);
+            playTone(1975.5, 'sine', now + 0.07, 0.26, 0.14, 0.0001, 3400);
+            playTone(2637.0, 'sine', now + 0.14, 0.38, 0.16, 0.0001, 3800);
+            triggerHaptic([15, 40, 20]);
         },
 
         /**

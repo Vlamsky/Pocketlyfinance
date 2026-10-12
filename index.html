@@ -3,14 +3,27 @@
 
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 
-    <title>Pocketly — Cloud Finance & Smart Wealth Tracker</title>
+    <title>Pocketly | Cloud Finance &amp; Smart Wealth Tracker</title>
     <meta name="description"
         content="Minimalist smart wealth and expense manager, debt tracker, and personal finance analytics.">
 
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#f8fafc" id="themeColorMeta">
+
+    <script>
+        (function() {
+            try {
+                var isDarkInit = localStorage.getItem('theme') === 'dark';
+                var meta = document.getElementById('themeColorMeta');
+                if (meta) meta.setAttribute('content', isDarkInit ? '#0b0f19' : '#f8fafc');
+                if (window.AndroidNative && typeof window.AndroidNative.setSystemBarTheme === 'function') {
+                    window.AndroidNative.setSystemBarTheme(isDarkInit);
+                }
+            } catch(e) {}
+        })();
+    </script>
 
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -29,12 +42,15 @@
 
 <body>
 
+    <!-- Frosted Glass Mobile Notch Bar (Subtle blur behind clock & battery) -->
+    <div class="mobile-notch-blur-bar" aria-hidden="true"></div>
+
     <!-- Minimalist Initial Loader -->
     <div id="initialLoader"
         style="position: fixed; inset: 0; background: var(--bg-color, #f8fafc); z-index: 99999; display: flex; justify-content: center; align-items: center; flex-direction: column; transition: opacity 0.3s ease;">
         <div
             style="position: relative; width: 64px; height: 64px; display: flex; align-items: center; justify-content: center; margin-bottom: 18px;">
-            <img src="logo-new.png" alt="Pocketly" style="width: 44px; height: 44px; object-fit: contain;">
+            <img src="logo-new.png" alt="Pocketly" style="width: 56px; height: 56px; border-radius: 16px; object-fit: cover; box-shadow: 0 8px 24px rgba(37, 99, 235, 0.28);">
         </div>
         <p
             style="color: #64748b; font-family: 'SF Pro Display', -apple-system, sans-serif; font-size: 0.95rem; font-weight: 600; letter-spacing: -0.01em;">
@@ -79,7 +95,8 @@
             <div class="app-lock-brand">
                 <img src="logo-new.png" alt="Pocketly Logo" class="app-lock-logo">
                 <h2 class="app-lock-title">Pocketly</h2>
-                <p class="app-lock-subtitle" id="appLockPromptText" data-i18n="lock_enter_pin">Enter 4-Digit PIN to unlock</p>
+                <p class="app-lock-subtitle" id="appLockPromptText" data-i18n="lock_enter_pin">Enter 4-Digit PIN to
+                    unlock</p>
             </div>
 
             <div class="pin-dots-container" id="pinDotsContainer" aria-label="PIN Status">
@@ -89,7 +106,8 @@
                 <div class="pin-dot" id="pdot3"></div>
             </div>
 
-            <p class="pin-error-msg" id="pinErrorMsg" style="display: none;" data-i18n="lock_pin_incorrect">Incorrect PIN. Please try again.</p>
+            <p class="pin-error-msg" id="pinErrorMsg" style="display: none;" data-i18n="lock_pin_incorrect">Incorrect
+                PIN. Please try again.</p>
 
             <div class="pin-keypad">
                 <button type="button" class="pin-key-btn" data-key="1">
@@ -131,20 +149,23 @@
                     <span class="pin-key-sub">WXYZ</span>
                 </button>
 
-                <button type="button" class="pin-key-btn aux-btn" id="btnBiometricUnlock" title="Biometric Unlock" aria-label="Biometric Unlock">
+                <button type="button" class="pin-key-btn aux-btn" id="btnBiometricUnlock" title="Biometric Unlock"
+                    aria-label="Biometric Unlock">
                     <i class="fa-solid fa-fingerprint"></i>
                 </button>
                 <button type="button" class="pin-key-btn" data-key="0">
                     <span class="pin-key-num">0</span>
                     <span class="pin-key-sub">&nbsp;</span>
                 </button>
-                <button type="button" class="pin-key-btn aux-btn" id="btnPinBackspace" title="Delete" aria-label="Delete">
+                <button type="button" class="pin-key-btn aux-btn" id="btnPinBackspace" title="Delete"
+                    aria-label="Delete">
                     <i class="fa-solid fa-delete-left"></i>
                 </button>
             </div>
 
             <div class="pin-forgot-row">
-                <button type="button" class="btn-forgot-pin" id="btnForgotPin" data-i18n="forgot_pin_title">Forgot PIN?</button>
+                <button type="button" class="btn-forgot-pin" id="btnForgotPin" data-i18n="forgot_pin_title">Forgot
+                    PIN?</button>
             </div>
         </div>
     </div>
@@ -154,9 +175,11 @@
         <div class="modal-body center-text text-center" style="text-align: center;">
             <i class="fa-solid fa-circle-exclamation text-blue" id="alertIcon"
                 style="font-size: 2.6rem; margin: 0 auto 14px auto; display: block; text-align: center;"></i>
-            <h3 id="alertTitle" data-i18n="alert_notice" style="font-size: 1.3rem; margin-bottom: 8px; text-align: center;">Notice</h3>
+            <h3 id="alertTitle" data-i18n="alert_notice"
+                style="font-size: 1.3rem; margin-bottom: 8px; text-align: center;">Notice</h3>
             <p id="alertMessage"
-                style="color: var(--text-grey); font-size: 0.92rem; margin-bottom: 22px; line-height: 1.5; text-align: center;">Message...
+                style="color: var(--text-grey); font-size: 0.92rem; margin-bottom: 22px; line-height: 1.5; text-align: center;">
+                Message...
             </p>
             <button class="btn-primary full-width" data-i18n="alert_got_it" onclick="closeAlert()">Got it</button>
         </div>
@@ -167,113 +190,172 @@
         <div class="modal-body center-text text-center" style="text-align: center;">
             <i id="confirmIcon" class="fa-solid fa-triangle-exclamation text-red"
                 style="font-size: 2.6rem; margin: 0 auto 14px auto; display: block; text-align: center;"></i>
-            <h3 id="confirmTitle" data-i18n="confirm_are_you_sure" style="font-size: 1.3rem; margin-bottom: 8px; text-align: center;">Are you sure?</h3>
+            <h3 id="confirmTitle" data-i18n="confirm_are_you_sure"
+                style="font-size: 1.3rem; margin-bottom: 8px; text-align: center;">Are you sure?</h3>
             <p id="confirmMessage" data-i18n="confirm_cannot_undone"
-                style="color: var(--text-grey); font-size: 0.92rem; margin-bottom: 22px; line-height: 1.5; text-align: center;">This action
+                style="color: var(--text-grey); font-size: 0.92rem; margin-bottom: 22px; line-height: 1.5; text-align: center;">
+                This action
                 cannot be undone.</p>
             <div class="confirm-actions" style="display: flex; gap: 10px;">
-                <button class="btn-secondary" style="flex: 1;" data-i18n="btn_cancel" onclick="closeConfirm()">Cancel</button>
+                <button class="btn-secondary" style="flex: 1;" data-i18n="btn_cancel"
+                    onclick="closeConfirm()">Cancel</button>
                 <button id="confirmYesBtn" class="btn-danger" style="flex: 1;" data-i18n="btn_proceed">Proceed</button>
             </div>
         </div>
     </div>
 
-    <!-- 1. AUTH SCREEN (MINIMAL LUXE) -->
-    <div id="authScreen" class="auth-container">
-        <div class="auth-glass-card">
-            <div class="auth-header">
-                <div class="auth-brand-badge">
-                    <img src="logo-new.png" alt="Pocketly Logo">
+    <!-- 1. AUTH SCREEN (WAVE HERO FINTECH EXPERIENCE) -->
+    <div id="authScreen" class="auth-container wave-auth-layout">
+        <div class="auth-layout-wrapper">
+            <!-- Top Wave Hero Banner (Blue with animated liquid background) -->
+            <div class="auth-wave-hero">
+                <!-- Animated Background Liquid Waves -->
+                <div class="hero-liquid-canvas" aria-hidden="true">
+                    <div class="liquid-blob blob-1"></div>
+                    <div class="liquid-blob blob-2"></div>
+                    <div class="liquid-blob blob-3"></div>
                 </div>
-                <h2 id="authTitle">Welcome Back</h2>
-                <p id="authSubtitle" class="auth-sub-text">Track wealth and expenses with clarity.</p>
+
+                <!-- Top Navigation (Back button) -->
+                <div class="auth-hero-nav">
+                    <button type="button" class="auth-hero-back-btn" id="authHeroBackBtn" title="Back" onclick="window.handleAuthBack()" style="opacity: 0; pointer-events: none;">
+                        <i class="fa-solid fa-arrow-left"></i>
+                    </button>
+                </div>
+
+                <!-- Hero Branding Content -->
+                <div class="auth-hero-content">
+                    <div class="auth-brand-badge" id="authBrandBadge">
+                        <img src="logo-new.png" alt="Pocketly Logo">
+                        <div class="badge-glass-shine"></div>
+                    </div>
+                    <h2 id="authTitle">Welcome</h2>
+                    <p id="authSubtitle" class="auth-sub-text">Sign in to continue</p>
+                </div>
+
+                <!-- Flowing Curved Wave SVG Divider -->
+                <div class="auth-wave-svg-wrap" aria-hidden="true">
+                    <svg class="auth-wave-svg" viewBox="0 0 1440 200" preserveAspectRatio="none">
+                        <!-- Layer 1: Ambient Translucent Wave -->
+                        <path class="wave-layer-back" d="M0,60 C320,140 580,10 880,80 C1140,150 1340,40 1440,70 L1440,200 L0,200 Z"></path>
+                        <!-- Layer 2: Main Cut Wave filling the sheet surface -->
+                        <path class="wave-layer-front" d="M0,100 C280,40 560,160 920,70 C1200,10 1360,110 1440,90 L1440,200 L0,200 Z"></path>
+                    </svg>
+                </div>
             </div>
 
-            <!-- Segmented Mode Control -->
-            <div class="auth-segmented-tabs">
-                <button type="button" class="auth-tab-btn active" id="tabAuthLogin"
-                    onclick="window.setAuthMode('login')">Sign In</button>
-                <button type="button" class="auth-tab-btn" id="tabAuthRegister"
-                    onclick="window.setAuthMode('register')">Register</button>
-            </div>
+            <!-- Lower Form Sheet Area -->
+            <div class="auth-sheet-container">
+                <div class="auth-sheet-inner">
+                    <!-- Segmented Mode Control (Sign In / Register) with Spring Glider -->
+                    <div class="auth-segmented-tabs" id="authSegmentedTabs">
+                        <div class="auth-tab-glider" id="authTabGlider"></div>
+                        <button type="button" class="auth-tab-btn active" id="tabAuthLogin"
+                            onclick="window.setAuthMode('login')">Sign In</button>
+                        <button type="button" class="auth-tab-btn" id="tabAuthRegister"
+                            onclick="window.setAuthMode('register')">Register</button>
+                    </div>
 
-            <form id="authForm" class="auth-form-layout">
-                <div class="form-group" id="nameField" style="display:none;">
-                    <label>Full Name</label>
-                    <div class="input-glass-wrapper">
-                        <i class="fa-regular fa-user input-icon"></i>
-                        <input type="text" id="fullName" placeholder="e.g. Alexander Ray">
+                    <form id="authForm" class="auth-form-layout is-login-mode">
+                        <!-- Row 1 (Register only): Full Name & Username in 2 columns -->
+                        <div class="auth-row-2col" id="rowNameUser" style="display:none;">
+                            <div class="form-group" id="nameField" style="display:none;">
+                                <label>Full Name</label>
+                                <div class="input-glass-wrapper">
+                                    <i class="fa-regular fa-user input-icon"></i>
+                                    <input type="text" id="fullName" placeholder="e.g. John Doe">
+                                </div>
+                            </div>
+
+                            <div class="form-group" id="usernameField" style="display:none;">
+                                <label>User ID</label>
+                                <div class="input-glass-wrapper">
+                                    <i class="fa-solid fa-at input-icon"></i>
+                                    <input type="text" id="regUsername" placeholder="username123">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Email Address (Full Width) with Live Checkmark Indicator -->
+                        <div class="form-group" id="emailField">
+                            <label>Email Address</label>
+                            <div class="input-glass-wrapper">
+                                <i class="fa-regular fa-envelope input-icon"></i>
+                                <input type="email" id="email" required placeholder="name@email.com" autocomplete="email">
+                                <span class="input-valid-indicator" id="emailValidIndicator" title="Valid Email">
+                                    <i class="fa-solid fa-circle-check"></i>
+                                </span>
+                            </div>
+                        </div>
+
+                        <!-- Row 2: Password & Confirm Password (2 columns in register, full-width in login) -->
+                        <div class="auth-row-2col" id="rowPassFields">
+                            <div class="form-group" id="passwordField">
+                                <label>Password</label>
+                                <div class="input-glass-wrapper">
+                                    <i class="fa-solid fa-lock input-icon"></i>
+                                    <input type="password" id="password" required placeholder="••••••••" autocomplete="current-password">
+                                    <i class="fa-solid fa-eye toggle-pass-icon" id="toggleLoginPass"></i>
+                                </div>
+                                <div class="pass-strength-meter" id="passStrengthMeter" style="display: none;">
+                                    <div class="strength-track">
+                                        <div class="strength-fill" id="strengthFill"></div>
+                                    </div>
+                                    <span class="strength-label" id="strengthLabel">Weak</span>
+                                </div>
+                                <div class="forgot-pass-wrapper" id="forgotPassRow">
+                                    <a href="#" id="forgotPasswordLink">Forgot Password?</a>
+                                </div>
+                            </div>
+
+                            <div class="form-group" id="confirmPasswordField" style="display:none;">
+                                <label>Confirm Password</label>
+                                <div class="input-glass-wrapper">
+                                    <i class="fa-solid fa-lock input-icon"></i>
+                                    <input type="password" id="confirmPassword" placeholder="••••••••" autocomplete="new-password">
+                                    <i class="fa-solid fa-eye toggle-pass-icon" id="toggleConfirmPass"></i>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Row 3 (Register only): Compact Single-Row Captcha Check -->
+                        <div class="form-group" id="captchaField" style="display:none;">
+                            <label>Security Check</label>
+                            <div class="captcha-inline-row">
+                                <div class="captcha-preview-wrap">
+                                    <canvas id="captchaCanvas" width="130" height="42"></canvas>
+                                    <button type="button" id="refreshCaptchaBtn" class="btn-round-small" title="Refresh Code">
+                                        <i class="fa-solid fa-arrows-rotate"></i>
+                                    </button>
+                                </div>
+                                <div class="input-glass-wrapper captcha-input-wrap">
+                                    <i class="fa-solid fa-shield-halved input-icon"></i>
+                                    <input type="text" id="captchaInput" placeholder="Enter code above">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Submit & Quick Biometric Row -->
+                        <div class="auth-actions-group">
+                            <button type="submit" class="btn-auth-primary" id="authBtn">
+                                <span class="btn-text">Login</span>
+                                <i class="fa-solid fa-arrow-right auth-btn-arrow"></i>
+                                <span class="btn-loading-spin" style="display: none;"><i class="fa-solid fa-circle-notch fa-spin"></i></span>
+                            </button>
+                            <button type="button" class="btn-auth-biometric" id="btnBiometricLogin" title="Biometric Quick Login" onclick="window.handleBiometricAuth()">
+                                <i class="fa-solid fa-fingerprint"></i>
+                            </button>
+                        </div>
+                    </form>
+
+
+                    <div class="auth-footer">
+                        <p class="switch-auth">
+                            <span id="switchText">Don't have an account? </span>
+                            <a href="#" id="switchBtn">Sign up</a>
+                        </p>
                     </div>
                 </div>
-
-                <div class="form-group" id="usernameField" style="display:none;">
-                    <label>Unique Username</label>
-                    <div class="input-glass-wrapper">
-                        <i class="fa-solid fa-at input-icon"></i>
-                        <input type="text" id="regUsername" placeholder="alexander123">
-                    </div>
-                </div>
-
-                <div class="form-group">
-                    <label>Email Address</label>
-                    <div class="input-glass-wrapper">
-                        <i class="fa-regular fa-envelope input-icon"></i>
-                        <input type="email" id="email" required placeholder="name@email.com">
-                    </div>
-                </div>
-
-                <div class="form-group">
-                    <label>Password</label>
-                    <div class="input-glass-wrapper">
-                        <i class="fa-solid fa-lock input-icon"></i>
-                        <input type="password" id="password" required placeholder="••••••••">
-                        <i class="fa-solid fa-eye toggle-pass-icon" id="toggleLoginPass"></i>
-                    </div>
-                    <div class="forgot-pass-wrapper" id="forgotPassRow">
-                        <a href="#" id="forgotPasswordLink">Forgot Password?</a>
-                    </div>
-                </div>
-
-                <div class="form-group" id="confirmPasswordField" style="display:none;">
-                    <label>Confirm Password</label>
-                    <div class="input-glass-wrapper">
-                        <i class="fa-solid fa-lock input-icon"></i>
-                        <input type="password" id="confirmPassword" placeholder="••••••••">
-                        <i class="fa-solid fa-eye toggle-pass-icon" id="toggleConfirmPass"></i>
-                    </div>
-                </div>
-
-                <div class="form-group" id="captchaField" style="display:none;">
-                    <label>Security Check</label>
-                    <div style="display: flex; gap: 10px; align-items: center; margin-bottom: 8px;">
-                        <canvas id="captchaCanvas" width="130" height="42"
-                            style="border-radius: 10px; background: rgba(0,0,0,0.04); border: 1px solid var(--border-color);"></canvas>
-                        <button type="button" id="refreshCaptchaBtn" class="btn-round-small" title="Refresh Code">
-                            <i class="fa-solid fa-arrows-rotate"></i>
-                        </button>
-                    </div>
-                    <div class="input-glass-wrapper">
-                        <i class="fa-solid fa-shield-halved input-icon"></i>
-                        <input type="text" id="captchaInput" placeholder="Enter code above">
-                    </div>
-                </div>
-
-                <button type="submit" class="btn-auth-primary" id="authBtn">
-                    Sign In to Pocketly <i class="fa-solid fa-arrow-right"
-                        style="margin-left: 8px; font-size: 0.85rem;"></i>
-                </button>
-
-                <!-- Guest / Demo Exploration Button -->
-                <button type="button" class="btn-demo-mode" id="btnExploreDemo" onclick="window.startDemoMode()">
-                    <i class="fa-solid fa-wand-magic-sparkles text-blue"></i> Try Demo Mode (Quick Preview)
-                </button>
-            </form>
-
-            <div class="auth-footer">
-                <p class="switch-auth">
-                    <span id="switchText">Don't have an account? </span>
-                    <a href="#" id="switchBtn">Sign up</a>
-                </p>
             </div>
         </div>
     </div>
@@ -339,6 +421,14 @@
 
             <!-- Main Scrollable Content -->
             <main class="main-content">
+                <!-- Top Pull to Refresh Indicator -->
+                <div class="ptr-indicator" id="ptrIndicator">
+                    <div class="ptr-spinner-icon" id="ptrIcon">
+                        <i class="fa-solid fa-arrows-rotate"></i>
+                    </div>
+                    <span class="ptr-label" id="ptrLabel">Pull to refresh</span>
+                </div>
+
                 <!-- Top App Header -->
                 <header>
                     <div class="header-left">
@@ -358,15 +448,18 @@
                             <div class="popup-header" data-i18n="user_popup_title">My Account</div>
                             <a href="#" class="popup-item" id="btnGoToConnections"
                                 onclick="switchPage('connections'); return false;">
-                                <i class="fa-solid fa-user-group text-purple"></i> <span data-i18n="nav_connections">Connections</span>
+                                <i class="fa-solid fa-user-group text-purple"></i> <span
+                                    data-i18n="nav_connections">Connections</span>
                             </a>
                             <a href="#" class="popup-item" id="btnGoToSettings"
                                 onclick="switchPage('account'); return false;">
-                                <i class="fa-solid fa-gear text-blue"></i> <span data-i18n="nav_settings">Settings</span>
+                                <i class="fa-solid fa-gear text-blue"></i> <span
+                                    data-i18n="nav_settings">Settings</span>
                             </a>
                             <div class="popup-divider"></div>
                             <a href="#" class="popup-item text-red-muted" id="btnPopupLogout">
-                                <i class="fa-solid fa-right-from-bracket"></i> <span data-i18n="nav_sign_out">Sign Out</span>
+                                <i class="fa-solid fa-right-from-bracket"></i> <span data-i18n="nav_sign_out">Sign
+                                    Out</span>
                             </a>
                         </div>
 
@@ -414,12 +507,15 @@
                             </div>
                         </div>
 
-                        <!-- Notification bell for goal invitations -->
-                        <button class="btn-glass-icon" id="btnOpenGoalInvites" onclick="openGoalInvitesModal()"
-                            style="display: none;" title="Goal Invitations">
+                        <!-- Notification bell (Direct Navigation to Notifications Page) -->
+                        <button class="btn-glass-icon notif-bell-btn" id="btnOpenNotificationCenter" onclick="navigateToNotifications()"
+                            title="Notifications" aria-label="Notifications" data-i18n-title="notif_center_title">
                             <i class="fa-regular fa-bell"></i>
-                            <span id="goalInviteBadge" class="notif-badge-dot" style="display: none;"></span>
+                            <span id="notifCenterBadge" class="notif-badge-count" style="display: none;">0</span>
                         </button>
+                        <!-- Backward-compat hidden elements for legacy handlers -->
+                        <button id="btnOpenGoalInvites" style="display: none;" onclick="openGoalInvitesModal()"></button>
+                        <span id="goalInviteBadge" style="display: none;"></span>
                     </div>
                 </header>
 
@@ -499,11 +595,13 @@
                                     style="cursor: pointer;">
                                     <div class="widget-row">
                                         <div class="widget-item receivable">
-                                            <span class="widget-label"><i class="fa-solid fa-arrow-down"></i> <span data-i18n="lent_receivable">Lent (Receivable)</span></span>
+                                            <span class="widget-label"><i class="fa-solid fa-arrow-down"></i> <span
+                                                    data-i18n="lent_receivable">Lent (Receivable)</span></span>
                                             <h4 id="dashDebtReceivable">Rp0</h4>
                                         </div>
                                         <div class="widget-item payable">
-                                            <span class="widget-label"><i class="fa-solid fa-arrow-up"></i> <span data-i18n="borrowed_payable">Borrowed (Payable)</span></span>
+                                            <span class="widget-label"><i class="fa-solid fa-arrow-up"></i> <span
+                                                    data-i18n="borrowed_payable">Borrowed (Payable)</span></span>
                                             <h4 id="dashDebtPayable">Rp0</h4>
                                         </div>
                                     </div>
@@ -539,11 +637,13 @@
                             <div class="trans-switch-glider"></div>
                             <button type="button" class="trans-view-tab active" id="transactionListTab"
                                 data-trans-view="list">
-                                <i class="fa-solid fa-list-check"></i> <span data-i18n="trans_list_tab">Transaction List</span>
+                                <i class="fa-solid fa-list-check"></i> <span data-i18n="trans_list_tab">Transaction
+                                    List</span>
                             </button>
                             <button type="button" class="trans-view-tab" id="transactionCalendarTab"
                                 data-trans-view="calendar">
-                                <i class="fa-solid fa-calendar-days"></i> <span data-i18n="trans_calendar_tab">Financial Calendar</span>
+                                <i class="fa-solid fa-calendar-days"></i> <span data-i18n="trans_calendar_tab">Financial
+                                    Calendar</span>
                             </button>
                         </div>
 
@@ -551,13 +651,15 @@
                         <div class="trans-header-row">
                             <div class="pill-search-trans">
                                 <i class="fa-solid fa-magnifying-glass"></i>
-                                <input type="text" id="searchTransaction" placeholder="Search transactions..." data-i18n-placeholder="search_transactions_ph">
+                                <input type="text" id="searchTransaction" placeholder="Search transactions..."
+                                    data-i18n-placeholder="search_transactions_ph">
                             </div>
 
                             <div class="action-group">
                                 <button type="button" id="btnExportPDF_Header"
                                     class="btn-circle-glass btn-action-export" title="Export PDF Statement"
-                                    aria-label="Export PDF Statement" data-i18n-title="btn_export_pdf" onclick="openExportPdfModal()">
+                                    aria-label="Export PDF Statement" data-i18n-title="btn_export_pdf"
+                                    onclick="openExportPdfModal()">
                                     <i class="fa-solid fa-file-pdf"></i>
                                 </button>
                                 <button type="button" id="transFilterToggleBtn"
@@ -566,7 +668,8 @@
                                     <i class="fa-solid fa-sliders"></i>
                                 </button>
                                 <button type="button" class="btn-primary btn-action-add" id="openTransModalBtn"
-                                    title="New Transaction" aria-label="New Transaction" data-i18n-title="btn_new_transaction">
+                                    title="New Transaction" aria-label="New Transaction"
+                                    data-i18n-title="btn_new_transaction">
                                     <i class="fa-solid fa-plus"></i>
                                 </button>
                             </div>
@@ -577,11 +680,13 @@
                             <div id="transactionListContainer" class="trans-list-wrapper"></div>
                             <div class="pagination-wrapper" id="paginationControls" style="display:none;">
                                 <div class="pagination-capsule" role="navigation" aria-label="Transaction pagination">
-                                    <button type="button" class="pagination-btn pagination-nav-btn" id="btnPrevPage" onclick="changePage(-1)" aria-label="Previous page" title="Previous page">
+                                    <button type="button" class="pagination-btn pagination-nav-btn" id="btnPrevPage"
+                                        onclick="changePage(-1)" aria-label="Previous page" title="Previous page">
                                         <i class="fa-solid fa-chevron-left"></i>
                                     </button>
                                     <div class="pagination-pages" id="paginationPagesList"></div>
-                                    <button type="button" class="pagination-btn pagination-nav-btn" id="btnNextPage" onclick="changePage(1)" aria-label="Next page" title="Next page">
+                                    <button type="button" class="pagination-btn pagination-nav-btn" id="btnNextPage"
+                                        onclick="changePage(1)" aria-label="Next page" title="Next page">
                                         <i class="fa-solid fa-chevron-right"></i>
                                     </button>
                                 </div>
@@ -596,7 +701,8 @@
                             <div class="calendar-page-wrapper">
                                 <div class="calendar-toolbar glass-effect-card">
                                     <div>
-                                        <h3 style="margin-bottom: 4px;" data-i18n="financial_calendar">Financial Calendar</h3>
+                                        <h3 style="margin-bottom: 4px;" data-i18n="financial_calendar">Financial
+                                            Calendar</h3>
                                     </div>
                                     <div class="calendar-controls">
                                         <button class="btn-circle-small" id="calendarPrevMonth" title="Previous Month">
@@ -608,14 +714,21 @@
                                             <i class="fa-solid fa-chevron-right"></i>
                                         </button>
                                         <button class="btn-secondary" id="btnCalendarToday"
-                                            style="padding: 6px 14px; font-size: 0.85rem;" data-i18n="btn_today">Today</button>
+                                            style="padding: 6px 14px; font-size: 0.85rem;"
+                                            data-i18n="btn_today">Today</button>
                                     </div>
                                 </div>
 
                                 <div class="calendar-layout-grid">
                                     <div class="glass-effect-card calendar-card">
                                         <div class="calendar-weekdays">
-                                            <span data-i18n="weekday_sun">Sun</span><span data-i18n="weekday_mon">Mon</span><span data-i18n="weekday_tue">Tue</span><span data-i18n="weekday_wed">Wed</span><span data-i18n="weekday_thu">Thu</span><span data-i18n="weekday_fri">Fri</span><span data-i18n="weekday_sat">Sat</span>
+                                            <span data-i18n="weekday_sun">Sun</span><span
+                                                data-i18n="weekday_mon">Mon</span><span
+                                                data-i18n="weekday_tue">Tue</span><span
+                                                data-i18n="weekday_wed">Wed</span><span
+                                                data-i18n="weekday_thu">Thu</span><span
+                                                data-i18n="weekday_fri">Fri</span><span
+                                                data-i18n="weekday_sat">Sat</span>
                                         </div>
                                         <div id="calendarGrid" class="calendar-grid"></div>
                                     </div>
@@ -636,15 +749,18 @@
                     <div class="settings-page-container wide">
                         <div class="debt-header-banner glass-effect-card">
                             <div class="debt-header-left">
-                                <button class="btn-back-settings" type="button" onclick="switchPage('dashboard')" title="Back to Dashboard" aria-label="Back">
+                                <button class="btn-back-settings" type="button" onclick="switchPage('dashboard')"
+                                    title="Back to Dashboard" aria-label="Back">
                                     <i class="fa-solid fa-arrow-left"></i>
                                 </button>
                                 <div>
                                     <h2 data-i18n="debts_loans">Debts & Loans</h2>
-                                    <span class="debt-header-subtitle" data-i18n="debt_subtitle">Receivables & Payables</span>
+                                    <span class="debt-header-subtitle" data-i18n="debt_subtitle">Receivables &
+                                        Payables</span>
                                 </div>
                             </div>
-                            <button class="btn-primary btn-round debt-header-add" onclick="openDebtModal()" title="Add Debt or Loan" aria-label="Add Record">
+                            <button class="btn-primary btn-round debt-header-add" onclick="openDebtModal()"
+                                title="Add Debt or Loan" aria-label="Add Record">
                                 <i class="fa-solid fa-plus"></i>
                             </button>
                         </div>
@@ -693,7 +809,8 @@
                         <div class="glass-toolbar debt-toolbar">
                             <div class="pill-search-wrapper debt-search-pill">
                                 <i class="fa-solid fa-magnifying-glass"></i>
-                                <input type="text" id="debtSearch" placeholder="Search records..." data-i18n-placeholder="search_records_ph">
+                                <input type="text" id="debtSearch" placeholder="Search records..."
+                                    data-i18n-placeholder="search_records_ph">
                             </div>
                             <div class="debt-toolbar-actions">
                                 <div class="debt-filter-select-wrap">
@@ -727,7 +844,8 @@
                             <div>
                                 <h3>🎯 <span data-i18n="savings_goals_title">Savings Goals</span></h3>
                             </div>
-                            <button class="btn-primary btn-round" onclick="openCreateBudgetModal('goal')" title="New Goal" aria-label="New Goal" data-i18n-title="btn_new_goal">
+                            <button class="btn-primary btn-round" onclick="openCreateBudgetModal('goal')"
+                                title="New Goal" aria-label="New Goal" data-i18n-title="btn_new_goal">
                                 <i class="fa-solid fa-plus"></i>
                             </button>
                         </div>
@@ -739,7 +857,8 @@
                             <div>
                                 <h3>📉 <span data-i18n="category_budgets_title">Category Budgets</span></h3>
                             </div>
-                            <button class="btn-primary btn-round" onclick="openCreateBudgetModal('budget')" title="Set Budget Limit" aria-label="Set Budget Limit" data-i18n-title="btn_set_budget">
+                            <button class="btn-primary btn-round" onclick="openCreateBudgetModal('budget')"
+                                title="Set Budget Limit" aria-label="Set Budget Limit" data-i18n-title="btn_set_budget">
                                 <i class="fa-solid fa-plus"></i>
                             </button>
                         </div>
@@ -778,7 +897,8 @@
                             <div class="sum-info">
                                 <small data-i18n="savings_rate">Savings Rate</small>
                                 <h3 id="rptSavingsRateText">0%</h3>
-                                <span style="font-size:0.75rem; color:var(--text-grey);" data-i18n="of_total_income">of total income</span>
+                                <span style="font-size:0.75rem; color:var(--text-grey);" data-i18n="of_total_income">of
+                                    total income</span>
                             </div>
                             <i class="fa-solid fa-chart-line card-watermark"></i>
                         </div>
@@ -821,25 +941,30 @@
                     <div class="settings-page-container wide">
                         <div class="connections-header-banner glass-effect-card">
                             <div class="connections-header-left">
-                                <button class="btn-back-settings" type="button" onclick="switchPage('account')" title="Back to Settings" aria-label="Back">
+                                <button class="btn-back-settings" type="button" onclick="switchPage('account')"
+                                    title="Back to Settings" aria-label="Back">
                                     <i class="fa-solid fa-arrow-left"></i>
                                 </button>
                                 <div>
                                     <h2 data-i18n="nav_connections">Connections</h2>
-                                    <span class="connections-header-subtitle" data-i18n="con_subtitle">Friends & Requests</span>
+                                    <span class="connections-header-subtitle" data-i18n="con_subtitle">Friends &
+                                        Requests</span>
                                 </div>
                             </div>
-                            <button class="btn-primary btn-round con-header-add" onclick="openAddFriendModal()" title="Add Friend" aria-label="Add Friend">
+                            <button class="btn-primary btn-round con-header-add" onclick="openAddFriendModal()"
+                                title="Add Friend" aria-label="Add Friend">
                                 <i class="fa-solid fa-user-plus"></i>
                             </button>
                         </div>
 
                         <div class="glass-toolbar connections-toolbar">
                             <div class="connection-segmented-tabs">
-                                <button class="con-tab active" id="tabBtnFriends" onclick="switchConnectionTab('friends')" type="button">
+                                <button class="con-tab active" id="tabBtnFriends"
+                                    onclick="switchConnectionTab('friends')" type="button">
                                     <i class="fa-solid fa-user-group"></i> <span data-i18n="tab_friends">Friends</span>
                                 </button>
-                                <button class="con-tab" id="tabBtnRequests" onclick="switchConnectionTab('requests')" type="button">
+                                <button class="con-tab" id="tabBtnRequests" onclick="switchConnectionTab('requests')"
+                                    type="button">
                                     <i class="fa-solid fa-bell"></i> <span data-i18n="tab_requests">Requests</span>
                                     <span id="tabRequestBadge" class="tab-badge" style="display:none;">0</span>
                                 </button>
@@ -848,7 +973,8 @@
                             <div class="connections-search-group">
                                 <div class="pill-search-wrapper con-search-pill">
                                     <i class="fa-solid fa-magnifying-glass"></i>
-                                    <input type="text" id="searchFriend" placeholder="Search friends..." data-i18n-placeholder="search_friends_ph">
+                                    <input type="text" id="searchFriend" placeholder="Search friends..."
+                                        data-i18n-placeholder="search_friends_ph">
                                 </div>
                                 <button class="btn-primary con-add-btn" onclick="openAddFriendModal()" type="button">
                                     <i class="fa-solid fa-plus"></i> <span data-i18n="btn_add">Add</span>
@@ -873,12 +999,14 @@
                     <div class="settings-page-container">
                         <div class="settings-header-banner glass-effect-card">
                             <div class="settings-header-left">
-                                <button class="btn-back-settings" type="button" onclick="switchPage('dashboard')" title="Back to Dashboard" aria-label="Back">
+                                <button class="btn-back-settings" type="button" onclick="switchPage('dashboard')"
+                                    title="Back to Dashboard" aria-label="Back">
                                     <i class="fa-solid fa-arrow-left"></i>
                                 </button>
                                 <div>
                                     <h2 data-i18n="settings_title">Settings</h2>
-                                    <span class="settings-header-subtitle" data-i18n="settings_subtitle">Preferences & Account</span>
+                                    <span class="settings-header-subtitle" data-i18n="settings_subtitle">Preferences &
+                                        Account</span>
                                 </div>
                             </div>
                         </div>
@@ -897,7 +1025,8 @@
                                 <h2 id="settingsUserName">Loading Profile...</h2>
                                 <p id="settingsUserEmail">email@example.com</p>
                             </div>
-                            <button class="btn-secondary btn-action-pill edit-profile-badge-btn" onclick="openEditProfileModal()" type="button" title="Edit Profile">
+                            <button class="btn-secondary btn-action-pill edit-profile-badge-btn"
+                                onclick="openEditProfileModal()" type="button" title="Edit Profile">
                                 <i class="fa-solid fa-pen"></i> <span data-i18n="btn_edit">Edit</span>
                             </button>
                         </div>
@@ -916,14 +1045,30 @@
                                 </div>
                             </div>
 
-                            <div class="settings-row" id="btnSettingsLanguage" onclick="window.PocketlyI18n && window.PocketlyI18n.openPicker()">
-                                <div class="set-icon bg-blue" style="background: rgba(6, 182, 212, 0.12); color: #06b6d4;"><i class="fa-solid fa-globe"></i></div>
+                            <div class="settings-row" id="btnSettingsNotification" onclick="navigateToNotifications()">
+                                <div class="set-icon bg-orange" style="background: rgba(249, 115, 22, 0.12); color: #f97316;"><i class="fa-solid fa-bell"></i></div>
+                                <div class="set-text">
+                                    <h4 data-i18n="settings_notifications">Notifications</h4>
+                                    <span class="settings-row-desc" id="settingsNotifStatusText">Active alerts & push</span>
+                                </div>
+                                <div class="set-action">
+                                    <span class="tab-badge" id="settingNotifBadge" style="display:none">0</span>
+                                    <i class="fa-solid fa-chevron-right"></i>
+                                </div>
+                            </div>
+
+                            <div class="settings-row" id="btnSettingsLanguage" onclick="switchPage('languageSettings')">
+                                <div class="set-icon bg-blue"
+                                    style="background: rgba(6, 182, 212, 0.12); color: #06b6d4;"><i
+                                        class="fa-solid fa-globe"></i></div>
                                 <div class="set-text">
                                     <h4 data-i18n="settings_language">Language</h4>
                                 </div>
                                 <div class="set-action">
-                                    <span class="conv-flag-box" id="settingsLangFlagBox" style="width: 22px; height: 15px; margin-right: 4px;">
-                                        <img src="https://flagcdn.com/w40/us.png" alt="English" id="settingsLangFlagImg" class="currency-flag-img">
+                                    <span class="conv-flag-box" id="settingsLangFlagBox"
+                                        style="width: 22px; height: 15px; margin-right: 4px;">
+                                        <img src="https://flagcdn.com/w40/us.png" alt="English" id="settingsLangFlagImg"
+                                            class="currency-flag-img">
                                     </span>
                                     <span class="value-text" id="settingsLanguageText">English</span>
                                     <i class="fa-solid fa-chevron-right"></i>
@@ -1013,7 +1158,7 @@
                                 <div class="set-action"><i class="fa-solid fa-chevron-right"></i></div>
                             </div>
 
-                            <div class="settings-row" id="rowBiometric" style="display: none;">
+                            <div class="settings-row" id="rowBiometric">
                                 <div class="set-icon bg-green"><i class="fa-solid fa-fingerprint"></i></div>
                                 <div class="set-text">
                                     <h4 data-i18n="settings_biometrics">Biometric Unlock (Face ID / Fingerprint)</h4>
@@ -1023,6 +1168,17 @@
                                         <input type="checkbox" id="biometricLockToggle">
                                         <span class="slider round"></span>
                                     </label>
+                                </div>
+                            </div>
+
+                            <div class="settings-row" id="rowAutoLockTimeout" style="display: none; cursor: pointer;">
+                                <div class="set-icon bg-blue"><i class="fa-solid fa-clock"></i></div>
+                                <div class="set-text">
+                                    <h4 data-i18n="settings_autolock_timeout">Auto-Lock Delay</h4>
+                                </div>
+                                <div class="set-action">
+                                    <span class="value-text" id="currentAutoLockTimeoutText">After 1 minute</span>
+                                    <i class="fa-solid fa-chevron-right"></i>
                                 </div>
                             </div>
 
@@ -1076,7 +1232,7 @@
                         </div>
 
                         <div class="settings-footer-info">
-                            <p>Pocketly Finance & Wealth — Version 4.0 Pro</p>
+                            <p>Pocketly Finance - V2</p>
                         </div>
                     </div>
                 </section>
@@ -1085,7 +1241,8 @@
                 <section id="currencySettings" class="content-section settings-subpage">
                     <div class="settings-page-container">
                         <div class="subpage-header-banner glass-effect-card">
-                            <button class="btn-back-settings" type="button" onclick="switchPage('account')" title="Back" aria-label="Back">
+                            <button class="btn-back-settings" type="button" onclick="switchPage('account')" title="Back"
+                                aria-label="Back">
                                 <i class="fa-solid fa-arrow-left"></i>
                             </button>
                             <div>
@@ -1099,11 +1256,13 @@
                             <div class="sync-status-left">
                                 <span class="live-pulse-dot"></span>
                                 <div>
-                                    <span id="currencyRateStatus" class="sync-status-text" data-i18n="currency_sync_text">Live rates connected</span>
+                                    <span id="currencyRateStatus" class="sync-status-text"
+                                        data-i18n="currency_sync_text">Live rates connected</span>
                                     <span id="convRateTime" class="sync-status-time"></span>
                                 </div>
                             </div>
-                            <button class="btn-refresh-rates" id="btnRefreshRates" type="button" title="Refresh Live Rates">
+                            <button class="btn-refresh-rates" id="btnRefreshRates" type="button"
+                                title="Refresh Live Rates">
                                 <i class="fa-solid fa-rotate"></i> <span data-i18n="currency_sync_btn">Sync</span>
                             </button>
                         </div>
@@ -1111,17 +1270,21 @@
                         <!-- LIVE CURRENCY CONVERTER WIDGET -->
                         <div class="converter-widget glass-effect-card">
                             <div class="converter-header-info">
-                                <span class="rate-badge"><i class="fa-solid fa-chart-line"></i> <span data-i18n="mid_market_rate">Mid-Market Rate</span></span>
+                                <span class="rate-badge"><i class="fa-solid fa-chart-line"></i> <span
+                                        data-i18n="mid_market_rate">Mid-Market Rate</span></span>
                                 <h3 id="convRateText" class="rate-highlight">1 USD = 16,000 IDR</h3>
                             </div>
                             <div class="converter-inputs">
                                 <div class="converter-group">
                                     <span class="conv-field-label" data-i18n="conv_from">From</span>
                                     <div class="converter-field">
-                                        <input type="number" id="convInputFrom" value="100" step="any" min="0" class="conv-amount-input" placeholder="0">
-                                        <button type="button" class="conv-currency-pill-btn" id="convBtnFrom" onclick="openCurrencyPicker('from')" title="Change Currency">
+                                        <input type="number" id="convInputFrom" value="100" step="any" min="0"
+                                            class="conv-amount-input" placeholder="0">
+                                        <button type="button" class="conv-currency-pill-btn" id="convBtnFrom"
+                                            onclick="openCurrencyPicker('from')" title="Change Currency">
                                             <span class="conv-flag-box" id="convFlagFrom">
-                                                <img src="https://flagcdn.com/w40/us.png" alt="USD" class="currency-flag-img">
+                                                <img src="https://flagcdn.com/w40/us.png" alt="USD"
+                                                    class="currency-flag-img">
                                             </span>
                                             <span class="conv-code-text" id="convCodeFrom">USD</span>
                                             <i class="fa-solid fa-chevron-down conv-chevron"></i>
@@ -1131,7 +1294,8 @@
                                 </div>
 
                                 <div class="converter-swap-row">
-                                    <button class="btn-swap-currency" id="btnSwapCurrency" type="button" title="Swap Currencies" aria-label="Swap">
+                                    <button class="btn-swap-currency" id="btnSwapCurrency" type="button"
+                                        title="Swap Currencies" aria-label="Swap">
                                         <i class="fa-solid fa-arrows-up-down"></i>
                                     </button>
                                 </div>
@@ -1139,10 +1303,13 @@
                                 <div class="converter-group">
                                     <span class="conv-field-label" data-i18n="conv_converted">Converted</span>
                                     <div class="converter-field">
-                                        <input type="number" id="convInputTo" value="1600000" step="any" min="0" class="conv-amount-input" readonly placeholder="0">
-                                        <button type="button" class="conv-currency-pill-btn" id="convBtnTo" onclick="openCurrencyPicker('to')" title="Change Currency">
+                                        <input type="number" id="convInputTo" value="1600000" step="any" min="0"
+                                            class="conv-amount-input" readonly placeholder="0">
+                                        <button type="button" class="conv-currency-pill-btn" id="convBtnTo"
+                                            onclick="openCurrencyPicker('to')" title="Change Currency">
                                             <span class="conv-flag-box" id="convFlagTo">
-                                                <img src="https://flagcdn.com/w40/id.png" alt="IDR" class="currency-flag-img">
+                                                <img src="https://flagcdn.com/w40/id.png" alt="IDR"
+                                                    class="currency-flag-img">
                                             </span>
                                             <span class="conv-code-text" id="convCodeTo">IDR</span>
                                             <i class="fa-solid fa-chevron-down conv-chevron"></i>
@@ -1161,7 +1328,8 @@
                             </div>
                             <div class="pill-search-wrapper currency-search-box">
                                 <i class="fa-solid fa-magnifying-glass"></i>
-                                <input type="text" id="currencySearchInput" placeholder="Search currency or country..." data-i18n-placeholder="search_currency_ph">
+                                <input type="text" id="currencySearchInput" placeholder="Search currency or country..."
+                                    data-i18n-placeholder="search_currency_ph">
                             </div>
                             <div id="currencyPageList" class="currency-grid-premium"></div>
                         </div>
@@ -1172,12 +1340,14 @@
                 <section id="themeSettings" class="content-section settings-subpage">
                     <div class="settings-page-container">
                         <div class="subpage-header-banner glass-effect-card">
-                            <button class="btn-back-settings" type="button" onclick="switchPage('account')" title="Back" aria-label="Back">
+                            <button class="btn-back-settings" type="button" onclick="switchPage('account')" title="Back"
+                                aria-label="Back">
                                 <i class="fa-solid fa-arrow-left"></i>
                             </button>
                             <div>
                                 <h2 data-i18n="page_theme">Theme Accent</h2>
-                                <span class="subpage-subtitle" data-i18n="theme_subtitle">System-Wide Color Palette</span>
+                                <span class="subpage-subtitle" data-i18n="theme_subtitle">System-Wide Color
+                                    Palette</span>
                             </div>
                         </div>
 
@@ -1185,8 +1355,10 @@
                         <div class="theme-live-preview-card glass-effect-card">
                             <div class="theme-live-header">
                                 <div class="theme-live-title-wrap">
-                                    <span class="theme-live-kicker"><i class="fa-solid fa-wand-magic-sparkles"></i> <span data-i18n="theme_preview_title">Live UI Preview</span></span>
-                                    <p class="theme-live-desc" data-i18n="theme_preview_desc">Simulate dynamic theme colors applied across buttons, icons, docks, and cards</p>
+                                    <span class="theme-live-kicker"><i class="fa-solid fa-wand-magic-sparkles"></i>
+                                        <span data-i18n="theme_preview_title">Live UI Preview</span></span>
+                                    <p class="theme-live-desc" data-i18n="theme_preview_desc">Simulate dynamic theme
+                                        colors applied across buttons, icons, docks, and cards</p>
                                 </div>
                                 <div class="theme-live-badge" id="themeLivePreviewBadge">
                                     <span class="preview-badge-dot"></span>
@@ -1204,13 +1376,15 @@
                                 </div>
                                 <div class="theme-live-comp-item">
                                     <button type="button" class="btn-primary theme-preview-action-btn">
-                                        <i class="fa-solid fa-bolt"></i> <span data-i18n="theme_action_btn">Action</span>
+                                        <i class="fa-solid fa-bolt"></i> <span
+                                            data-i18n="theme_action_btn">Action</span>
                                     </button>
                                     <span class="theme-comp-label" data-i18n="theme_primary_btn">Primary Button</span>
                                 </div>
                                 <div class="theme-live-comp-item">
                                     <span class="theme-preview-chip">
-                                        <i class="fa-solid fa-circle-check"></i> <span data-i18n="theme_active_chip">Active Chip</span>
+                                        <i class="fa-solid fa-circle-check"></i> <span
+                                            data-i18n="theme_active_chip">Active Chip</span>
                                     </span>
                                     <span class="theme-comp-label" data-i18n="theme_filter_tag">Filter & Tag</span>
                                 </div>
@@ -1218,7 +1392,8 @@
                                     <div class="theme-preview-progress-track">
                                         <div class="theme-preview-progress-bar"></div>
                                     </div>
-                                    <span class="theme-comp-label" data-i18n="theme_glow_progress">Glow & Progress</span>
+                                    <span class="theme-comp-label" data-i18n="theme_glow_progress">Glow &
+                                        Progress</span>
                                 </div>
                             </div>
                         </div>
@@ -1237,7 +1412,8 @@
                 <section id="categorySettings" class="content-section settings-subpage">
                     <div class="settings-page-container wide">
                         <div class="subpage-header-banner glass-effect-card">
-                            <button class="btn-back-settings" type="button" onclick="switchPage('account')" title="Back" aria-label="Back">
+                            <button class="btn-back-settings" type="button" onclick="switchPage('account')" title="Back"
+                                aria-label="Back">
                                 <i class="fa-solid fa-arrow-left"></i>
                             </button>
                             <div>
@@ -1256,27 +1432,34 @@
                                     <span class="cat-preview-dot" id="catStudioDot" style="background:#2563eb;">
                                         <i class="fa-solid fa-box" id="catStudioIcon"></i>
                                     </span>
-                                    <span class="cat-preview-label" id="catStudioLabel" data-i18n="cat_preview_label">Preview</span>
+                                    <span class="cat-preview-label" id="catStudioLabel"
+                                        data-i18n="cat_preview_label">Preview</span>
                                 </div>
                             </div>
 
                             <div class="cat-studio-form">
                                 <div class="cat-input-pill">
                                     <i class="fa-solid fa-tag"></i>
-                                    <input type="text" id="newCatName" placeholder="Category name..." data-i18n-placeholder="cat_name_ph" oninput="window.updateCatStudioPreview && window.updateCatStudioPreview()">
+                                    <input type="text" id="newCatName" placeholder="Category name..."
+                                        data-i18n-placeholder="cat_name_ph"
+                                        oninput="window.updateCatStudioPreview && window.updateCatStudioPreview()">
                                 </div>
                                 <div class="cat-studio-pickers-grid">
                                     <div class="cat-studio-field-wrap">
-                                        <button type="button" class="cat-icon-select-trigger" id="newCatIconBtn" onclick="openCategoryIconPicker('newCat')" title="Choose Icon">
-                                            <span class="icon-trigger-badge" id="newCatIconBadge"><i class="fa-solid fa-box" id="newCatIconDisplay"></i></span>
+                                        <button type="button" class="cat-icon-select-trigger" id="newCatIconBtn"
+                                            onclick="openCategoryIconPicker('newCat')" title="Choose Icon">
+                                            <span class="icon-trigger-badge" id="newCatIconBadge"><i
+                                                    class="fa-solid fa-box" id="newCatIconDisplay"></i></span>
                                             <span class="icon-trigger-label" id="newCatIconLabel">Box</span>
                                             <i class="fa-solid fa-chevron-down icon-trigger-chevron"></i>
                                         </button>
                                         <input type="hidden" id="newCatIcon" value="fa-box">
                                     </div>
                                     <div class="cat-studio-field-wrap">
-                                        <button type="button" class="cat-color-select-trigger" id="newCatColorBtn" onclick="openCategoryColorPicker('newCat')" title="Choose Color">
-                                            <span class="color-trigger-swatch" id="newCatColorSwatch" style="background:#2563eb;"></span>
+                                        <button type="button" class="cat-color-select-trigger" id="newCatColorBtn"
+                                            onclick="openCategoryColorPicker('newCat')" title="Choose Color">
+                                            <span class="color-trigger-swatch" id="newCatColorSwatch"
+                                                style="background:#2563eb;"></span>
                                             <span class="color-trigger-label" id="newCatColorLabel">Blue</span>
                                             <i class="fa-solid fa-chevron-down color-trigger-chevron"></i>
                                         </button>
@@ -1284,7 +1467,8 @@
                                     </div>
                                 </div>
                                 <button class="btn-primary cat-add-btn-full" onclick="addNewCategory()" type="button">
-                                    <i class="fa-solid fa-plus"></i> <span data-i18n="btn_add_category">Add Category</span>
+                                    <i class="fa-solid fa-plus"></i> <span data-i18n="btn_add_category">Add
+                                        Category</span>
                                 </button>
                             </div>
                         </div>
@@ -1296,6 +1480,214 @@
                                 <span class="cat-catalog-badge" id="categoryCountText">0 categories</span>
                             </div>
                             <div id="manageCategoryList" class="category-grid-catalog"></div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- SECTION 10: LANGUAGE SETTINGS DEDICATED SUBPAGE -->
+                <section id="languageSettings" class="content-section settings-subpage">
+                    <div class="settings-page-container">
+                        <!-- Subpage Header Banner -->
+                        <div class="subpage-header-banner glass-effect-card">
+                            <button class="btn-back-settings" type="button" onclick="switchPage('account')" title="Back"
+                                aria-label="Back">
+                                <i class="fa-solid fa-arrow-left"></i>
+                            </button>
+                            <div>
+                                <h2 data-i18n="settings_language">Language</h2>
+                                <span class="subpage-subtitle" data-i18n="lang_modal_subtitle">Choose your preferred
+                                    display language</span>
+                            </div>
+                        </div>
+
+                        <!-- Active Language Hero Card -->
+                        <div class="lang-hero-card glass-effect-card">
+                            <div class="lang-hero-left">
+                                <div class="lang-hero-flag-wrap">
+                                    <img id="langPageActiveFlag" src="https://flagcdn.com/w40/us.png" alt="English"
+                                        class="lang-hero-flag-img">
+                                    <span class="lang-hero-pulse-dot"></span>
+                                </div>
+                                <div class="lang-hero-info">
+                                    <span class="lang-hero-kicker" data-i18n="lang_active_kicker">Active Language</span>
+                                    <h3 id="langPageActiveName" class="lang-hero-title">English</h3>
+                                    <span id="langPageActiveNative" class="lang-hero-sub">English (en-US)</span>
+                                </div>
+                            </div>
+                            <div class="lang-hero-right">
+                                <span class="lang-status-pill">
+                                    <i class="fa-solid fa-circle-check"></i> <span
+                                        data-i18n="lang_applied_badge">System-Wide</span>
+                                </span>
+                            </div>
+                        </div>
+
+                        <!-- Language Catalog & Search Section -->
+                        <div class="lang-catalog-section">
+                            <div class="lang-catalog-header">
+                                <h3 data-i18n="lang_catalog_title">Available Languages</h3>
+                                <span class="lang-count-badge" id="langCountBadge" data-i18n="lang_count_badge">12
+                                    Languages</span>
+                            </div>
+
+                            <div class="lang-search-wrapper">
+                                <i class="fa-solid fa-magnifying-glass search-icon"></i>
+                                <input type="text" id="languagePageSearchInput" class="lang-search-input"
+                                    placeholder="Search language or country..."
+                                    data-i18n-placeholder="lang_search_placeholder" autocomplete="off">
+                                <button type="button" class="lang-search-clear" id="languagePageSearchClear"
+                                    style="display: none;" aria-label="Clear Search">
+                                    <i class="fa-solid fa-xmark"></i>
+                                </button>
+                            </div>
+
+                            <div id="languagePageGrid" class="language-page-grid"></div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- SECTION 12: NOTIFICATIONS DEDICATED PAGE -->
+                <section id="notifications" class="content-section settings-subpage">
+                    <div class="notif-clean-container">
+                        <!-- Top Minimalist App Bar -->
+                        <div class="notif-clean-header">
+                            <button class="notif-btn-circle" type="button" onclick="navigateBackFromNotifications()" title="Kembali" aria-label="Kembali" data-i18n-title="notif_btn_back">
+                                <i class="fa-solid fa-arrow-left"></i>
+                            </button>
+                            <div class="notif-clean-title-group">
+                                <h2 data-i18n="notif_center_title">Notifikasi</h2>
+                                <span id="notifPageUnreadPill" class="notif-mini-badge" style="display: none;">0</span>
+                            </div>
+                            <div class="notif-clean-header-actions">
+                                <button type="button" class="notif-btn-circle" id="btnPageMarkAllRead" onclick="PocketlyNotification.markAllRead()" title="Tandai semua dibaca" aria-label="Tandai semua dibaca" data-i18n-title="notif_btn_mark_all_read">
+                                    <i class="fa-solid fa-check-double"></i>
+                                </button>
+                                <button type="button" class="notif-btn-circle" id="btnToggleNotifPrefsDrawer" onclick="toggleNotificationPreferencesDrawer()" title="Preferensi notifikasi" aria-label="Preferensi notifikasi" data-i18n-title="notif_btn_prefs">
+                                    <i class="fa-solid fa-sliders"></i>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Sleek Minimalist Metric Strip (Single slim horizontal line) -->
+                        <div class="notif-metric-strip">
+                            <div class="notif-metric-item">
+                                <span class="metric-dot blue"></span>
+                                <span class="metric-num" id="statNotifTotal">0</span>
+                                <span class="metric-label" data-i18n="notif_stat_total">Total</span>
+                            </div>
+                            <div class="notif-metric-sep"></div>
+                            <div class="notif-metric-item">
+                                <span class="metric-dot red"></span>
+                                <span class="metric-num" id="statNotifUnread">0</span>
+                                <span class="metric-label" data-i18n="notif_stat_unread">Belum Dibaca</span>
+                            </div>
+                            <div class="notif-metric-sep"></div>
+                            <div class="notif-metric-item clickable" id="statPushBox" onclick="PocketlyNotification.requestSystemPermission()" title="Status notifikasi browser" data-i18n-title="notif_stat_push">
+                                <span class="metric-dot" id="statPushDot"></span>
+                                <span class="metric-label" id="statNotifPushStatus" data-i18n="notif_stat_push">Push Browser</span>
+                            </div>
+                        </div>
+
+                        <!-- Minimalist Collapsible Preferences Drawer (Clean toggles without verbose descriptions) -->
+                        <div class="notif-clean-drawer" id="notifPreferencesDrawer" style="display: none;">
+                            <div class="notif-drawer-top">
+                                <div class="drawer-title-box">
+                                    <i class="fa-solid fa-sliders"></i>
+                                    <span data-i18n="notif_settings_title">Preferensi Peringatan</span>
+                                </div>
+                                <div class="drawer-action-box">
+                                    <button type="button" class="btn-clean-test" onclick="PocketlyNotification.sendTestNotification()">
+                                        <i class="fa-solid fa-paper-plane"></i> <span data-i18n="notif_btn_test">Uji Push</span>
+                                    </button>
+                                    <button type="button" class="btn-drawer-close" onclick="toggleNotificationPreferencesDrawer()" aria-label="Tutup" data-i18n-title="btn_cancel">
+                                        <i class="fa-solid fa-xmark"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="notif-toggle-grid">
+                                <div class="notif-toggle-row">
+                                    <div class="toggle-info">
+                                        <i class="fa-solid fa-triangle-exclamation text-red"></i>
+                                        <span data-i18n="notif_pref_budget_title">Batas Anggaran</span>
+                                    </div>
+                                    <label class="switch switch-sm">
+                                        <input type="checkbox" id="pageToggleNotifBudget" onchange="saveNotificationPref('budgetAlerts', this.checked)" checked>
+                                        <span class="slider round"></span>
+                                    </label>
+                                </div>
+                                <div class="notif-toggle-row">
+                                    <div class="toggle-info">
+                                        <i class="fa-solid fa-hand-holding-dollar text-yellow"></i>
+                                        <span data-i18n="notif_pref_debt_title">Jatuh Tempo Hutang</span>
+                                    </div>
+                                    <label class="switch switch-sm">
+                                        <input type="checkbox" id="pageToggleNotifDebt" onchange="saveNotificationPref('debtAlerts', this.checked)" checked>
+                                        <span class="slider round"></span>
+                                    </label>
+                                </div>
+                                <div class="notif-toggle-row">
+                                    <div class="toggle-info">
+                                        <i class="fa-solid fa-bullseye text-green"></i>
+                                        <span data-i18n="notif_pref_goal_title">Target Tabungan</span>
+                                    </div>
+                                    <label class="switch switch-sm">
+                                        <input type="checkbox" id="pageToggleNotifGoal" onchange="saveNotificationPref('goalAlerts', this.checked)" checked>
+                                        <span class="slider round"></span>
+                                    </label>
+                                </div>
+                                <div class="notif-toggle-row">
+                                    <div class="toggle-info">
+                                        <i class="fa-solid fa-user-group text-purple"></i>
+                                        <span data-i18n="notif_pref_invite_title">Undangan Bersama</span>
+                                    </div>
+                                    <label class="switch switch-sm">
+                                        <input type="checkbox" id="pageToggleNotifInvite" onchange="saveNotificationPref('inviteAlerts', this.checked)" checked>
+                                        <span class="slider round"></span>
+                                    </label>
+                                </div>
+                                <div class="notif-toggle-row">
+                                    <div class="toggle-info">
+                                        <i class="fa-solid fa-calendar-check text-blue"></i>
+                                        <span data-i18n="notif_pref_daily_title">Pengingat Harian</span>
+                                    </div>
+                                    <label class="switch switch-sm">
+                                        <input type="checkbox" id="pageToggleNotifDaily" onchange="saveNotificationPref('dailyReminder', this.checked)" checked>
+                                        <span class="slider round"></span>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Horizontal Filter Pills Toolbar -->
+                        <div class="notif-clean-pills-bar">
+                            <button type="button" class="clean-pill active" id="pillFilterAll" onclick="setNotificationFilter('all')">
+                                <span data-i18n="notif_tab_all">Semua</span>
+                                <span class="pill-count" id="pageCountAll">0</span>
+                            </button>
+                            <button type="button" class="clean-pill" id="pillFilterUnread" onclick="setNotificationFilter('unread')">
+                                <span data-i18n="notif_tab_unread">Belum Dibaca</span>
+                                <span class="pill-count" id="pageCountUnread">0</span>
+                            </button>
+                            <button type="button" class="clean-pill" id="pillFilterBudget" onclick="setNotificationFilter('budget')">
+                                <span data-i18n="notif_tab_budget">Anggaran</span>
+                                <span class="pill-count" id="pageCountBudget">0</span>
+                            </button>
+                            <button type="button" class="clean-pill" id="pillFilterDebt" onclick="setNotificationFilter('debt')">
+                                <span data-i18n="notif_tab_debt">Hutang</span>
+                                <span class="pill-count" id="pageCountDebt">0</span>
+                            </button>
+                            <button type="button" class="clean-pill" id="pillFilterGoal" onclick="setNotificationFilter('goal')">
+                                <span data-i18n="notif_tab_goal">Tabungan</span>
+                                <span class="pill-count" id="pageCountGoal">0</span>
+                            </button>
+                            <button type="button" class="clean-pill" id="pillFilterReminder" onclick="setNotificationFilter('reminder')">
+                                <span data-i18n="notif_tab_reminder">Pengingat</span>
+                                <span class="pill-count" id="pageCountReminder">0</span>
+                            </button>
+                        </div>
+
+                        <!-- Notification Cards List (Animated) -->
+                        <div class="notif-cards-stack" id="notificationsPageList">
                         </div>
                     </div>
                 </section>
@@ -1336,7 +1728,8 @@
         <div class="modal-content">
             <div class="modal-header-actions-row"
                 style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-                <h2 id="transModalTitle" style="font-size: 1.3rem; margin: 0;" data-i18n="btn_new_transaction">New Transaction</h2>
+                <h2 id="transModalTitle" style="font-size: 1.3rem; margin: 0;" data-i18n="btn_new_transaction">New
+                    Transaction</h2>
                 <div style="display: flex; align-items: center; gap: 8px;">
                     <button type="button" id="btnVoiceRecord" class="btn-circle-glass"
                         style="width: 36px; height: 36px;" title="Voice Input" data-i18n-title="voice_input_title">
@@ -1344,7 +1737,8 @@
                     </button>
                     <div style="position: relative;">
                         <button type="button" id="btnScanReceipt" class="btn-circle-glass"
-                            style="width: 36px; height: 36px;" title="Scan Receipt (OCR)" data-i18n-title="scan_receipt_title">
+                            style="width: 36px; height: 36px;" title="Scan Receipt (OCR)"
+                            data-i18n-title="scan_receipt_title">
                             <i class="fa-solid fa-camera"></i>
                         </button>
                         <div id="imageOptionsPopup" class="glass-popup"
@@ -1387,7 +1781,8 @@
                 <div class="form-group" id="categoryGroup">
                     <label data-i18n="trans_lbl_category">Category</label>
                     <select id="inputCategory" class="clean-select">
-                        <option value="" disabled selected data-i18n="trans_select_category_placeholder">Select Category</option>
+                        <option value="" disabled selected data-i18n="trans_select_category_placeholder">Select Category
+                        </option>
                         <option value="Food & Drink" data-i18n="cat_food_drink">🍔 Food & Drink</option>
                         <option value="Transportation" data-i18n="cat_transportation">🚗 Transportation</option>
                         <option value="Shopping" data-i18n="cat_shopping">🛍️ Shopping</option>
@@ -1416,12 +1811,13 @@
 
                 <div class="form-group">
                     <label data-i18n="trans_lbl_desc">Note / Description</label>
-                    <input type="text" id="inputDesc" required placeholder="e.g. Lunch, Coffee, Groceries" data-i18n-placeholder="trans_desc_placeholder">
+                    <input type="text" id="inputDesc" required placeholder="e.g. Lunch, Coffee, Groceries"
+                        data-i18n-placeholder="trans_desc_placeholder">
                 </div>
 
                 <div class="form-group">
-                    <label data-i18n="trans_lbl_amount">Amount</label>
-                    <input type="number" id="inputAmount" required placeholder="0" min="1">
+                    <label><span data-i18n="trans_lbl_amount">Amount</span><span class="currency-badge-label" id="transAmountCurrency">IDR (Rp)</span></label>
+                    <input type="number" id="inputAmount" required placeholder="0" min="0.01" step="any">
                 </div>
 
                 <div class="form-group">
@@ -1429,7 +1825,8 @@
                     <input type="date" id="inputDate" required>
                 </div>
 
-                <button type="submit" class="btn-primary full-width" id="btnSaveTrans" style="margin-top: 10px;" data-i18n="btn_save_transaction">Save Transaction</button>
+                <button type="submit" class="btn-primary full-width" id="btnSaveTrans" style="margin-top: 10px;"
+                    data-i18n="btn_save_transaction">Save Transaction</button>
             </form>
         </div>
     </div>
@@ -1439,25 +1836,29 @@
         <div class="modal-content">
             <button type="button" class="close-btn a-close" aria-label="Close modal"><i
                     class="fa-solid fa-xmark"></i></button>
-            <h2 id="accModalTitle" style="font-size: 1.3rem; margin-bottom: 18px; padding-right: 38px;" data-i18n="acc_modal_title">New Account</h2>
+            <h2 id="accModalTitle" style="font-size: 1.3rem; margin-bottom: 18px; padding-right: 38px;"
+                data-i18n="acc_modal_title">New Account</h2>
             <form id="accountForm">
                 <input type="hidden" id="editAccId">
 
                 <div class="form-group">
                     <label data-i18n="acc_name_label">Account / Bank / Wallet Name</label>
-                    <input type="text" id="accName" placeholder="e.g. Checking, Savings, Cash Wallet" data-i18n-placeholder="acc_name_placeholder" required>
+                    <input type="text" id="accName" placeholder="e.g. Checking, Savings, Cash Wallet"
+                        data-i18n-placeholder="acc_name_placeholder" required>
                 </div>
 
                 <div class="form-group" id="balanceGroup">
-                    <label data-i18n="acc_balance_label">Initial Balance</label>
-                    <input type="number" id="accBalance" required placeholder="0">
+                    <label><span data-i18n="acc_balance_label">Initial Balance</span><span class="currency-badge-label" id="accBalanceCurrency">IDR (Rp)</span></label>
+                    <input type="number" id="accBalance" required placeholder="0" step="any">
                     <small
                         style="color: var(--text-grey); font-size: 0.8rem; margin-top: 8px; display: block; line-height: 1.4;">
-                        <i class="fa-solid fa-circle-info text-blue"></i> <span data-i18n="acc_balance_help">Automatically recorded as opening balance.</span>
+                        <i class="fa-solid fa-circle-info text-blue"></i> <span
+                            data-i18n="acc_balance_help">Automatically recorded as opening balance.</span>
                     </small>
                 </div>
 
-                <button type="submit" class="btn-primary full-width" id="btnSaveAcc" style="margin-top: 10px;" data-i18n="btn_save_account">Save Account</button>
+                <button type="submit" class="btn-primary full-width" id="btnSaveAcc" style="margin-top: 10px;"
+                    data-i18n="btn_save_account">Save Account</button>
             </form>
         </div>
     </div>
@@ -1513,7 +1914,8 @@
         <div class="modal-content">
             <button type="button" class="close-btn b-close" aria-label="Close modal"><i
                     class="fa-solid fa-xmark"></i></button>
-            <h2 id="budgetModalTitle" style="font-size: 1.3rem; margin-bottom: 18px; padding-right: 38px;" data-i18n="budget_modal_title">New Budget Plan</h2>
+            <h2 id="budgetModalTitle" style="font-size: 1.3rem; margin-bottom: 18px; padding-right: 38px;"
+                data-i18n="budget_modal_title">New Budget Plan</h2>
             <form id="budgetForm">
                 <input type="hidden" id="editBudgetId">
 
@@ -1527,13 +1929,15 @@
 
                 <div class="form-group" id="goalNameGroup">
                     <label data-i18n="lbl_goal_name">Goal Name</label>
-                    <input type="text" id="budgetName" placeholder="e.g. Japan Trip, Emergency Fund" data-i18n-placeholder="goal_name_placeholder">
+                    <input type="text" id="budgetName" placeholder="e.g. Japan Trip, Emergency Fund"
+                        data-i18n-placeholder="goal_name_placeholder">
                 </div>
 
                 <div class="form-group" id="budgetCategoryGroup" style="display:none;">
                     <label data-i18n="lbl_budget_category">Budget Category</label>
                     <select id="budgetCategorySelect" class="clean-select">
-                        <option value="" disabled selected data-i18n="trans_select_category_placeholder">Select Category</option>
+                        <option value="" disabled selected data-i18n="trans_select_category_placeholder">Select Category
+                        </option>
                         <option value="Food & Drink" data-i18n="cat_food_drink">Food & Drink</option>
                         <option value="Transportation" data-i18n="cat_transportation">Transportation</option>
                         <option value="Shopping" data-i18n="cat_shopping">Shopping</option>
@@ -1561,11 +1965,12 @@
                 </div>
 
                 <div class="form-group">
-                    <label data-i18n="lbl_target_amount">Target Amount</label>
-                    <input type="number" id="budgetTarget" required placeholder="0" min="1">
+                    <label><span data-i18n="lbl_target_amount">Target Amount</span><span class="currency-badge-label" id="budgetCurrency">IDR (Rp)</span></label>
+                    <input type="number" id="budgetTarget" required placeholder="0" min="0.01" step="any">
                 </div>
 
-                <button type="submit" class="btn-primary full-width" id="btnSaveBudget" style="margin-top: 10px;" data-i18n="btn_save_plan">Save Plan</button>
+                <button type="submit" class="btn-primary full-width" id="btnSaveBudget" style="margin-top: 10px;"
+                    data-i18n="btn_save_plan">Save Plan</button>
             </form>
         </div>
     </div>
@@ -1576,7 +1981,8 @@
             <button type="button" class="close-btn t-close"
                 onclick="document.getElementById('topupBudgetModal').classList.remove('show')"
                 aria-label="Close modal"><i class="fa-solid fa-xmark"></i></button>
-            <h2 id="topupModalTitle" style="font-size: 1.3rem; margin-bottom: 18px; padding-right: 38px;" data-i18n="topup_modal_title">Deposit /
+            <h2 id="topupModalTitle" style="font-size: 1.3rem; margin-bottom: 18px; padding-right: 38px;"
+                data-i18n="topup_modal_title">Deposit /
                 Withdraw Goal Funds</h2>
             <form id="topupBudgetForm">
                 <input type="hidden" id="topupBudgetId">
@@ -1590,12 +1996,12 @@
                 </div>
 
                 <div class="form-group">
-                    <label data-i18n="trans_lbl_amount">Amount</label>
-                    <input type="number" id="topupAmount" required placeholder="0" min="1">
+                    <label><span data-i18n="trans_lbl_amount">Amount</span><span class="currency-badge-label" id="topupCurrency">IDR (Rp)</span></label>
+                    <input type="number" id="topupAmount" required placeholder="0" min="0.01" step="any">
                 </div>
 
-                <button type="submit" class="btn-primary full-width" id="btnTopupAction"
-                    style="margin-top: 10px;" data-i18n="btn_confirm_transaction">Confirm Transaction</button>
+                <button type="submit" class="btn-primary full-width" id="btnTopupAction" style="margin-top: 10px;"
+                    data-i18n="btn_confirm_transaction">Confirm Transaction</button>
             </form>
         </div>
     </div>
@@ -1605,10 +2011,12 @@
         <div class="modal-content">
             <button type="button" class="close-btn refund-close" aria-label="Close modal"><i
                     class="fa-solid fa-xmark"></i></button>
-            <h2 class="text-red" style="font-size: 1.3rem; margin-bottom: 10px; padding-right: 38px;" data-i18n="refund_modal_title">Refund Funds &
+            <h2 class="text-red" style="font-size: 1.3rem; margin-bottom: 10px; padding-right: 38px;"
+                data-i18n="refund_modal_title">Refund Funds &
                 Delete Goal</h2>
             <p style="color: var(--text-grey); font-size: 0.9rem; margin-bottom: 18px;">
-                <span data-i18n="refund_modal_desc_prefix">This goal has a saved balance of</span> <b id="refundAmountDisplay" style="color: var(--text-dark);"></b>.
+                <span data-i18n="refund_modal_desc_prefix">This goal has a saved balance of</span> <b
+                    id="refundAmountDisplay" style="color: var(--text-dark);"></b>.
                 <span data-i18n="refund_modal_desc_suffix">Where should the funds be returned?</span>
             </p>
             <form id="refundForm">
@@ -1621,7 +2029,8 @@
                     <select id="refundAccountSelect" required class="clean-select"></select>
                 </div>
 
-                <button type="submit" class="btn-danger full-width" style="margin-top: 10px;" data-i18n="btn_refund_delete">Refund Funds & Delete Goal</button>
+                <button type="submit" class="btn-danger full-width" style="margin-top: 10px;"
+                    data-i18n="btn_refund_delete">Refund Funds & Delete Goal</button>
             </form>
         </div>
     </div>
@@ -1631,15 +2040,18 @@
         <div class="modal-content">
             <button type="button" class="close-btn r-close" aria-label="Close modal"><i
                     class="fa-solid fa-xmark"></i></button>
-            <h2 style="font-size: 1.3rem; margin-bottom: 14px; padding-right: 38px;" data-i18n="reset_pwd_title">Reset Password</h2>
-            <p style="color: var(--text-grey); font-size: 0.9rem; margin-bottom: 18px;" data-i18n="reset_pwd_sub">Enter your email address to
+            <h2 style="font-size: 1.3rem; margin-bottom: 14px; padding-right: 38px;" data-i18n="reset_pwd_title">Reset
+                Password</h2>
+            <p style="color: var(--text-grey); font-size: 0.9rem; margin-bottom: 18px;" data-i18n="reset_pwd_sub">Enter
+                your email address to
                 receive password reset instructions.</p>
             <form id="resetPasswordForm">
                 <div class="form-group">
                     <label data-i18n="lbl_email">Email Address</label>
                     <input type="email" id="resetEmail" required placeholder="you@domain.com">
                 </div>
-                <button type="submit" class="btn-primary full-width" style="margin-top: 10px;" data-i18n="btn_send_reset_link">Send Reset Link</button>
+                <button type="submit" class="btn-primary full-width" style="margin-top: 10px;"
+                    data-i18n="btn_send_reset_link">Send Reset Link</button>
             </form>
         </div>
     </div>
@@ -1649,7 +2061,8 @@
         <div class="modal-content">
             <button type="button" class="close-btn req-close" aria-label="Close modal"><i
                     class="fa-solid fa-xmark"></i></button>
-            <h2 style="font-size: 1.3rem; margin-bottom: 16px; padding-right: 38px;" data-i18n="friend_requests_title">Friend Requests</h2>
+            <h2 style="font-size: 1.3rem; margin-bottom: 16px; padding-right: 38px;" data-i18n="friend_requests_title">
+                Friend Requests</h2>
             <div id="modalRequestList" class="friend-grid-list"
                 style="display: flex; flex-direction: column; gap: 10px;"></div>
         </div>
@@ -1660,7 +2073,8 @@
         <div class="modal-content">
             <button type="button" class="close-btn f-close" aria-label="Close modal"><i
                     class="fa-solid fa-xmark"></i></button>
-            <h2 style="font-size: 1.3rem; margin-bottom: 14px; padding-right: 38px;" data-i18n="add_new_friend_title">Add New Friend</h2>
+            <h2 style="font-size: 1.3rem; margin-bottom: 14px; padding-right: 38px;" data-i18n="add_new_friend_title">
+                Add New Friend</h2>
             <form id="friendForm">
                 <div class="form-group">
                     <label data-i18n="lbl_friend_user_id">Friend User ID (@username)</label>
@@ -1684,9 +2098,10 @@
                     </div>
                 </div>
 
-                <button type="button" id="btnCheckUser" class="btn-secondary full-width"
-                    style="margin-bottom: 10px;" data-i18n="btn_find_user">Find User</button>
-                <button type="submit" id="btnSendInvite" class="btn-primary full-width" style="display:none;" data-i18n="btn_send_invitation">Send Invitation</button>
+                <button type="button" id="btnCheckUser" class="btn-secondary full-width" style="margin-bottom: 10px;"
+                    data-i18n="btn_find_user">Find User</button>
+                <button type="submit" id="btnSendInvite" class="btn-primary full-width" style="display:none;"
+                    data-i18n="btn_send_invitation">Send Invitation</button>
             </form>
         </div>
     </div>
@@ -1696,11 +2111,14 @@
         <div class="modal-content">
             <button type="button" class="close-btn gi-close" aria-label="Close modal"><i
                     class="fa-solid fa-xmark"></i></button>
-            <h2 style="font-size: 1.3rem; margin-bottom: 8px; padding-right: 38px;" data-i18n="shared_goal_invites_title">Shared Goal Invites</h2>
-            <p style="color: var(--text-grey); font-size: 0.88rem; margin-bottom: 18px;" data-i18n="shared_goal_invites_sub">Friends inviting you to save together.</p>
+            <h2 style="font-size: 1.3rem; margin-bottom: 8px; padding-right: 38px;"
+                data-i18n="shared_goal_invites_title">Shared Goal Invites</h2>
+            <p style="color: var(--text-grey); font-size: 0.88rem; margin-bottom: 18px;"
+                data-i18n="shared_goal_invites_sub">Friends inviting you to save together.</p>
             <div id="modalGoalInviteList" class="friend-grid-list"
                 style="display: flex; flex-direction: column; gap: 10px;">
-                <p style="text-align: center; color: var(--text-muted); padding: 20px;" data-i18n="no_pending_invites">No pending invitations.</p>
+                <p style="text-align: center; color: var(--text-muted); padding: 20px;" data-i18n="no_pending_invites">
+                    No pending invitations.</p>
             </div>
         </div>
     </div>
@@ -1712,35 +2130,53 @@
                 onclick="document.getElementById('participantsModal').classList.remove('show')"
                 aria-label="Close modal"><i class="fa-solid fa-xmark"></i></button>
             <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 6px;">
-                <div style="width: 40px; height: 40px; border-radius: 12px; background: rgba(37,99,235,0.12); color: var(--primary-color); display: flex; align-items: center; justify-content: center; font-size: 1.15rem; flex-shrink: 0;">
+                <div
+                    style="width: 40px; height: 40px; border-radius: 12px; background: rgba(37,99,235,0.12); color: var(--primary-color); display: flex; align-items: center; justify-content: center; font-size: 1.15rem; flex-shrink: 0;">
                     <i class="fa-solid fa-user-group"></i>
                 </div>
                 <div style="min-width: 0;">
-                    <h2 id="participantsModalGoalName" style="font-size: 1.25rem; margin: 0; line-height: 1.25; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" data-i18n="goal_members_title">Goal Members</h2>
-                    <p id="participantsModalSubtitle" style="color: var(--text-grey); font-size: 0.8rem; margin: 3px 0 0 0;" data-i18n="goal_members_sub">Shared savings group & contributors</p>
+                    <h2 id="participantsModalGoalName"
+                        style="font-size: 1.25rem; margin: 0; line-height: 1.25; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;"
+                        data-i18n="goal_members_title">Goal Members</h2>
+                    <p id="participantsModalSubtitle"
+                        style="color: var(--text-grey); font-size: 0.8rem; margin: 3px 0 0 0;"
+                        data-i18n="goal_members_sub">Shared savings group & contributors</p>
                 </div>
             </div>
 
-            <div id="participantsOverview" style="margin-top: 14px; margin-bottom: 14px; background: var(--input-bg); border: 1px solid var(--border-color); border-radius: var(--radius-lg); padding: 12px 16px; display: flex; justify-content: space-between; align-items: center;">
+            <div id="participantsOverview"
+                style="margin-top: 14px; margin-bottom: 14px; background: var(--input-bg); border: 1px solid var(--border-color); border-radius: var(--radius-lg); padding: 12px 16px; display: flex; justify-content: space-between; align-items: center;">
                 <div>
-                    <small style="color: var(--text-grey); font-size: 0.72rem; text-transform: uppercase; font-weight: 700; letter-spacing: 0.5px;" data-i18n="stat_total_saved">Total Saved</small>
-                    <div id="participantsModalTotalSaved" style="font-size: 1.1rem; font-weight: 800; color: #10b981;">Rp 0</div>
+                    <small
+                        style="color: var(--text-grey); font-size: 0.72rem; text-transform: uppercase; font-weight: 700; letter-spacing: 0.5px;"
+                        data-i18n="stat_total_saved">Total Saved</small>
+                    <div id="participantsModalTotalSaved" style="font-size: 1.1rem; font-weight: 800; color: #10b981;">
+                        Rp 0</div>
                 </div>
                 <div style="text-align: right;">
-                    <small style="color: var(--text-grey); font-size: 0.72rem; text-transform: uppercase; font-weight: 700; letter-spacing: 0.5px;" data-i18n="stat_goal_target">Goal Target</small>
-                    <div id="participantsModalTarget" style="font-size: 1.1rem; font-weight: 800; color: var(--text-dark);">Rp 0</div>
+                    <small
+                        style="color: var(--text-grey); font-size: 0.72rem; text-transform: uppercase; font-weight: 700; letter-spacing: 0.5px;"
+                        data-i18n="stat_goal_target">Goal Target</small>
+                    <div id="participantsModalTarget"
+                        style="font-size: 1.1rem; font-weight: 800; color: var(--text-dark);">Rp 0</div>
                 </div>
             </div>
 
             <div style="margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center;">
-                <span style="font-size: 0.8rem; font-weight: 700; color: var(--text-grey); text-transform: uppercase; letter-spacing: 0.5px;" data-i18n="stat_members_list">Members List</span>
-                <span id="participantsCountBadge" class="cat-status-badge safe" style="font-size: 0.75rem;">0 Members</span>
+                <span
+                    style="font-size: 0.8rem; font-weight: 700; color: var(--text-grey); text-transform: uppercase; letter-spacing: 0.5px;"
+                    data-i18n="stat_members_list">Members List</span>
+                <span id="participantsCountBadge" class="cat-status-badge safe" style="font-size: 0.75rem;">0
+                    Members</span>
             </div>
 
             <div id="participantsList" class="friend-grid-list"
-                style="display: flex; flex-direction: column; gap: 10px; max-height: 290px; overflow-y: auto; padding-right: 2px;"></div>
+                style="display: flex; flex-direction: column; gap: 10px; max-height: 290px; overflow-y: auto; padding-right: 2px;">
+            </div>
 
-            <div id="participantsFooterActions" style="margin-top: 16px; padding-top: 14px; border-top: 1px solid var(--border-color); display: none;"></div>
+            <div id="participantsFooterActions"
+                style="margin-top: 16px; padding-top: 14px; border-top: 1px solid var(--border-color); display: none;">
+            </div>
         </div>
     </div>
 
@@ -1749,8 +2185,8 @@
         <div class="modal-content" style="max-width: 420px;">
             <button type="button" class="close-btn detail-close" aria-label="Close modal"><i
                     class="fa-solid fa-xmark"></i></button>
-            <h3
-                style="margin-bottom: 20px; text-align: center; border-bottom: 1px solid var(--border-color); padding-bottom: 14px;" data-i18n="trans_detail_title">
+            <h3 style="margin-bottom: 20px; text-align: center; border-bottom: 1px solid var(--border-color); padding-bottom: 14px;"
+                data-i18n="trans_detail_title">
                 Transaction Details</h3>
 
             <div style="text-align: center; margin-bottom: 24px;">
@@ -1778,12 +2214,14 @@
                 </div>
                 <div
                     style="display: flex; justify-content: space-between; border-bottom: 1px dashed var(--border-color); padding-bottom: 8px;">
-                    <span id="labelDetailAccount" style="color: var(--text-grey);" data-i18n="detail_lbl_account">Account</span>
+                    <span id="labelDetailAccount" style="color: var(--text-grey);"
+                        data-i18n="detail_lbl_account">Account</span>
                     <span id="detailAccount" style="font-weight: 700; color: var(--text-dark);">-</span>
                 </div>
                 <div id="detailTargetRow"
                     style="display: none; justify-content: space-between; border-bottom: 1px dashed var(--border-color); padding-bottom: 8px;">
-                    <span style="color: var(--text-grey);" data-i18n="detail_lbl_dest_account">Destination Account</span>
+                    <span style="color: var(--text-grey);" data-i18n="detail_lbl_dest_account">Destination
+                        Account</span>
                     <span id="detailTargetAccount" style="font-weight: 700; color: var(--text-dark);">-</span>
                 </div>
                 <div
@@ -1804,7 +2242,8 @@
 
             <div id="detailLockedMsg"
                 style="text-align: center; color: var(--text-grey); font-size: 0.85rem; display: none; background: var(--input-bg); padding: 10px; border-radius: var(--radius-md); border: 1px solid var(--border-color);">
-                <i class="fa-solid fa-lock"></i> <span data-i18n="detail_locked_msg">System record (locked from editing).</span>
+                <i class="fa-solid fa-lock"></i> <span data-i18n="detail_locked_msg">System record (locked from
+                    editing).</span>
             </div>
         </div>
     </div>
@@ -1860,7 +2299,8 @@
                     <option value="Others" data-i18n="cat_others">Others</option>
                 </select>
             </div>
-            <button id="resetTransFilter" class="btn-secondary full-width" style="margin-top: 10px;" data-i18n="btn_reset_filters">Reset Filters</button>
+            <button id="resetTransFilter" class="btn-secondary full-width" style="margin-top: 10px;"
+                data-i18n="btn_reset_filters">Reset Filters</button>
         </div>
     </div>
 
@@ -1870,7 +2310,8 @@
             <button type="button" class="close-btn"
                 onclick="document.getElementById('debtModal').classList.remove('show')" aria-label="Close modal"><i
                     class="fa-solid fa-xmark"></i></button>
-            <h2 id="debtModalTitle" style="font-size: 1.3rem; margin-bottom: 18px; padding-right: 38px;" data-i18n="debt_modal_title">New Debt / Loan</h2>
+            <h2 id="debtModalTitle" style="font-size: 1.3rem; margin-bottom: 18px; padding-right: 38px;"
+                data-i18n="debt_modal_title">New Debt / Loan</h2>
             <form id="debtForm">
                 <input type="hidden" id="editDebtId">
 
@@ -1884,14 +2325,15 @@
                     </div>
                     <div class="form-group">
                         <label data-i18n="debt_party_label">Party / Person / Entity</label>
-                        <input type="text" id="debtPartyName" placeholder="e.g. John, Bank, Friend" data-i18n-placeholder="debt_party_placeholder" required>
+                        <input type="text" id="debtPartyName" placeholder="e.g. John, Bank, Friend"
+                            data-i18n-placeholder="debt_party_placeholder" required>
                     </div>
                 </div>
 
                 <div class="form-grid-2">
                     <div class="form-group">
-                        <label data-i18n="debt_principal_label">Principal Amount</label>
-                        <input type="number" id="debtPrincipal" min="1" required placeholder="0">
+                        <label><span data-i18n="debt_principal_label">Principal Amount</span><span class="currency-badge-label" id="debtPrincipalCurrency">IDR (Rp)</span></label>
+                        <input type="number" id="debtPrincipal" min="0.01" required placeholder="0" step="any">
                     </div>
                     <div class="form-group">
                         <label data-i18n="debt_account_label">Associated Account</label>
@@ -1912,7 +2354,8 @@
 
                 <div class="form-group">
                     <label data-i18n="debt_notes_label">Notes</label>
-                    <input type="text" id="debtNotes" placeholder="Payment terms, interest, or reminders" data-i18n-placeholder="debt_notes_placeholder">
+                    <input type="text" id="debtNotes" placeholder="Payment terms, interest, or reminders"
+                        data-i18n-placeholder="debt_notes_placeholder">
                 </div>
 
                 <label class="checkbox-row" id="debtAffectBalanceRow">
@@ -1920,7 +2363,8 @@
                     <span data-i18n="debt_affect_balance_text">Update account balance & auto-record transaction</span>
                 </label>
 
-                <button type="submit" class="btn-primary full-width" id="btnSaveDebt" style="margin-top: 10px;" data-i18n="debt_save_btn">Save Record</button>
+                <button type="submit" class="btn-primary full-width" id="btnSaveDebt" style="margin-top: 10px;"
+                    data-i18n="debt_save_btn">Save Record</button>
             </form>
         </div>
     </div>
@@ -1931,7 +2375,8 @@
             <button type="button" class="close-btn"
                 onclick="document.getElementById('debtPaymentModal').classList.remove('show')"
                 aria-label="Close modal"><i class="fa-solid fa-xmark"></i></button>
-            <h2 id="debtPaymentTitle" style="font-size: 1.3rem; margin-bottom: 14px; padding-right: 38px;" data-i18n="record_payment_title">Record Payment</h2>
+            <h2 id="debtPaymentTitle" style="font-size: 1.3rem; margin-bottom: 14px; padding-right: 38px;"
+                data-i18n="record_payment_title">Record Payment</h2>
             <form id="debtPaymentForm">
                 <input type="hidden" id="paymentDebtId">
                 <div class="debt-payment-context" id="debtPaymentContext"
@@ -1944,8 +2389,8 @@
                 </div>
 
                 <div class="form-group">
-                    <label data-i18n="lbl_payment_amount">Payment Amount</label>
-                    <input type="number" id="debtPaymentAmount" min="1" required placeholder="0">
+                    <label><span data-i18n="lbl_payment_amount">Payment Amount</span><span class="currency-badge-label" id="debtPaymentCurrency">IDR (Rp)</span></label>
+                    <input type="number" id="debtPaymentAmount" min="0.01" required placeholder="0" step="any">
                 </div>
 
                 <div class="form-group">
@@ -1955,11 +2400,12 @@
 
                 <div class="form-group">
                     <label data-i18n="lbl_payment_note">Payment Note</label>
-                    <input type="text" id="debtPaymentNote" placeholder="e.g. Installment #1, Full payoff" data-i18n-placeholder="payment_note_placeholder">
+                    <input type="text" id="debtPaymentNote" placeholder="e.g. Installment #1, Full payoff"
+                        data-i18n-placeholder="payment_note_placeholder">
                 </div>
 
-                <button type="submit" class="btn-primary full-width" id="btnSaveDebtPayment"
-                    style="margin-top: 10px;" data-i18n="btn_save_payment">Save Payment</button>
+                <button type="submit" class="btn-primary full-width" id="btnSaveDebtPayment" style="margin-top: 10px;"
+                    data-i18n="btn_save_payment">Save Payment</button>
             </form>
         </div>
     </div>
@@ -1970,42 +2416,59 @@
             <button type="button" class="close-btn"
                 onclick="document.getElementById('backupImportModal').classList.remove('show')"
                 aria-label="Close modal"><i class="fa-solid fa-xmark"></i></button>
-            
+
             <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 6px;">
-                <div style="width: 42px; height: 42px; border-radius: 12px; background: rgba(37,99,235,0.12); color: var(--primary-color); display: flex; align-items: center; justify-content: center; font-size: 1.25rem; flex-shrink: 0;">
+                <div
+                    style="width: 42px; height: 42px; border-radius: 12px; background: rgba(37,99,235,0.12); color: var(--primary-color); display: flex; align-items: center; justify-content: center; font-size: 1.25rem; flex-shrink: 0;">
                     <i class="fa-solid fa-cloud-arrow-up"></i>
                 </div>
                 <div style="min-width: 0;">
-                    <h2 style="font-size: 1.25rem; margin: 0; line-height: 1.25;" data-i18n="restore_backup_title">Restore Backup</h2>
-                    <p style="color: var(--text-grey); font-size: 0.82rem; margin: 3px 0 0 0;" data-i18n="restore_backup_sub">Import transactions & data from JSON</p>
+                    <h2 style="font-size: 1.25rem; margin: 0; line-height: 1.25;" data-i18n="restore_backup_title">
+                        Restore Backup</h2>
+                    <p style="color: var(--text-grey); font-size: 0.82rem; margin: 3px 0 0 0;"
+                        data-i18n="restore_backup_sub">Import transactions & data from JSON</p>
                 </div>
             </div>
 
-            <p style="color: var(--text-grey); font-size: 0.88rem; line-height: 1.5; margin: 12px 0 16px 0;" data-i18n="restore_backup_desc">
+            <p style="color: var(--text-grey); font-size: 0.88rem; line-height: 1.5; margin: 12px 0 16px 0;"
+                data-i18n="restore_backup_desc">
                 Select a previously exported Pocketly backup file to restore or merge your financial records.
             </p>
 
             <form id="backupImportForm">
                 <input type="file" id="backupJsonFile" accept="application/json,.json" required style="display: none;">
-                
-                <div class="backup-dropzone-card" id="backupDropzone" onclick="document.getElementById('backupJsonFile').click()">
-                    <div style="width: 48px; height: 48px; border-radius: 50%; background: var(--blue-accent-light); color: var(--primary-color); display: flex; align-items: center; justify-content: center; font-size: 1.3rem; margin-bottom: 10px;">
+
+                <div class="backup-dropzone-card" id="backupDropzone"
+                    onclick="document.getElementById('backupJsonFile').click()">
+                    <div
+                        style="width: 48px; height: 48px; border-radius: 50%; background: var(--blue-accent-light); color: var(--primary-color); display: flex; align-items: center; justify-content: center; font-size: 1.3rem; margin-bottom: 10px;">
                         <i class="fa-solid fa-file-arrow-up" id="dropzoneIcon"></i>
                     </div>
-                    <span id="dropzoneTextMain" style="font-weight: 700; font-size: 0.95rem; color: var(--text-dark);" data-i18n="restore_choose_file">Choose Backup File</span>
-                    <span id="dropzoneTextSub" style="font-size: 0.8rem; color: var(--text-grey); margin-top: 3px;" data-i18n="restore_browse_sub">Click to browse or drop .json file</span>
-                    <span id="dropzoneFileBadge" class="cat-status-badge safe" style="display: none; margin-top: 10px; font-size: 0.76rem;" data-i18n="restore_ready_badge">Ready to Restore ✓</span>
+                    <span id="dropzoneTextMain" style="font-weight: 700; font-size: 0.95rem; color: var(--text-dark);"
+                        data-i18n="restore_choose_file">Choose Backup File</span>
+                    <span id="dropzoneTextSub" style="font-size: 0.8rem; color: var(--text-grey); margin-top: 3px;"
+                        data-i18n="restore_browse_sub">Click to browse or drop .json file</span>
+                    <span id="dropzoneFileBadge" class="cat-status-badge safe"
+                        style="display: none; margin-top: 10px; font-size: 0.76rem;"
+                        data-i18n="restore_ready_badge">Ready to Restore ✓</span>
                 </div>
 
-                <div class="backup-option-box" style="margin-top: 16px; background: var(--input-bg); border: 1px solid var(--border-color); border-radius: var(--radius-lg); padding: 12px 14px;">
-                    <label class="checkbox-row" style="margin: 0; display: flex; align-items: flex-start; gap: 10px; cursor: pointer;">
-                        <input type="checkbox" id="backupReplaceExisting" style="margin-top: 3px; accent-color: var(--primary-color);">
+                <div class="backup-option-box"
+                    style="margin-top: 16px; background: var(--input-bg); border: 1px solid var(--border-color); border-radius: var(--radius-lg); padding: 12px 14px;">
+                    <label class="checkbox-row"
+                        style="margin: 0; display: flex; align-items: flex-start; gap: 10px; cursor: pointer;">
+                        <input type="checkbox" id="backupReplaceExisting"
+                            style="margin-top: 3px; accent-color: var(--primary-color);">
                         <div style="flex: 1;">
                             <div style="display: flex; align-items: center; gap: 6px;">
-                                <span style="font-size: 0.86rem; font-weight: 700; color: var(--text-dark);" data-i18n="restore_replace_title">Replace Existing Data</span>
-                                <span style="font-size: 0.65rem; font-weight: 700; background: rgba(239, 68, 68, 0.12); color: var(--red); padding: 1px 6px; border-radius: 6px;" data-i18n="restore_caution_tag">Caution</span>
+                                <span style="font-size: 0.86rem; font-weight: 700; color: var(--text-dark);"
+                                    data-i18n="restore_replace_title">Replace Existing Data</span>
+                                <span
+                                    style="font-size: 0.65rem; font-weight: 700; background: rgba(239, 68, 68, 0.12); color: var(--red); padding: 1px 6px; border-radius: 6px;"
+                                    data-i18n="restore_caution_tag">Caution</span>
                             </div>
-                            <p style="margin: 2px 0 0 0; font-size: 0.76rem; color: var(--text-grey); line-height: 1.35;" data-i18n="restore_replace_desc">
+                            <p style="margin: 2px 0 0 0; font-size: 0.76rem; color: var(--text-grey); line-height: 1.35;"
+                                data-i18n="restore_replace_desc">
                                 Wipe current records before import. If unchecked, backup data will safely merge.
                             </p>
                         </div>
@@ -2013,8 +2476,12 @@
                 </div>
 
                 <div style="display: flex; gap: 10px; margin-top: 18px;">
-                    <button type="button" class="btn-secondary" onclick="document.getElementById('backupImportModal').classList.remove('show')" style="flex: 1; border-radius: var(--radius-pill); font-weight: 700;" data-i18n="btn_cancel">Cancel</button>
-                    <button type="submit" class="btn-primary" id="btnRunBackupImport" style="flex: 1.5; border-radius: var(--radius-pill); font-weight: 700; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                    <button type="button" class="btn-secondary"
+                        onclick="document.getElementById('backupImportModal').classList.remove('show')"
+                        style="flex: 1; border-radius: var(--radius-pill); font-weight: 700;"
+                        data-i18n="btn_cancel">Cancel</button>
+                    <button type="submit" class="btn-primary" id="btnRunBackupImport"
+                        style="flex: 1.5; border-radius: var(--radius-pill); font-weight: 700; display: flex; align-items: center; justify-content: center; gap: 8px;">
                         <i class="fa-solid fa-rotate-right"></i> <span data-i18n="btn_restore_data">Restore Data</span>
                     </button>
                 </div>
@@ -2029,7 +2496,8 @@
                 onclick="document.getElementById('voiceRecordModal').classList.remove('show')"
                 aria-label="Close modal"><i class="fa-solid fa-xmark"></i></button>
             <h2 style="font-size: 1.3rem; margin-bottom: 6px;" data-i18n="voice_input_title">Voice Input</h2>
-            <p style="color: var(--text-grey); font-size: 0.88rem; margin-bottom: 24px;"><span data-i18n="voice_speak_entry">Speak your entry, e.g.</span>
+            <p style="color: var(--text-grey); font-size: 0.88rem; margin-bottom: 24px;"><span
+                    data-i18n="voice_speak_entry">Speak your entry, e.g.</span>
                 <i>"Lunch 25 dollars from Cash"</i>
             </p>
             <button type="button" id="btnStartListening" class="btn-circle-glass"
@@ -2048,7 +2516,8 @@
             <button type="button" class="close-btn"
                 onclick="document.getElementById('editProfileModal').classList.remove('show')"
                 aria-label="Close modal"><i class="fa-solid fa-xmark"></i></button>
-            <h2 style="font-size: 1.3rem; margin-bottom: 18px; padding-right: 38px;" data-i18n="edit_profile_title">Edit User Profile</h2>
+            <h2 style="font-size: 1.3rem; margin-bottom: 18px; padding-right: 38px;" data-i18n="edit_profile_title">Edit
+                User Profile</h2>
 
             <div style="display: flex; flex-direction: column; align-items: center; margin-bottom: 20px;">
                 <div
@@ -2070,7 +2539,8 @@
                 </div>
                 <div class="form-group">
                     <label data-i18n="lbl_display_name">Display Name</label>
-                    <input type="text" id="updateNameInput" placeholder="e.g. Alex Ray" data-i18n-placeholder="display_name_placeholder">
+                    <input type="text" id="updateNameInput" placeholder="e.g. Alex Ray"
+                        data-i18n-placeholder="display_name_placeholder">
                 </div>
                 <div class="form-group">
                     <label data-i18n="lbl_user_id">User ID</label>
@@ -2079,7 +2549,8 @@
                         <input type="text" id="updateUserID" placeholder="alex123">
                     </div>
                 </div>
-                <button type="button" class="btn-primary full-width" id="saveProfileBtn" style="margin-top: 10px;" data-i18n="btn_save_profile">Save Profile</button>
+                <button type="button" class="btn-primary full-width" id="saveProfileBtn" style="margin-top: 10px;"
+                    data-i18n="btn_save_profile">Save Profile</button>
             </form>
         </div>
     </div>
@@ -2089,32 +2560,39 @@
         <div class="modal-content">
             <button type="button" class="close-btn" id="closeChangePasswordBtn" aria-label="Close modal"><i
                     class="fa-solid fa-xmark"></i></button>
-            <h2 style="font-size: 1.3rem; margin-bottom: 18px; padding-right: 38px;" data-i18n="change_password_title">Change Password</h2>
+            <h2 style="font-size: 1.3rem; margin-bottom: 18px; padding-right: 38px;" data-i18n="change_password_title">
+                Change Password</h2>
             <div class="form-group">
                 <label data-i18n="lbl_current_password">Current Password</label>
                 <div class="input-glass-wrapper">
                     <i class="fa-solid fa-lock input-icon"></i>
-                    <input type="password" id="oldPasswordInput" placeholder="Enter current password" data-i18n-placeholder="placeholder_current_pwd" required>
+                    <input type="password" id="oldPasswordInput" placeholder="Enter current password"
+                        data-i18n-placeholder="placeholder_current_pwd" required>
                 </div>
             </div>
             <div class="form-group">
                 <label data-i18n="lbl_new_password">New Password</label>
                 <div class="input-glass-wrapper">
                     <i class="fa-solid fa-key input-icon"></i>
-                    <input type="password" id="newPasswordInput" placeholder="Minimum 6 characters" data-i18n-placeholder="placeholder_new_pwd" required>
+                    <input type="password" id="newPasswordInput" placeholder="Minimum 6 characters"
+                        data-i18n-placeholder="placeholder_new_pwd" required>
                 </div>
             </div>
             <div class="form-group" style="margin-bottom: 6px;">
                 <label data-i18n="lbl_confirm_new_password">Confirm New Password</label>
                 <div class="input-glass-wrapper">
                     <i class="fa-solid fa-key input-icon"></i>
-                    <input type="password" id="confirmNewPasswordInput" placeholder="Re-enter new password" data-i18n-placeholder="placeholder_confirm_new_pwd" required>
+                    <input type="password" id="confirmNewPasswordInput" placeholder="Re-enter new password"
+                        data-i18n-placeholder="placeholder_confirm_new_pwd" required>
                 </div>
             </div>
             <div class="forgot-pass-wrapper" style="margin-top: 4px; margin-bottom: 16px;">
-                <a href="#" id="inAppForgotPasswordLink" style="font-size: 0.8rem; font-weight: 600; color: var(--primary-color); text-decoration: none; transition: opacity var(--transition-fast);" data-i18n="link_forgot_pwd">Forgot password?</a>
+                <a href="#" id="inAppForgotPasswordLink"
+                    style="font-size: 0.8rem; font-weight: 600; color: var(--primary-color); text-decoration: none; transition: opacity var(--transition-fast);"
+                    data-i18n="link_forgot_pwd">Forgot password?</a>
             </div>
-            <button id="saveNewPasswordBtn" class="btn-primary full-width" data-i18n="btn_update_password">Update Password</button>
+            <button id="saveNewPasswordBtn" class="btn-primary full-width" data-i18n="btn_update_password">Update
+                Password</button>
         </div>
     </div>
 
@@ -2123,10 +2601,13 @@
         <div class="modal-content center-text" style="max-width: 380px;">
             <i class="fa-solid fa-trash-can text-red"
                 style="font-size: 2.5rem; margin-bottom: 14px; display: inline-block;"></i>
-            <h3 id="confirmActionTitle" style="font-size: 1.25rem; margin-bottom: 8px;" data-i18n="confirm_modal_title">Are you sure?</h3>
-            <p id="confirmActionMessage" style="color: var(--text-grey); font-size: 0.92rem; margin-bottom: 22px;" data-i18n="confirm_modal_msg">This action cannot be undone.</p>
+            <h3 id="confirmActionTitle" style="font-size: 1.25rem; margin-bottom: 8px;" data-i18n="confirm_modal_title">
+                Are you sure?</h3>
+            <p id="confirmActionMessage" style="color: var(--text-grey); font-size: 0.92rem; margin-bottom: 22px;"
+                data-i18n="confirm_modal_msg">This action cannot be undone.</p>
             <div style="display: flex; gap: 10px;">
-                <button class="btn-secondary" onclick="closeConfirmModal()" style="flex: 1;" data-i18n="btn_cancel">Cancel</button>
+                <button class="btn-secondary" onclick="closeConfirmModal()" style="flex: 1;"
+                    data-i18n="btn_cancel">Cancel</button>
                 <button id="btnConfirmAction" class="btn-danger" style="flex: 1;" data-i18n="btn_delete">Delete</button>
             </div>
         </div>
@@ -2142,7 +2623,8 @@
                     </div>
                     <div>
                         <h3 class="icon-picker-title" data-i18n="choose_icon_title">Choose Category Icon</h3>
-                        <span class="icon-picker-subtitle" data-i18n="choose_icon_sub">Select an icon from the catalog</span>
+                        <span class="icon-picker-subtitle" data-i18n="choose_icon_sub">Select an icon from the
+                            catalog</span>
                     </div>
                 </div>
                 <button type="button" class="close-btn" onclick="closeCategoryIconPicker()" aria-label="Close modal">
@@ -2153,8 +2635,12 @@
             <!-- Search Bar -->
             <div class="icon-picker-search-bar">
                 <i class="fa-solid fa-magnifying-glass"></i>
-                <input type="text" id="iconPickerSearchInput" placeholder="Search icons (e.g. food, car, coffee, shopping)..." data-i18n-placeholder="search_icons_placeholder" oninput="filterIconPickerGrid()" autocomplete="off">
-                <button type="button" class="icon-picker-search-clear" id="iconPickerSearchClear" onclick="clearIconPickerSearch()" style="display: none;">
+                <input type="text" id="iconPickerSearchInput"
+                    placeholder="Search icons (e.g. food, car, coffee, shopping)..."
+                    data-i18n-placeholder="search_icons_placeholder" oninput="filterIconPickerGrid()"
+                    autocomplete="off">
+                <button type="button" class="icon-picker-search-clear" id="iconPickerSearchClear"
+                    onclick="clearIconPickerSearch()" style="display: none;">
                     <i class="fa-solid fa-circle-xmark"></i>
                 </button>
             </div>
@@ -2181,7 +2667,7 @@
                     </div>
                     <div>
                         <h3 class="color-picker-title" data-i18n="choose_color_title">Choose Category Color</h3>
-                        <span class="color-picker-subtitle" data-i18n="choose_color_sub">Select a curated palette or customize</span>
+                        <span class="color-picker-subtitle" data-i18n="choose_color_sub">Select a visual accent color</span>
                     </div>
                 </div>
                 <button type="button" class="close-btn" onclick="closeCategoryColorPicker()" aria-label="Close modal">
@@ -2202,25 +2688,59 @@
                 </div>
             </div>
 
-            <!-- Curated Palettes Grid -->
-            <div class="color-swatches-section-label" data-i18n="curated_palettes_label">Curated Palettes</div>
-            <div class="color-picker-grid-container" id="colorPickerSwatchesGrid">
-                <!-- Dynamically populated curated swatches -->
+
+            <!-- Custom Color Studio (In-App Interactive Sliders & Hex) -->
+            <div class="custom-color-studio-card">
+                <div class="custom-studio-header">
+                    <div class="custom-studio-title-wrap">
+                        <span class="custom-studio-icon"><i class="fa-solid fa-sliders"></i></span>
+                        <div>
+                            <h4 class="custom-studio-heading" data-i18n="custom_color_label">Custom Color Studio</h4>
+                            <span class="custom-studio-subtitle" data-i18n="custom_studio_sub">Fine-tune hue, tone, or enter HEX</span>
+                        </div>
+                    </div>
+                    <div class="custom-hex-input-wrap">
+                        <span class="custom-hex-prefix">#</span>
+                        <input type="text" id="customColorHexInput" class="custom-hex-input" placeholder="2563EB"
+                            maxlength="6" oninput="handleCustomColorHexInput(this.value)"
+                            aria-label="Hex color code">
+                    </div>
+                </div>
+
+                <!-- Hue & Brightness Sliders -->
+                <div class="color-sliders-container">
+                    <div class="color-slider-row">
+                        <div class="slider-label-row">
+                            <span class="slider-label"><i class="fa-solid fa-palette"></i> <span data-i18n="color_hue_label">Hue</span></span>
+                            <span class="slider-value" id="hueValueDisplay">220°</span>
+                        </div>
+                        <input type="range" id="customHueSlider" min="0" max="360" value="220"
+                            class="premium-color-range hue-range" oninput="handleHueSliderChange(this.value)"
+                            aria-label="Color hue slider">
+                    </div>
+
+                    <div class="color-slider-row">
+                        <div class="slider-label-row">
+                            <span class="slider-label"><i class="fa-solid fa-sun"></i> <span data-i18n="color_brightness_label">Brightness</span></span>
+                            <span class="slider-value" id="lightnessValueDisplay">53%</span>
+                        </div>
+                        <input type="range" id="customLightnessSlider" min="15" max="85" value="53"
+                            class="premium-color-range lightness-range" oninput="handleLightnessSliderChange(this.value)"
+                            aria-label="Color brightness slider">
+                    </div>
+                </div>
+
+                <!-- Extended Vibrant Tones Quick Swatches -->
+                <div class="vibrant-tones-header">
+                    <span class="vibrant-tones-label" data-i18n="vibrant_tones_label">Vibrant Spectrum</span>
+                </div>
+                <div class="vibrant-tones-grid" id="vibrantTonesGrid">
+                    <!-- Populated dynamically -->
+                </div>
             </div>
 
-            <!-- Custom Color Picker Row -->
-            <div class="color-picker-custom-row">
-                <div class="custom-color-input-wrap">
-                    <input type="color" id="customColorNativePicker" class="custom-color-native-input" value="#2563eb" oninput="handleCustomColorNative(this.value)" onchange="handleCustomColorCommit(this.value)">
-                    <span class="custom-color-label" data-i18n="custom_color_label">Custom Color</span>
-                </div>
-                <div class="custom-hex-input-wrap">
-                    <span class="custom-hex-prefix">#</span>
-                    <input type="text" id="customColorHexInput" class="custom-hex-input" placeholder="2563eb" maxlength="6" oninput="handleCustomColorHex(this.value)" onchange="handleCustomColorCommit('#' + this.value)">
-                </div>
-            </div>
-
-            <button type="button" class="btn-primary full-width color-picker-done-btn" onclick="commitAndCloseCategoryColorPicker()">
+            <button type="button" class="btn-primary full-width color-picker-done-btn"
+                onclick="commitAndCloseCategoryColorPicker()">
                 <i class="fa-solid fa-check"></i> <span data-i18n="btn_done">Done</span>
             </button>
         </div>
@@ -2236,7 +2756,8 @@
                     </div>
                     <div>
                         <h3 class="currency-picker-title" data-i18n="select_currency_title">Select Currency</h3>
-                        <span class="currency-picker-subtitle" data-i18n="select_currency_sub">Choose currency for live conversion</span>
+                        <span class="currency-picker-subtitle" data-i18n="select_currency_sub">Choose currency for live
+                            conversion</span>
                     </div>
                 </div>
                 <button type="button" class="close-btn" onclick="closeCurrencyPicker()" aria-label="Close modal">
@@ -2247,8 +2768,12 @@
             <!-- Search input -->
             <div class="currency-picker-search-bar">
                 <i class="fa-solid fa-magnifying-glass"></i>
-                <input type="text" id="currencyPickerSearchInput" placeholder="Search by name, country or code (e.g. IDR, USD, Yen)..." data-i18n-placeholder="search_currency_picker_ph" oninput="filterCurrencyPickerList()" autocomplete="off">
-                <button type="button" class="currency-picker-search-clear" id="currencyPickerSearchClear" onclick="clearCurrencyPickerSearch()" style="display: none;">
+                <input type="text" id="currencyPickerSearchInput"
+                    placeholder="Search by name, country or code (e.g. IDR, USD, Yen)..."
+                    data-i18n-placeholder="search_currency_picker_ph" oninput="filterCurrencyPickerList()"
+                    autocomplete="off">
+                <button type="button" class="currency-picker-search-clear" id="currencyPickerSearchClear"
+                    onclick="clearCurrencyPickerSearch()" style="display: none;">
                     <i class="fa-solid fa-circle-xmark"></i>
                 </button>
             </div>
@@ -2256,61 +2781,23 @@
             <!-- Popular Quick Picks -->
             <div class="currency-picker-quick-picks">
                 <span class="quick-picks-label" data-i18n="lang_popular">Popular:</span>
-                <button type="button" class="quick-pick-pill" onclick="selectPickerCurrency('IDR')"><img src="https://flagcdn.com/w40/id.png" alt="IDR" class="quick-pick-flag"> IDR</button>
-                <button type="button" class="quick-pick-pill" onclick="selectPickerCurrency('USD')"><img src="https://flagcdn.com/w40/us.png" alt="USD" class="quick-pick-flag"> USD</button>
-                <button type="button" class="quick-pick-pill" onclick="selectPickerCurrency('EUR')"><img src="https://flagcdn.com/w40/eu.png" alt="EUR" class="quick-pick-flag"> EUR</button>
-                <button type="button" class="quick-pick-pill" onclick="selectPickerCurrency('SGD')"><img src="https://flagcdn.com/w40/sg.png" alt="SGD" class="quick-pick-flag"> SGD</button>
-                <button type="button" class="quick-pick-pill" onclick="selectPickerCurrency('JPY')"><img src="https://flagcdn.com/w40/jp.png" alt="JPY" class="quick-pick-flag"> JPY</button>
-                <button type="button" class="quick-pick-pill" onclick="selectPickerCurrency('MYR')"><img src="https://flagcdn.com/w40/my.png" alt="MYR" class="quick-pick-flag"> MYR</button>
+                <button type="button" class="quick-pick-pill" onclick="selectPickerCurrency('IDR')"><img
+                        src="https://flagcdn.com/w40/id.png" alt="IDR" class="quick-pick-flag"> IDR</button>
+                <button type="button" class="quick-pick-pill" onclick="selectPickerCurrency('USD')"><img
+                        src="https://flagcdn.com/w40/us.png" alt="USD" class="quick-pick-flag"> USD</button>
+                <button type="button" class="quick-pick-pill" onclick="selectPickerCurrency('EUR')"><img
+                        src="https://flagcdn.com/w40/eu.png" alt="EUR" class="quick-pick-flag"> EUR</button>
+                <button type="button" class="quick-pick-pill" onclick="selectPickerCurrency('SGD')"><img
+                        src="https://flagcdn.com/w40/sg.png" alt="SGD" class="quick-pick-flag"> SGD</button>
+                <button type="button" class="quick-pick-pill" onclick="selectPickerCurrency('JPY')"><img
+                        src="https://flagcdn.com/w40/jp.png" alt="JPY" class="quick-pick-flag"> JPY</button>
+                <button type="button" class="quick-pick-pill" onclick="selectPickerCurrency('MYR')"><img
+                        src="https://flagcdn.com/w40/my.png" alt="MYR" class="quick-pick-flag"> MYR</button>
             </div>
 
             <!-- List Container -->
             <div class="currency-picker-list-container" id="currencyPickerList">
                 <!-- Dynamically populated -->
-            </div>
-        </div>
-    </div>
-
-    <!-- Modal: Language Picker Popup Modal -->
-    <div id="languagePickerModal" class="modal" role="dialog" aria-modal="true" onclick="if(event.target === this) { if(window.PocketlyI18n) window.PocketlyI18n.closePicker(); }">
-        <div class="modal-content currency-picker-modal-content">
-            <div class="currency-picker-modal-header">
-                <div class="currency-picker-title-group">
-                    <div class="currency-picker-header-badge" style="background: rgba(6, 182, 212, 0.12); color: #06b6d4;">
-                        <i class="fa-solid fa-globe"></i>
-                    </div>
-                    <div>
-                        <h3 class="currency-picker-title" data-i18n="lang_modal_title">Select Language</h3>
-                        <span class="currency-picker-subtitle" data-i18n="lang_modal_subtitle">Choose your preferred display language</span>
-                    </div>
-                </div>
-                <button type="button" class="close-btn" onclick="window.PocketlyI18n && window.PocketlyI18n.closePicker()" aria-label="Close modal">
-                    <i class="fa-solid fa-xmark"></i>
-                </button>
-            </div>
-
-            <!-- Search input -->
-            <div class="currency-picker-search-bar">
-                <i class="fa-solid fa-magnifying-glass"></i>
-                <input type="text" id="languagePickerSearchInput" placeholder="Search language or country..." data-i18n-placeholder="lang_search_placeholder" autocomplete="off">
-                <button type="button" class="currency-picker-search-clear" id="languagePickerSearchClear" style="display: none;">
-                    <i class="fa-solid fa-circle-xmark"></i>
-                </button>
-            </div>
-
-            <!-- Popular Quick Picks -->
-            <div class="currency-picker-quick-picks">
-                <span class="quick-picks-label" data-i18n="lang_popular">Popular:</span>
-                <button type="button" class="quick-pick-pill" onclick="window.PocketlyI18n.select('en')"><img src="https://flagcdn.com/w40/us.png" alt="EN" class="quick-pick-flag"> English</button>
-                <button type="button" class="quick-pick-pill" onclick="window.PocketlyI18n.select('id')"><img src="https://flagcdn.com/w40/id.png" alt="ID" class="quick-pick-flag"> Indonesia</button>
-                <button type="button" class="quick-pick-pill" onclick="window.PocketlyI18n.select('es')"><img src="https://flagcdn.com/w40/es.png" alt="ES" class="quick-pick-flag"> Español</button>
-                <button type="button" class="quick-pick-pill" onclick="window.PocketlyI18n.select('ja')"><img src="https://flagcdn.com/w40/jp.png" alt="JA" class="quick-pick-flag"> 日本語</button>
-                <button type="button" class="quick-pick-pill" onclick="window.PocketlyI18n.select('zh')"><img src="https://flagcdn.com/w40/cn.png" alt="ZH" class="quick-pick-flag"> 简体中文</button>
-            </div>
-
-            <!-- List Container -->
-            <div class="currency-picker-list-container" id="languagePickerList">
-                <!-- Dynamically populated by i18n.js -->
             </div>
         </div>
     </div>
@@ -2326,7 +2813,8 @@
                     </div>
                     <div>
                         <h3 class="export-pdf-title" data-i18n="export_pdf_title">Export PDF Statement</h3>
-                        <span class="export-pdf-subtitle" data-i18n="export_pdf_subtitle">Select period & download detailed financial statement</span>
+                        <span class="export-pdf-subtitle" data-i18n="export_pdf_subtitle">Select period & download
+                            detailed financial statement</span>
                     </div>
                 </div>
                 <button type="button" class="close-btn" onclick="closeExportPdfModal()" aria-label="Close modal">
@@ -2336,7 +2824,8 @@
 
             <!-- Segmented Period Mode Switch -->
             <div class="export-pdf-mode-tabs" role="tablist">
-                <button type="button" class="export-mode-tab active" id="tabExportMonth" onclick="setExportPdfMode('month')">
+                <button type="button" class="export-mode-tab active" id="tabExportMonth"
+                    onclick="setExportPdfMode('month')">
                     <i class="fa-solid fa-calendar"></i> <span data-i18n="export_tab_month">Specific Month</span>
                 </button>
                 <button type="button" class="export-mode-tab" id="tabExportRange" onclick="setExportPdfMode('range')">
@@ -2355,7 +2844,8 @@
                         <div class="export-input-icon-badge">
                             <i class="fa-solid fa-calendar-day"></i>
                         </div>
-                        <input type="month" id="exportPdfSingleMonth" class="export-month-native-input" onchange="updateExportPdfScope()">
+                        <input type="month" id="exportPdfSingleMonth" class="export-month-native-input"
+                            onchange="updateExportPdfScope()">
                         <div class="export-input-trigger-hint" title="Open Calendar">
                             <i class="fa-solid fa-chevron-down"></i>
                         </div>
@@ -2364,8 +2854,10 @@
                 <!-- Quick Preset Pills -->
                 <div class="export-quick-presets">
                     <span class="export-preset-label" data-i18n="export_quick_presets_label">Quick Presets:</span>
-                    <button type="button" class="export-preset-btn" onclick="setExportPdfPreset('thisMonth')" data-i18n="export_preset_this_month">This Month</button>
-                    <button type="button" class="export-preset-btn" onclick="setExportPdfPreset('lastMonth')" data-i18n="export_preset_last_month">Last Month</button>
+                    <button type="button" class="export-preset-btn" onclick="setExportPdfPreset('thisMonth')"
+                        data-i18n="export_preset_this_month">This Month</button>
+                    <button type="button" class="export-preset-btn" onclick="setExportPdfPreset('lastMonth')"
+                        data-i18n="export_preset_last_month">Last Month</button>
                 </div>
             </div>
 
@@ -2378,7 +2870,8 @@
                             <div class="export-input-icon-badge">
                                 <i class="fa-solid fa-calendar-plus"></i>
                             </div>
-                            <input type="month" id="exportPdfStartMonth" class="export-month-native-input" onchange="updateExportPdfScope()">
+                            <input type="month" id="exportPdfStartMonth" class="export-month-native-input"
+                                onchange="updateExportPdfScope()">
                             <div class="export-input-trigger-hint" title="Open Calendar">
                                 <i class="fa-solid fa-chevron-down"></i>
                             </div>
@@ -2390,7 +2883,8 @@
                             <div class="export-input-icon-badge">
                                 <i class="fa-solid fa-calendar-check"></i>
                             </div>
-                            <input type="month" id="exportPdfEndMonth" class="export-month-native-input" onchange="updateExportPdfScope()">
+                            <input type="month" id="exportPdfEndMonth" class="export-month-native-input"
+                                onchange="updateExportPdfScope()">
                             <div class="export-input-trigger-hint" title="Open Calendar">
                                 <i class="fa-solid fa-chevron-down"></i>
                             </div>
@@ -2400,9 +2894,12 @@
                 <!-- Quick Range Presets -->
                 <div class="export-quick-presets">
                     <span class="export-preset-label" data-i18n="export_quick_presets_label">Quick Presets:</span>
-                    <button type="button" class="export-preset-btn" onclick="setExportPdfPreset('last3Months')" data-i18n="export_preset_last_3">Last 3 Months</button>
-                    <button type="button" class="export-preset-btn" onclick="setExportPdfPreset('last6Months')" data-i18n="export_preset_last_6">Last 6 Months</button>
-                    <button type="button" class="export-preset-btn" onclick="setExportPdfPreset('thisYear')" data-i18n="export_preset_this_year">This Year (YTD)</button>
+                    <button type="button" class="export-preset-btn" onclick="setExportPdfPreset('last3Months')"
+                        data-i18n="export_preset_last_3">Last 3 Months</button>
+                    <button type="button" class="export-preset-btn" onclick="setExportPdfPreset('last6Months')"
+                        data-i18n="export_preset_last_6">Last 6 Months</button>
+                    <button type="button" class="export-preset-btn" onclick="setExportPdfPreset('thisYear')"
+                        data-i18n="export_preset_this_year">This Year (YTD)</button>
                 </div>
             </div>
 
@@ -2449,30 +2946,39 @@
             <!-- Sleek Feature Pill (Clean & Concise) -->
             <div class="export-advisory-pill">
                 <i class="fa-solid fa-wand-magic-sparkles"></i>
-                <span data-i18n="export_advisory_text">Includes Cash Health Score, 50/30/20 Benchmark & Action Plan</span>
+                <span data-i18n="export_advisory_text">Includes Cash Health Score, 50/30/20 Benchmark & Action
+                    Plan</span>
             </div>
 
             <!-- Modal Action Buttons -->
             <div class="export-modal-actions-row">
-                <button type="button" class="btn-secondary export-cancel-btn" onclick="closeExportPdfModal()" data-i18n="btn_cancel">
+                <button type="button" class="btn-secondary export-cancel-btn" onclick="closeExportPdfModal()"
+                    data-i18n="btn_cancel">
                     Cancel
                 </button>
-                <button type="button" class="btn-primary export-generate-btn" id="btnConfirmGeneratePdf" onclick="generateExportPdf()">
-                    <i class="fa-solid fa-file-arrow-down"></i> <span data-i18n="btn_download_pdf">Download Statement PDF</span>
+                <button type="button" class="btn-primary export-generate-btn" id="btnConfirmGeneratePdf"
+                    onclick="generateExportPdf()">
+                    <i class="fa-solid fa-file-arrow-down"></i> <span data-i18n="btn_download_pdf">Download Statement
+                        PDF</span>
                 </button>
             </div>
         </div>
     </div>
 
     <!-- Modal: PIN Setup & Change -->
-    <div id="pinSetupModal" class="modal" role="dialog" aria-modal="true" onclick="if(event.target === this) { if(window.PocketlyAppLock && window.PocketlyAppLock.closeSetup) { window.PocketlyAppLock.closeSetup(); } }">
+    <div id="pinSetupModal" class="modal" role="dialog" aria-modal="true"
+        onclick="if(event.target === this) { if(window.PocketlyAppLock && window.PocketlyAppLock.closeSetup) { window.PocketlyAppLock.closeSetup(); } }">
         <div class="modal-content" style="max-width: 360px; text-align: center;">
-            <button type="button" class="close-btn" id="btnClosePinSetup" aria-label="Close modal"><i class="fa-solid fa-xmark"></i></button>
-            <div style="width: 48px; height: 48px; border-radius: 50%; background: var(--blue-accent-light); color: var(--primary-color); display: flex; align-items: center; justify-content: center; margin: 0 auto 14px auto; font-size: 1.3rem;">
+            <button type="button" class="close-btn" id="btnClosePinSetup" aria-label="Close modal"><i
+                    class="fa-solid fa-xmark"></i></button>
+            <div
+                style="width: 48px; height: 48px; border-radius: 50%; background: var(--blue-accent-light); color: var(--primary-color); display: flex; align-items: center; justify-content: center; margin: 0 auto 14px auto; font-size: 1.3rem;">
                 <i class="fa-solid fa-shield-halved"></i>
             </div>
-            <h2 id="pinSetupTitle" style="font-size: 1.25rem; font-weight: 700; margin-bottom: 6px;" data-i18n="pin_setup_title">Set 4-Digit PIN</h2>
-            <p id="pinSetupDesc" style="color: var(--text-grey); font-size: 0.86rem; margin-bottom: 18px;" data-i18n="pin_setup_sub">Enter 4 digits for your security PIN.</p>
+            <h2 id="pinSetupTitle" style="font-size: 1.25rem; font-weight: 700; margin-bottom: 6px;"
+                data-i18n="pin_setup_title">Set 4-Digit PIN</h2>
+            <p id="pinSetupDesc" style="color: var(--text-grey); font-size: 0.86rem; margin-bottom: 18px;"
+                data-i18n="pin_setup_sub">Enter 4 digits for your security PIN.</p>
 
             <div class="pin-dots-container" id="setupPinDotsContainer" style="margin-bottom: 16px;">
                 <div class="pin-dot" id="sdot0"></div>
@@ -2481,7 +2987,8 @@
                 <div class="pin-dot" id="sdot3"></div>
             </div>
 
-            <p class="pin-error-msg" id="setupPinErrorMsg" style="display: none; margin-bottom: 14px;" data-i18n="pin_mismatch_error">PIN confirmation does not match.</p>
+            <p class="pin-error-msg" id="setupPinErrorMsg" style="display: none; margin-bottom: 14px;"
+                data-i18n="pin_mismatch_error">PIN confirmation does not match.</p>
 
             <div class="pin-keypad compact-keypad">
                 <button type="button" class="pin-key-btn compact" data-skey="1">1</button>
@@ -2493,60 +3000,169 @@
                 <button type="button" class="pin-key-btn compact" data-skey="7">7</button>
                 <button type="button" class="pin-key-btn compact" data-skey="8">8</button>
                 <button type="button" class="pin-key-btn compact" data-skey="9">9</button>
-                <button type="button" class="pin-key-btn compact aux-btn" id="btnCancelPinSetup" data-i18n="btn_cancel">Cancel</button>
+                <button type="button" class="pin-key-btn compact aux-btn" id="btnCancelPinSetup"
+                    data-i18n="btn_cancel">Cancel</button>
                 <button type="button" class="pin-key-btn compact" data-skey="0">0</button>
-                <button type="button" class="pin-key-btn compact aux-btn" id="btnSetupBackspace" title="Delete" aria-label="Delete"><i class="fa-solid fa-delete-left"></i></button>
+                <button type="button" class="pin-key-btn compact aux-btn" id="btnSetupBackspace" title="Delete"
+                    aria-label="Delete"><i class="fa-solid fa-delete-left"></i></button>
             </div>
         </div>
     </div>
 
     <!-- Modal: Forgot PIN / Reset Lock -->
-    <div id="forgotPinModal" class="modal" role="dialog" aria-modal="true" onclick="if(event.target === this) { if(window.PocketlyAppLock && window.PocketlyAppLock.closeForgotModal) { window.PocketlyAppLock.closeForgotModal(); } }">
+    <div id="forgotPinModal" class="modal" role="dialog" aria-modal="true"
+        onclick="if(event.target === this) { if(window.PocketlyAppLock && window.PocketlyAppLock.closeForgotModal) { window.PocketlyAppLock.closeForgotModal(); } }">
         <div class="modal-content" style="max-width: 380px; text-align: center;">
-            <button type="button" class="close-btn" id="btnCloseForgotPin" aria-label="Close modal"><i class="fa-solid fa-xmark"></i></button>
-            <div style="width: 50px; height: 50px; border-radius: 50%; background: rgba(239, 68, 68, 0.1); color: #ef4444; display: flex; align-items: center; justify-content: center; margin: 0 auto 14px auto; font-size: 1.35rem;">
+            <button type="button" class="close-btn" id="btnCloseForgotPin" aria-label="Close modal"><i
+                    class="fa-solid fa-xmark"></i></button>
+            <div
+                style="width: 50px; height: 50px; border-radius: 50%; background: rgba(239, 68, 68, 0.1); color: #ef4444; display: flex; align-items: center; justify-content: center; margin: 0 auto 14px auto; font-size: 1.35rem;">
                 <i class="fa-solid fa-key"></i>
             </div>
-            <h2 style="font-size: 1.25rem; font-weight: 700; margin-bottom: 6px;" data-i18n="forgot_pin_title">Forgot PIN?</h2>
-            <p style="color: var(--text-grey); font-size: 0.86rem; margin-bottom: 18px; line-height: 1.45;" data-i18n="forgot_pin_sub">Verify your account password to reset your PIN, or sign out to log in again.</p>
+            <h2 style="font-size: 1.25rem; font-weight: 700; margin-bottom: 6px;" data-i18n="forgot_pin_title">Forgot
+                PIN?</h2>
+            <p style="color: var(--text-grey); font-size: 0.86rem; margin-bottom: 18px; line-height: 1.45;"
+                data-i18n="forgot_pin_sub">Verify your account password to reset your PIN, or sign out to log in again.
+            </p>
 
-            <form id="forgotPinForm" onsubmit="event.preventDefault();" style="display: flex; flex-direction: column; gap: 12px; margin-bottom: 16px;">
+            <form id="forgotPinForm" onsubmit="event.preventDefault();"
+                style="display: flex; flex-direction: column; gap: 12px; margin-bottom: 16px;">
                 <div style="position: relative; text-align: left;">
-                    <label style="font-size: 0.74rem; font-weight: 700; color: var(--text-grey); text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 4px; display: block;" data-i18n="lbl_account_password">Account Password</label>
+                    <label
+                        style="font-size: 0.74rem; font-weight: 700; color: var(--text-grey); text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 4px; display: block;"
+                        data-i18n="lbl_account_password">Account Password</label>
                     <div style="position: relative; display: flex; align-items: center;">
-                        <input type="password" id="forgotPinPasswordInput" placeholder="Enter your account password" data-i18n-placeholder="placeholder_account_pwd" style="width: 100%; padding: 11px 40px 11px 14px; border: 1.5px solid var(--border-color); border-radius: var(--radius-lg); background: var(--input-bg); color: var(--text-dark); font-size: 0.92rem; outline: none; transition: border-color 0.2s;" autocomplete="current-password">
-                        <button type="button" id="btnToggleForgotPassVisibility" style="position: absolute; right: 10px; background: none; border: none; color: var(--text-muted); cursor: pointer; padding: 6px; font-size: 0.9rem;" aria-label="Toggle password visibility">
+                        <input type="password" id="forgotPinPasswordInput" placeholder="Enter your account password"
+                            data-i18n-placeholder="placeholder_account_pwd"
+                            style="width: 100%; padding: 11px 40px 11px 14px; border: 1.5px solid var(--border-color); border-radius: var(--radius-lg); background: var(--input-bg); color: var(--text-dark); font-size: 0.92rem; outline: none; transition: border-color 0.2s;"
+                            autocomplete="current-password">
+                        <button type="button" id="btnToggleForgotPassVisibility"
+                            style="position: absolute; right: 10px; background: none; border: none; color: var(--text-muted); cursor: pointer; padding: 6px; font-size: 0.9rem;"
+                            aria-label="Toggle password visibility">
                             <i class="fa-regular fa-eye"></i>
                         </button>
                     </div>
                 </div>
 
-                <p id="forgotPinErrorMsg" style="display: none; color: #ef4444; font-size: 0.8rem; font-weight: 600; margin: 0; text-align: left;"></p>
+                <p id="forgotPinErrorMsg"
+                    style="display: none; color: #ef4444; font-size: 0.8rem; font-weight: 600; margin: 0; text-align: left;">
+                </p>
 
-                <button type="button" id="btnVerifyAndResetPin" class="btn-primary" style="width: 100%; padding: 12px; font-size: 0.9rem; font-weight: 700; border-radius: var(--radius-lg); margin-top: 4px;" data-i18n="btn_verify_reset_pin">
+                <button type="button" id="btnVerifyAndResetPin" class="btn-primary"
+                    style="width: 100%; padding: 12px; font-size: 0.9rem; font-weight: 700; border-radius: var(--radius-lg); margin-top: 4px;"
+                    data-i18n="btn_verify_reset_pin">
                     Verify & Reset PIN
                 </button>
             </form>
 
             <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 14px;">
                 <div style="flex: 1; height: 1px; background: var(--border-color);"></div>
-                <span style="font-size: 0.72rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase;" data-i18n="or_divider">or</span>
+                <span style="font-size: 0.72rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase;"
+                    data-i18n="or_divider">or</span>
                 <div style="flex: 1; height: 1px; background: var(--border-color);"></div>
             </div>
 
-            <button type="button" id="btnForgotPinSignOut" style="width: 100%; padding: 11px; background: var(--hover-bg); border: 1px solid var(--border-color); border-radius: var(--radius-lg); color: var(--text-dark); font-size: 0.86rem; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; transition: background 0.2s;" data-i18n="btn_signout_relogin">
+            <button type="button" id="btnForgotPinSignOut"
+                style="width: 100%; padding: 11px; background: var(--hover-bg); border: 1px solid var(--border-color); border-radius: var(--radius-lg); color: var(--text-dark); font-size: 0.86rem; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; transition: background 0.2s;"
+                data-i18n="btn_signout_relogin">
                 <i class="fa-solid fa-arrow-right-from-bracket"></i>
                 Sign Out & Re-login
             </button>
         </div>
     </div>
 
+    <!-- Modal: Auto-Lock Delay Selection Sheet (Luxe Mobile Sheet) -->
+    <div id="autoLockTimeoutModal" class="modal" role="dialog" aria-modal="true">
+        <div class="modal-content action-sheet-modal-content timeout-sheet-content">
+            <div class="action-sheet-header">
+                <div class="action-sheet-icon">
+                    <i class="fa-solid fa-clock"></i>
+                </div>
+                <div class="action-sheet-info">
+                    <h3 data-i18n="settings_autolock_timeout">Auto-Lock Delay</h3>
+                    <p data-i18n="autolock_modal_sub">Security Grace Period</p>
+                </div>
+                <button type="button" class="close-btn" id="btnCloseAutoLockModal" aria-label="Close modal">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <div class="timeout-options-list">
+                <div class="timeout-option-card" data-seconds="0" role="button" tabindex="0">
+                    <div class="timeout-card-icon bg-red-subtle">
+                        <i class="fa-solid fa-bolt"></i>
+                    </div>
+                    <div class="timeout-card-text">
+                        <h4 data-i18n="timeout_immediately">Immediately</h4>
+                        <span data-i18n="timeout_immediately_desc">Locks every time you leave or switch apps</span>
+                    </div>
+                    <div class="timeout-check-badge">
+                        <i class="fa-solid fa-check"></i>
+                    </div>
+                </div>
+
+                <div class="timeout-option-card" data-seconds="60" role="button" tabindex="0">
+                    <div class="timeout-card-icon bg-blue-subtle">
+                        <i class="fa-solid fa-stopwatch"></i>
+                    </div>
+                    <div class="timeout-card-text">
+                        <h4 data-i18n="timeout_1min">After 1 minute</h4>
+                        <span data-i18n="timeout_1min_desc">Recommended for smooth multitasking</span>
+                    </div>
+                    <div class="timeout-check-badge">
+                        <i class="fa-solid fa-check"></i>
+                    </div>
+                </div>
+
+                <div class="timeout-option-card" data-seconds="300" role="button" tabindex="0">
+                    <div class="timeout-card-icon bg-purple-subtle">
+                        <i class="fa-solid fa-hourglass-half"></i>
+                    </div>
+                    <div class="timeout-card-text">
+                        <h4 data-i18n="timeout_5min">After 5 minutes</h4>
+                        <span data-i18n="timeout_5min_desc">Generous grace period for short breaks</span>
+                    </div>
+                    <div class="timeout-check-badge">
+                        <i class="fa-solid fa-check"></i>
+                    </div>
+                </div>
+
+                <div class="timeout-option-card" data-seconds="900" role="button" tabindex="0">
+                    <div class="timeout-card-icon bg-teal-subtle">
+                        <i class="fa-solid fa-shield-halved"></i>
+                    </div>
+                    <div class="timeout-card-text">
+                        <h4 data-i18n="timeout_15min">After 15 minutes</h4>
+                        <span data-i18n="timeout_15min_desc">Ideal for continuous daily budgeting</span>
+                    </div>
+                    <div class="timeout-check-badge">
+                        <i class="fa-solid fa-check"></i>
+                    </div>
+                </div>
+
+                <div class="timeout-option-card" data-seconds="1800" role="button" tabindex="0">
+                    <div class="timeout-card-icon bg-orange-subtle">
+                        <i class="fa-solid fa-lock"></i>
+                    </div>
+                    <div class="timeout-card-text">
+                        <h4 data-i18n="timeout_30min">After 30 minutes</h4>
+                        <span data-i18n="timeout_30min_desc">Maximum duration before asking PIN</span>
+                    </div>
+                    <div class="timeout-check-badge">
+                        <i class="fa-solid fa-check"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Scripts -->
     <script src="audio-haptics.js?v=1.0"></script>
-    <script src="i18n.js?v=2.0"></script>
+    <script src="i18n.js?v=2.1"></script>
     <script src="app-lock.js?v=2.0"></script>
     <script src="poppins-font.js"></script>
-    <script type="module" src="script.js?v=12.1"></script>
+    <script src="capacitor-bridge.js"></script>
+    <script type="module" src="script.js?v=12.2"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
     <script defer src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script defer

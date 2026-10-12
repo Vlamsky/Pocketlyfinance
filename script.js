@@ -190,6 +190,9 @@ function setActiveNav(targetId) {
 }
 
 window.switchPage = function(targetId, addToHistory = true) {
+    if (targetId !== 'notifications') {
+        window.lastVisitedPage = targetId;
+    }
     // --- [PERBAIKAN UTAMA] Tutup semua popup sebelum pindah halaman ---
     closeAllModals(); 
     // ------------------------------------------------------------------
@@ -223,7 +226,8 @@ window.switchPage = function(targetId, addToHistory = true) {
                 'budget': 'Budget Plan', 
                 'account': 'User Settings', 
                 'reports': 'Analytics', 
-                'connections': 'Connections' 
+                'connections': 'Connections',
+                'languageSettings': 'Language'
             };
             if (titles[targetId]) pageTitle.innerText = titles[targetId];
         }
@@ -259,19 +263,41 @@ window.switchPage = function(targetId, addToHistory = true) {
         analyticsControls.style.display = (targetId === 'reports') ? 'flex' : 'none';
     }
 
-    const notifBtn = document.getElementById('btnOpenGoalInvites');
-    if (notifBtn) {
-        notifBtn.style.display = (targetId === 'budget') ? 'flex' : 'none';
+    const notifCenterBtn = document.getElementById('btnOpenNotificationCenter');
+    if (notifCenterBtn) {
+        const primaryViews = ['dashboard', 'transactions', 'budget', 'reports'];
+        notifCenterBtn.style.display = primaryViews.includes(targetId) ? 'inline-flex' : 'none';
+    }
+    const legacyGoalBtn = document.getElementById('btnOpenGoalInvites');
+    if (legacyGoalBtn) {
+        legacyGoalBtn.style.display = 'none';
+    }
+    if (window.PocketlyNotification && typeof window.PocketlyNotification.updateCenter === 'function') {
+        window.PocketlyNotification.updateCenter();
     }
 
     // 7b. Sembunyikan top app header pada halaman Settings & subpages agar tidak dobel
-    const settingsSubpages = ['account', 'connections', 'currencySettings', 'themeSettings', 'categorySettings'];
+    const settingsSubpages = ['account', 'connections', 'currencySettings', 'themeSettings', 'categorySettings', 'languageSettings', 'notifications'];
     const isSettings = settingsSubpages.includes(targetId);
     document.body.classList.toggle('is-settings-view', isSettings);
     const topAppHeader = document.querySelector('header');
     if (topAppHeader) {
         topAppHeader.style.display = isSettings ? 'none' : 'flex';
     }
+
+    if (targetId === 'languageSettings' && window.PocketlyI18n && typeof window.PocketlyI18n.renderLanguagePage === 'function') {
+        window.PocketlyI18n.renderLanguagePage();
+    }
+
+    if (targetId === 'notifications' && window.PocketlyNotification && typeof window.PocketlyNotification.updateCenter === 'function') {
+        window.PocketlyNotification.updateCenter();
+        window.PocketlyNotification.syncSettingsUI();
+    }
+
+    if (targetId === 'account' && window.PocketlyAppLock && typeof window.PocketlyAppLock.syncSettingsUI === 'function') {
+        window.PocketlyAppLock.syncSettingsUI();
+    }
+
     
     // 8. Refresh Dropdown Custom
     setTimeout(() => {
@@ -559,6 +585,10 @@ function listenToGoalInvites() {
     );
 
     onSnapshot(q, (snapshot) => {
+        if (window.PocketlyNotification) {
+            window.PocketlyNotification.rawGoalInvites = snapshot.empty ? [] : snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            window.PocketlyNotification.updateCenter();
+        }
         
         const badge = document.getElementById('goalInviteBadge');
         const listContainer = document.getElementById('modalGoalInviteList');
@@ -1057,16 +1087,23 @@ document.getElementById('authForm').addEventListener('submit', async (e) => {
     const password = document.getElementById('password').value; 
     const authBtn = document.getElementById('authBtn');
     const switchBtn = document.getElementById('switchBtn');
+    const btnText = authBtn.querySelector('.btn-text');
+    const btnArrow = authBtn.querySelector('.auth-btn-arrow');
+    const btnSpin = authBtn.querySelector('.btn-loading-spin');
     
     try { 
-        authBtn.innerText = "Processing..."; 
+        if (btnText) btnText.style.display = 'none';
+        if (btnArrow) btnArrow.style.display = 'none';
+        if (btnSpin) btnSpin.style.display = 'inline-block';
         authBtn.disabled = true;
 
         if(isLoginMode) {
             isRegistering = false;
             await signInWithEmailAndPassword(auth, email, password);
+            localStorage.setItem('pocketly_last_user_email', email);
+            saveBiometricCredentials(email, password);
         } else { 
-            // --- BAGIAN REGISTER (DIPERBAIKI) ---
+            // --- BAGIAN REGISTER ---
             const fullName = document.getElementById('fullName').value; 
             const usernameInput = document.getElementById('regUsername').value.trim().toLowerCase();
             const confirmPass = document.getElementById('confirmPassword').value;
@@ -1088,8 +1125,9 @@ document.getElementById('authForm').addEventListener('submit', async (e) => {
 
             isRegistering = true; 
 
-            // 1. DAFTAR AUTH DULU (Supaya dapat izin akses database)
+            // 1. DAFTAR AUTH DULU
             const cred = await createUserWithEmailAndPassword(auth, email, password);  
+            saveBiometricCredentials(email, password);  
             
             try {
                 // 2. SETELAH LOGIN, BARU CEK USERNAME DI DATABASE
@@ -1098,7 +1136,6 @@ document.getElementById('authForm').addEventListener('submit', async (e) => {
                 
                 // 3. JIKA USERNAME SUDAH ADA
                 if (!snap.empty) {
-                    // Hapus akun Auth yang barusan dibuat (Rollback)
                     await deleteUser(cred.user);
                     throw new Error("Username is already taken! Please choose another.");
                 }
@@ -1124,20 +1161,26 @@ document.getElementById('authForm').addEventListener('submit', async (e) => {
                 document.getElementById('email').value = email; 
                 
             } catch (innerError) {
-                // Jika error saat cek username/simpan data, pastikan state bersih
                 if (auth.currentUser) {
-                    // Opsional: deleteUser jika perlu, tapi hati-hati dengan re-auth requirement
-                    // await deleteUser(auth.currentUser).catch(e => console.log(e));
+                    // Cleanup rollback if necessary
                 }
-                throw innerError; // Lempar error ke catch utama untuk ditampilkan
+                throw innerError;
             }
             
             setTimeout(() => { isRegistering = false; }, 1000);
         } 
     } catch (err) { 
+        if (typeof window.triggerAuthShake === 'function') window.triggerAuthShake();
         showAlert(getFriendlyMessage(err), true); 
     } finally { 
-        authBtn.innerText = isLoginMode ? "Login" : "Register"; 
+        if (btnText) {
+            btnText.style.display = 'inline';
+            const lang = currentLocale === 'id-ID' ? 'id-ID' : 'en-US';
+            const t = authTranslations[lang] || authTranslations['en-US'];
+            btnText.innerText = isLoginMode ? t.authBtnLogin : t.authBtnRegister;
+        }
+        if (btnArrow) btnArrow.style.display = 'inline-block';
+        if (btnSpin) btnSpin.style.display = 'none';
         authBtn.disabled = false;
     }
 });
@@ -1147,6 +1190,8 @@ const authTranslations = {
         authTitleLogin: "Masuk ke Pocketly",
         authTitleRegister: "Buat Akun",
         authSubtitle: "Kelola keuangan Anda dengan bijak.",
+        authSubtitleLogin: "Kelola keuangan Anda dengan bijak.",
+        authSubtitleRegister: "Mulai perjalanan finansial cerdas Anda.",
         authBtnLogin: "Masuk",
         authBtnRegister: "Daftar",
         switchTextLogin: "Belum punya akun? ",
@@ -1175,6 +1220,8 @@ const authTranslations = {
         authTitleLogin: "Login to Pocketly",
         authTitleRegister: "Create Account",
         authSubtitle: "Manage your finance wisely.",
+        authSubtitleLogin: "Manage your finance wisely.",
+        authSubtitleRegister: "Start your smart financial journey.",
         authBtnLogin: "Login",
         authBtnRegister: "Register",
         switchTextLogin: "New here? ",
@@ -1206,7 +1253,7 @@ window.updateAuthLanguage = function() {
     const t = authTranslations[lang];
     
     const authSubtitle = document.getElementById('authSubtitle');
-    if (authSubtitle) authSubtitle.innerText = t.authSubtitle;
+    if (authSubtitle) authSubtitle.innerText = isLoginMode ? (t.authSubtitleLogin || t.authSubtitle) : (t.authSubtitleRegister || t.authSubtitle);
     const forgotLink = document.getElementById('forgotPasswordLink');
     if (forgotLink) forgotLink.innerText = t.forgotPass;
     
@@ -1238,12 +1285,20 @@ window.updateAuthLanguage = function() {
     
     if (isLoginMode) { 
         if (authTitle) authTitle.innerText = t.authTitleLogin; 
-        if (authBtn) authBtn.innerHTML = t.authBtnLogin + ' <i class="fa-solid fa-arrow-right" style="margin-left:8px; font-size:0.8rem;"></i>'; 
+        if (authBtn) {
+            const btnText = authBtn.querySelector('.btn-text');
+            if (btnText) btnText.innerText = t.authBtnLogin;
+            else authBtn.innerHTML = `<span class="btn-text">${t.authBtnLogin}</span> <i class="fa-solid fa-arrow-right auth-btn-arrow"></i><span class="btn-loading-spin" style="display:none;"><i class="fa-solid fa-circle-notch fa-spin"></i></span>`;
+        }
         if (switchText) switchText.innerText = t.switchTextLogin; 
         if (switchBtn) switchBtn.innerText = t.switchBtnLogin; 
     } else { 
         if (authTitle) authTitle.innerText = t.authTitleRegister; 
-        if (authBtn) authBtn.innerHTML = t.authBtnRegister + ' <i class="fa-solid fa-arrow-right" style="margin-left:8px; font-size:0.8rem;"></i>'; 
+        if (authBtn) {
+            const btnText = authBtn.querySelector('.btn-text');
+            if (btnText) btnText.innerText = t.authBtnRegister;
+            else authBtn.innerHTML = `<span class="btn-text">${t.authBtnRegister}</span> <i class="fa-solid fa-arrow-right auth-btn-arrow"></i><span class="btn-loading-spin" style="display:none;"><i class="fa-solid fa-circle-notch fa-spin"></i></span>`;
+        }
         if (switchText) switchText.innerText = t.switchTextRegister; 
         if (switchBtn) switchBtn.innerText = t.switchBtnRegister; 
     }
@@ -1251,37 +1306,124 @@ window.updateAuthLanguage = function() {
 
 window.setAuthMode = function(mode) {
     isLoginMode = (mode === 'login');
+    const authForm = document.getElementById('authForm');
+    if (authForm) {
+        authForm.classList.toggle('is-login-mode', isLoginMode);
+        authForm.classList.toggle('is-register-mode', !isLoginMode);
+    }
     const tabLogin = document.getElementById('tabAuthLogin');
     const tabRegister = document.getElementById('tabAuthRegister');
     if (tabLogin && tabRegister) {
         tabLogin.classList.toggle('active', isLoginMode);
         tabRegister.classList.toggle('active', !isLoginMode);
     }
+    const tabGlider = document.getElementById('authTabGlider');
+    if (tabGlider) {
+        tabGlider.style.transform = isLoginMode ? 'translate3d(0, 0, 0)' : 'translate3d(100%, 0, 0)';
+    }
+    
+    // Smooth, gentle micro-feedback on brand badge (subtle pulse, zero rotation/blur)
+    const brandBadge = document.getElementById('authBrandBadge');
+    if (brandBadge) {
+        brandBadge.classList.remove('badge-switch-active');
+        void brandBadge.offsetWidth;
+        brandBadge.classList.add('badge-switch-active');
+        setTimeout(() => brandBadge.classList.remove('badge-switch-active'), 280);
+    }
+    const heroContent = document.querySelector('.auth-hero-content');
+    if (heroContent) {
+        heroContent.classList.remove('title-switch-active');
+        void heroContent.offsetWidth;
+        heroContent.classList.add('title-switch-active');
+        setTimeout(() => heroContent.classList.remove('title-switch-active'), 240);
+    }
+
+    if (window.PocketlyAudio) {
+        window.PocketlyAudio.playCardTap();
+    }
+    if (typeof navigator !== 'undefined' && typeof navigator.vibrate === 'function') {
+        try { navigator.vibrate([15, 30, 20]); } catch(e) {}
+    }
+
+    const rowNameUser = document.getElementById('rowNameUser');
+    const rowPassFields = document.getElementById('rowPassFields');
     const nameField = document.getElementById('nameField'); 
     const usernameField = document.getElementById('usernameField'); 
     const forgotRow = document.getElementById('forgotPassRow'); 
     const forgotLink = document.getElementById('forgotPasswordLink'); 
     const confirmPasswordField = document.getElementById('confirmPasswordField');
     const captchaField = document.getElementById('captchaField');
+    const passMeter = document.getElementById('passStrengthMeter');
+    const socialArea = document.getElementById('authSocialArea');
+    if (socialArea) socialArea.style.display = 'none';
     
     if (isLoginMode) { 
+        if (typeof window !== 'undefined' && window.scrollY > 20) {
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+        if (rowNameUser) rowNameUser.style.display = "none";
         if (nameField) nameField.style.display = "none"; 
         if (usernameField) usernameField.style.display = "none"; 
         if (confirmPasswordField) confirmPasswordField.style.display = "none";
         if (captchaField) captchaField.style.display = "none";
-        if (forgotRow) forgotRow.style.display = "flex";
+        if (forgotRow) {
+            forgotRow.style.display = "flex";
+            forgotRow.classList.remove('forgot-row-fade-in');
+            void forgotRow.offsetWidth;
+            forgotRow.classList.add('forgot-row-fade-in');
+        }
         if (forgotLink) forgotLink.style.display = "block";
+        if (rowPassFields) rowPassFields.style.gridTemplateColumns = "1fr";
+        if (passMeter) passMeter.style.display = "none";
     } else { 
+        if (rowNameUser) {
+            rowNameUser.style.display = "grid";
+            rowNameUser.classList.remove('field-cascade-down');
+            void rowNameUser.offsetWidth;
+            rowNameUser.classList.add('field-cascade-down');
+        }
         if (nameField) nameField.style.display = "block"; 
         if (usernameField) usernameField.style.display = "block"; 
-        if (confirmPasswordField) confirmPasswordField.style.display = "block";
-        if (captchaField) captchaField.style.display = "block";
+        if (confirmPasswordField) {
+            confirmPasswordField.style.display = "block";
+            confirmPasswordField.classList.remove('field-slide-right');
+            void confirmPasswordField.offsetWidth;
+            confirmPasswordField.classList.add('field-slide-right');
+        }
+        if (captchaField) {
+            captchaField.style.display = "block";
+            captchaField.classList.remove('captcha-cascade-down');
+            void captchaField.offsetWidth;
+            captchaField.classList.add('captcha-cascade-down');
+        }
         if (forgotRow) forgotRow.style.display = "none";
         if (forgotLink) forgotLink.style.display = "none";
+        if (rowPassFields) rowPassFields.style.gridTemplateColumns = "";
+        if (passMeter) {
+            passMeter.style.display = "flex";
+            passMeter.classList.remove('pass-meter-expand');
+            void passMeter.offsetWidth;
+            passMeter.classList.add('pass-meter-expand');
+        }
         generateCaptcha();
     } 
+    const backBtn = document.getElementById('authHeroBackBtn');
+    if (backBtn) {
+        backBtn.style.opacity = isLoginMode ? "0" : "1";
+        backBtn.style.pointerEvents = isLoginMode ? "none" : "auto";
+        backBtn.style.transform = isLoginMode ? "scale(0.85)" : "scale(1)";
+    }
+    if (typeof window.initBiometricAuthUI === 'function') {
+        window.initBiometricAuthUI();
+    }
     if (typeof window.updateAuthLanguage === 'function') {
         window.updateAuthLanguage();
+    }
+};
+
+window.handleAuthBack = function() {
+    if (!isLoginMode) {
+        window.setAuthMode('login');
     }
 };
 
@@ -1293,8 +1435,341 @@ if (switchBtnEl) {
     });
 }
 
+// Shake form on error
+window.triggerAuthShake = function() {
+    const authForm = document.getElementById('authForm');
+    if (authForm) {
+        authForm.classList.remove('auth-shake-error');
+        void authForm.offsetWidth;
+        authForm.classList.add('auth-shake-error');
+        setTimeout(() => authForm.classList.remove('auth-shake-error'), 550);
+    }
+    if (typeof navigator !== 'undefined' && typeof navigator.vibrate === 'function') {
+        try { navigator.vibrate([40, 60, 40]); } catch(e) {}
+    }
+};
+
+// 3D Parallax & Gyroscope Badge Tilt
+(function initBadgeParallax() {
+    function setupParallax() {
+        const hero = document.querySelector('.auth-wave-hero');
+        const badge = document.getElementById('authBrandBadge');
+        if (!hero || !badge) return;
+        const shine = badge.querySelector('.badge-glass-shine');
+
+        function applyTilt(xRatio, yRatio) {
+            const tiltX = -yRatio * 16;
+            const tiltY = xRatio * 16;
+            badge.style.transform = `perspective(600px) rotateX(${tiltX.toFixed(2)}deg) rotateY(${tiltY.toFixed(2)}deg) scale(1.05)`;
+            if (shine) {
+                shine.style.transform = `translate(${tiltY * 2}px, ${tiltX * 2}px)`;
+                shine.style.opacity = Math.min((Math.abs(xRatio) + Math.abs(yRatio)) * 0.8, 0.75);
+            }
+        }
+
+        function resetTilt() {
+            badge.style.transform = '';
+            if (shine) shine.style.opacity = '0';
+        }
+
+        hero.addEventListener('mousemove', (e) => {
+            const rect = hero.getBoundingClientRect();
+            const x = (e.clientX - rect.left) / rect.width - 0.5;
+            const y = (e.clientY - rect.top) / rect.height - 0.5;
+            applyTilt(x * 2, y * 2);
+        });
+
+        hero.addEventListener('mouseleave', resetTilt);
+
+        hero.addEventListener('touchmove', (e) => {
+            if (!e.touches || !e.touches[0]) return;
+            const touch = e.touches[0];
+            const rect = hero.getBoundingClientRect();
+            const x = (touch.clientX - rect.left) / rect.width - 0.5;
+            const y = (touch.clientY - rect.top) / rect.height - 0.5;
+            applyTilt(x * 2, y * 2);
+
+            const blob1 = hero.querySelector('.liquid-blob.blob-1');
+            const blob2 = hero.querySelector('.liquid-blob.blob-2');
+            if (blob1) blob1.style.transform = `translate3d(${x * 30}px, ${y * 30}px, 0)`;
+            if (blob2) blob2.style.transform = `translate3d(${-x * 25}px, ${-y * 25}px, 0)`;
+        }, { passive: true });
+
+        hero.addEventListener('touchend', resetTilt);
+
+        if (window.DeviceOrientationEvent) {
+            window.addEventListener('deviceorientation', (e) => {
+                if (e.gamma == null || e.beta == null) return;
+                const gammaRatio = Math.max(-1, Math.min(1, e.gamma / 30));
+                const betaRatio = Math.max(-1, Math.min(1, (e.beta - 45) / 30));
+                applyTilt(gammaRatio, betaRatio);
+            }, { passive: true });
+        }
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', setupParallax);
+    } else {
+        setupParallax();
+    }
+})();
+
+// Live Validation Indicator (Email)
+(function initLiveEmailValidation() {
+    function setupValidation() {
+        const emailInput = document.getElementById('email');
+        const indicator = document.getElementById('emailValidIndicator');
+        if (!emailInput || !indicator) return;
+
+        emailInput.addEventListener('input', () => {
+            const val = emailInput.value.trim();
+            const isValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val);
+            indicator.classList.toggle('is-valid', isValid);
+        });
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', setupValidation);
+    } else {
+        setupValidation();
+    }
+})();
+
+// Password Strength Meter
+(function initPasswordStrength() {
+    function setupStrength() {
+        const passInput = document.getElementById('password');
+        const fill = document.getElementById('strengthFill');
+        const label = document.getElementById('strengthLabel');
+        if (!passInput || !fill || !label) return;
+
+        passInput.addEventListener('input', () => {
+            if (isLoginMode) return;
+            const val = passInput.value;
+            if (!val) {
+                fill.style.width = '0%';
+                label.innerText = 'Weak';
+                label.style.color = 'var(--text-grey)';
+                return;
+            }
+
+            let score = 0;
+            if (val.length >= 8) score++;
+            if (/[A-Z]/.test(val)) score++;
+            if (/[0-9]/.test(val)) score++;
+            if (/[^A-Za-z0-9]/.test(val)) score++;
+
+            if (score <= 1) {
+                fill.style.width = '25%';
+                fill.style.background = '#ef4444';
+                label.innerText = 'Weak';
+                label.style.color = '#ef4444';
+            } else if (score === 2) {
+                fill.style.width = '50%';
+                fill.style.background = '#f59e0b';
+                label.innerText = 'Fair';
+                label.style.color = '#f59e0b';
+            } else if (score === 3) {
+                fill.style.width = '75%';
+                fill.style.background = '#3b82f6';
+                label.innerText = 'Good';
+                label.style.color = '#3b82f6';
+            } else {
+                fill.style.width = '100%';
+                fill.style.background = '#10b981';
+                label.innerText = 'Strong';
+                label.style.color = '#10b981';
+                if (window.PocketlyAudio) window.PocketlyAudio.playCardTap();
+            }
+        });
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', setupStrength);
+    } else {
+        setupStrength();
+    }
+})();
+
+// Biometric Credential Storage & Direct Login
+function saveBiometricCredentials(email, password) {
+    try {
+        if (!email || !password) return;
+        const payload = JSON.stringify({ email: email.trim(), password: password, t: Date.now() });
+        const encoded = btoa(unescape(encodeURIComponent(payload)));
+        localStorage.setItem('pocketly_biometric_credentials', encoded);
+        localStorage.setItem('pocketly_biometric_enabled', 'true');
+        localStorage.setItem('pocketly_last_user_email', email.trim());
+    } catch (e) {
+        console.warn('[Biometric] Save credentials error:', e);
+    }
+}
+
+function getBiometricCredentials() {
+    try {
+        const raw = localStorage.getItem('pocketly_biometric_credentials');
+        if (!raw) return null;
+        const decoded = decodeURIComponent(escape(atob(raw)));
+        const parsed = JSON.parse(decoded);
+        if (parsed && parsed.email && parsed.password) {
+            return parsed;
+        }
+    } catch (e) {
+        console.warn('[Biometric] Parse credentials error:', e);
+    }
+    return null;
+}
+
+// Biometric Quick Login UI & Handler
+window.initBiometricAuthUI = function() {
+    const bioBtn = document.getElementById('btnBiometricLogin');
+    if (!bioBtn) return;
+    bioBtn.style.display = isLoginMode ? 'inline-flex' : 'none';
+};
+
+window.handleBiometricAuth = async function() {
+    if (window.PocketlyAudio && typeof window.PocketlyAudio.playCardTap === 'function') {
+        window.PocketlyAudio.playCardTap();
+    }
+
+    const creds = getBiometricCredentials();
+    if (!creds || !creds.email || !creds.password) {
+        const savedEmail = localStorage.getItem('pocketly_last_user_email') || localStorage.getItem('pocketly_saved_email');
+        if (savedEmail) {
+            const emailInput = document.getElementById('email');
+            if (emailInput) {
+                emailInput.value = savedEmail;
+                const indicator = document.getElementById('emailValidIndicator');
+                if (indicator) indicator.classList.add('is-valid');
+            }
+        }
+        const msg = (typeof currentLocale !== 'undefined' && currentLocale === 'id-ID')
+            ? "Silakan login dengan email & kata sandi terlebih dahulu satu kali untuk mengaktifkan login biometrik langsung."
+            : "Please log in with your email & password once to enable direct biometric login.";
+        if (typeof showAlert === 'function') showAlert(msg, true);
+        const passInput = document.getElementById('password');
+        if (passInput) passInput.focus();
+        return;
+    }
+
+    // Direct Login Execution (Bypasses email, password, and PIN screen)
+    const performDirectLogin = async () => {
+        const authBtn = document.getElementById('authBtn');
+        const btnText = authBtn ? authBtn.querySelector('.btn-text') : null;
+        const btnArrow = authBtn ? authBtn.querySelector('.auth-btn-arrow') : null;
+        const btnSpin = authBtn ? authBtn.querySelector('.btn-loading-spin') : null;
+
+        try {
+            if (btnText) btnText.style.display = 'none';
+            if (btnArrow) btnArrow.style.display = 'none';
+            if (btnSpin) btnSpin.style.display = 'inline-block';
+            if (authBtn) authBtn.disabled = true;
+
+            const emailInput = document.getElementById('email');
+            const passInput = document.getElementById('password');
+            if (emailInput) emailInput.value = creds.email;
+            if (passInput) passInput.value = creds.password;
+
+            // 1. Bypass PIN Lock: User already authenticated via Biometrics!
+            if (window.PocketlyAppLock && typeof window.PocketlyAppLock.bypassNextLock === 'function') {
+                window.PocketlyAppLock.bypassNextLock();
+            }
+
+            // 2. Direct Sign In via Firebase
+            isRegistering = false;
+            await signInWithEmailAndPassword(auth, creds.email, creds.password);
+
+            if (window.PocketlyAudio && typeof window.PocketlyAudio.playSuccessChime === 'function') {
+                window.PocketlyAudio.playSuccessChime();
+            }
+
+            // 3. Immediately ensure lock screen is hidden and app is unlocked
+            if (window.PocketlyAppLock && typeof window.PocketlyAppLock.unlockApp === 'function') {
+                window.PocketlyAppLock.unlockApp();
+            }
+        } catch (err) {
+            console.error('[Biometric] Direct login failed:', err);
+            const msg = (typeof currentLocale !== 'undefined' && currentLocale === 'id-ID')
+                ? "Gagal login otomatis. Silakan masukkan kata sandi akun Anda."
+                : "Automatic login failed. Please enter your account password.";
+            if (typeof showAlert === 'function') showAlert(msg, true);
+        } finally {
+            if (btnText) btnText.style.display = '';
+            if (btnArrow) btnArrow.style.display = '';
+            if (btnSpin) btnSpin.style.display = 'none';
+            if (authBtn) authBtn.disabled = false;
+        }
+    };
+
+    // 1. Android Native BiometricPrompt (Fingerprint / Face ID)
+    if (window.AndroidNative && typeof window.AndroidNative.authenticateBiometric === 'function') {
+        window.__pocketlyBioCallback = function(success, errorMsg) {
+            window.__pocketlyBioCallback = null;
+            if (success) {
+                performDirectLogin();
+            } else if (errorMsg && errorMsg !== 'Gunakan PIN' && errorMsg !== 'User canceled') {
+                if (typeof showAlert === 'function') showAlert(errorMsg, true);
+            }
+        };
+
+        const title = (typeof currentLocale !== 'undefined' && currentLocale === 'id-ID') 
+            ? 'Masuk ke Pocketly' 
+            : 'Login to Pocketly';
+        const subtitle = (typeof currentLocale !== 'undefined' && currentLocale === 'id-ID') 
+            ? 'Sentuh sensor sidik jari atau gunakan Face ID untuk langsung masuk' 
+            : 'Touch fingerprint sensor or use Face ID to log in directly';
+        window.AndroidNative.authenticateBiometric(title, subtitle);
+        return;
+    }
+
+    // 2. Web fallback (WebAuthn or simulation)
+    if (window.PublicKeyCredential) {
+        try {
+            const challenge = new Uint8Array(32);
+            window.crypto.getRandomValues(challenge);
+            const options = {
+                publicKey: {
+                    challenge: challenge,
+                    timeout: 60000,
+                    userVerification: 'preferred'
+                }
+            };
+            const assertion = await navigator.credentials.get(options);
+            if (assertion) {
+                performDirectLogin();
+                return;
+            }
+        } catch (e) {
+            console.debug('[Biometric] WebAuthn get fallback:', e.message);
+        }
+    }
+
+    // Direct login fallback
+    performDirectLogin();
+};
+
+// Social Login Handler
+window.handleSocialLogin = function(provider) {
+    if (window.PocketlyAudio) window.PocketlyAudio.playCardTap();
+    showAlert(currentLocale === 'id-ID' 
+        ? `Menghubungkan autentikasi ${provider}... Silakan gunakan email dan kata sandi akun Pocketly Anda.` 
+        : `Connecting with ${provider}... Please use your Pocketly account email and password.`, false);
+};
+
 document.addEventListener('DOMContentLoaded', () => {
     window.updateAuthLanguage();
+    if (typeof window.initBiometricAuthUI === 'function') {
+        window.initBiometricAuthUI();
+    }
+    const lastEmail = localStorage.getItem('pocketly_last_user_email');
+    if (lastEmail) {
+        const emailInput = document.getElementById('email');
+        if (emailInput && !emailInput.value) {
+            emailInput.value = lastEmail;
+            const indicator = document.getElementById('emailValidIndicator');
+            if (indicator) indicator.classList.add('is-valid');
+        }
+    }
     if (!isLoginMode) generateCaptcha();
 });
 const changePasswordModal = document.getElementById('changePasswordModal');
@@ -1341,6 +1816,7 @@ saveNewPasswordBtn.addEventListener('click', async () => {
         const credential = EmailAuthProvider.credential(currentUser.email, oldPassword);
         await reauthenticateWithCredential(currentUser, credential);
         await updatePassword(currentUser, newPassword);
+        saveBiometricCredentials(currentUser.email, newPassword);
         
         changePasswordModal.style.display = 'none';
         showAlert('Password updated successfully.', false);
@@ -1549,15 +2025,87 @@ document.getElementById('saveProfileBtn').addEventListener('click', async () => 
 });
 
 async function resetAllData() {
-    const deleteCollection = async (collectionName) => {
-        const q = query(collection(db, collectionName), where("uid", "==", currentUser.uid));
-        const snapshot = await getDocs(q);
-        const BATCH_SIZE = 400; 
-        const chunks = [];
-        for (let i = 0; i < snapshot.docs.length; i += BATCH_SIZE) { chunks.push(snapshot.docs.slice(i, i + BATCH_SIZE)); }
-        for (const chunk of chunks) { const batch = writeBatch(db); chunk.forEach(doc => batch.delete(doc.ref)); await batch.commit(); }
+    if (!currentUser) throw new Error("No authenticated user.");
+
+    const safeDeleteCollection = async (collectionName) => {
+        try {
+            const q = query(collection(db, collectionName), where("uid", "==", currentUser.uid));
+            const snapshot = await getDocs(q);
+            if (snapshot.empty) return;
+
+            const BATCH_SIZE = 400;
+            const chunks = [];
+            for (let i = 0; i < snapshot.docs.length; i += BATCH_SIZE) {
+                chunks.push(snapshot.docs.slice(i, i + BATCH_SIZE));
+            }
+
+            for (const chunk of chunks) {
+                try {
+                    const batch = writeBatch(db);
+                    chunk.forEach(docSnap => batch.delete(docSnap.ref));
+                    await batch.commit();
+                } catch (batchErr) {
+                    console.warn(`[Reset] Batch delete failed for ${collectionName}, falling back to single deletes:`, batchErr);
+                    for (const docSnap of chunk) {
+                        try {
+                            await deleteDoc(docSnap.ref);
+                        } catch (docErr) {
+                            console.warn(`[Reset] Could not delete doc ${docSnap.id} in ${collectionName}:`, docErr);
+                        }
+                    }
+                }
+            }
+        } catch (colErr) {
+            console.warn(`[Reset] Could not query or delete collection ${collectionName}:`, colErr);
+        }
     };
-    try { await deleteCollection("transactions"); await deleteCollection("accounts"); await deleteCollection("budgets"); await deleteCollection("debts"); await deleteCollection("connections"); return true; } catch (error) { throw error; }
+
+    // 1. Delete personal financial records
+    await safeDeleteCollection("transactions");
+    await safeDeleteCollection("accounts");
+    await safeDeleteCollection("debts");
+
+    // 2. Delete owned budgets
+    await safeDeleteCollection("budgets");
+
+    // 3. Gracefully leave shared budgets where user is participant
+    try {
+        const sharedBudgetsQ = query(
+            collection(db, "budgets"),
+            where("participants", "array-contains", currentUser.uid)
+        );
+        const sharedSnaps = await getDocs(sharedBudgetsQ);
+        for (const docSnap of sharedSnaps.docs) {
+            const data = docSnap.data();
+            if (data.uid !== currentUser.uid) {
+                try {
+                    await updateDoc(docSnap.ref, {
+                        participants: arrayRemove(currentUser.uid)
+                    });
+                } catch (leaveErr) {
+                    console.warn(`[Reset] Could not leave shared budget ${docSnap.id}:`, leaveErr);
+                }
+            }
+        }
+    } catch (sharedErr) {
+        console.warn("[Reset] Could not query shared budgets:", sharedErr);
+    }
+
+    // 4. Clear local caches
+    try {
+        localStorage.removeItem('pocketly_cached_dashboard');
+        localStorage.removeItem('pocketly_offline_transactions');
+        localStorage.removeItem('pocketly_rates_updated_at');
+    } catch (e) {
+        console.warn('[Reset] Local storage cache clear error:', e);
+    }
+
+    // 5. Trigger live UI updates
+    if (typeof updateDashboard === 'function') {
+        setTimeout(updateDashboard, 50);
+    }
+
+    return true;
 }
 
 const btnReset = document.getElementById('btnResetData');
@@ -1573,9 +2121,9 @@ if(btnReset) {
             async () => {                         // 4. Aksi
                 try { 
                     await resetAllData(); 
-                    showAlert("Data reset successful.", false); 
+                    showAlert("All financial data has been reset successfully.", false); 
                 } catch(err) { 
-                    showAlert("Failed: " + err.message, true); 
+                    showAlert("Failed to reset data: " + err.message, true); 
                 } 
             }
         ); 
@@ -2064,15 +2612,22 @@ window.exportTransactionsCSV = function() {
         ].join(','));
     });
 
-    const csvContent = "data:text/csv;charset=utf-8," + [headers.join(','), ...rows].join('\n');
-    const encodedUri = encodeURI(csvContent);
-    const link = document.createElement("a");
-    link.setAttribute("href", encodedUri);
+    const rawCsvText = [headers.join(','), ...rows].join('\n');
     const dateStamp = new Date().toISOString().split('T')[0];
-    link.setAttribute("download", `Pocketly_Transactions_${dateStamp}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    const csvFileName = `Pocketly_Transactions_${dateStamp}.csv`;
+
+    if (window.PocketlyDownloader && window.PocketlyDownloader.isNative()) {
+        window.PocketlyDownloader.saveText(rawCsvText, csvFileName, 'text/csv');
+    } else {
+        const csvContent = "data:text/csv;charset=utf-8," + rawCsvText;
+        const encodedUri = encodeURI(csvContent);
+        const link = document.createElement("a");
+        link.setAttribute("href", encodedUri);
+        link.setAttribute("download", csvFileName);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    }
 
     const expDropdown = document.getElementById('exportDropdown');
     if (expDropdown) expDropdown.classList.remove('show');
@@ -2325,10 +2880,10 @@ function getPocketlyLogoDataUrl() {
         if (existingImg && existingImg.complete && existingImg.naturalWidth > 0) {
             try {
                 const canvas = document.createElement('canvas');
-                canvas.width = 140;
-                canvas.height = 146;
+                canvas.width = 160;
+                canvas.height = 160;
                 const ctx = canvas.getContext('2d');
-                ctx.drawImage(existingImg, 0, 0, 140, 146);
+                ctx.drawImage(existingImg, 0, 0, 160, 160);
                 cachedPocketlyLogo = canvas.toDataURL('image/png');
                 resolve(cachedPocketlyLogo);
                 return;
@@ -2340,10 +2895,10 @@ function getPocketlyLogoDataUrl() {
         img.onload = () => {
             try {
                 const canvas = document.createElement('canvas');
-                canvas.width = 140;
-                canvas.height = 146;
+                canvas.width = 160;
+                canvas.height = 160;
                 const ctx = canvas.getContext('2d');
-                ctx.drawImage(img, 0, 0, 140, 146);
+                ctx.drawImage(img, 0, 0, 160, 160);
                 cachedPocketlyLogo = canvas.toDataURL('image/png');
                 resolve(cachedPocketlyLogo);
             } catch (e) {
@@ -3468,9 +4023,9 @@ window.generateExportPdf = async function() {
         let brandStartX = marginX;
         if (logoDataUrl) {
             try {
-                // Crisp square logo icon (9mm x 9.4mm)
-                doc.addImage(logoDataUrl, 'PNG', marginX, 14.8, 9, 9.4);
-                brandStartX = marginX + 11.5;
+                // Crisp square logo icon (9.5mm x 9.5mm)
+                doc.addImage(logoDataUrl, 'PNG', marginX, 14.5, 9.5, 9.5);
+                brandStartX = marginX + 12;
             } catch (e) {
                 console.warn('Could not add logo to PDF:', e);
             }
@@ -3891,8 +4446,8 @@ window.generateExportPdf = async function() {
         let p2TitleX = marginX;
         if (logoDataUrl) {
             try {
-                doc.addImage(logoDataUrl, 'PNG', marginX, 15, 8, 8.35);
-                p2TitleX = marginX + 10.5;
+                doc.addImage(logoDataUrl, 'PNG', marginX, 15, 8.5, 8.5);
+                p2TitleX = marginX + 11;
             } catch (e) {}
         }
 
@@ -4013,7 +4568,14 @@ window.generateExportPdf = async function() {
 
         // Save file with clean filename
         const safeSuffix = fileSuffix.replace(/[^a-zA-Z0-9_\-]/g, '_');
-        doc.save(`Pocketly_Statement_${safeSuffix}.pdf`);
+        const pdfFileName = `Pocketly_Statement_${safeSuffix}.pdf`;
+
+        if (window.PocketlyDownloader && window.PocketlyDownloader.isNative()) {
+            const pdfBlob = doc.output('blob');
+            window.PocketlyDownloader.saveBlob(pdfBlob, pdfFileName, 'application/pdf');
+        } else {
+            doc.save(pdfFileName);
+        }
 
         window.closeExportPdfModal();
         showAlert(`Financial statement for "${periodLabel}" downloaded successfully!`, false);
@@ -4042,29 +4604,34 @@ if (btnExportPDF_Header) {
 const darkModeToggle = document.getElementById('darkModeToggle');
 const metaThemeColor = document.getElementById('themeColorMeta'); // Ambil elemen meta
 
-// Fungsi helper untuk ubah warna status bar HP
+// Helper for synchronized status bar and navigation bar theming
 const updateMetaTheme = (isDark) => {
-    if(metaThemeColor) {
-        // Warna Hex sesuai style.css (--bg-color)
-        metaThemeColor.setAttribute('content', isDark ? '#111827' : '#f8f9fd');
+    if (typeof window.updateSystemBars === 'function') {
+        window.updateSystemBars(isDark);
+    } else if (metaThemeColor) {
+        metaThemeColor.setAttribute('content', isDark ? '#0b0f19' : '#f8fafc');
     }
-}
+};
 
 if(localStorage.getItem('theme') === 'dark') { 
     document.body.classList.add('dark-mode'); 
     if(darkModeToggle) darkModeToggle.checked = true; 
     updateMetaTheme(true); // Set Dark saat load
+} else {
+    document.body.classList.remove('dark-mode');
+    if(darkModeToggle) darkModeToggle.checked = false;
+    updateMetaTheme(false); // Set Light saat load
 }
 
 if(darkModeToggle) darkModeToggle.addEventListener('change', () => { 
     if(darkModeToggle.checked) { 
         document.body.classList.add('dark-mode'); 
         localStorage.setItem('theme', 'dark'); 
-        updateMetaTheme(true); // Ubah status bar jadi Gelap
+        updateMetaTheme(true); // Ubah status bar & nav bar jadi Gelap
     } else { 
         document.body.classList.remove('dark-mode'); 
         localStorage.setItem('theme', 'light'); 
-        updateMetaTheme(false); // Ubah status bar jadi Terang
+        updateMetaTheme(false); // Ubah status bar & nav bar jadi Terang
     } 
 });
 
@@ -4537,14 +5104,23 @@ function updateDashboard() {
     });
     
     const incDisplay = document.getElementById('displayIncome'); 
-    if(incDisplay) incDisplay.innerText = formatRupiah(income); 
+    if(incDisplay) {
+        if (typeof window.animateCountUp === 'function') window.animateCountUp('displayIncome', income);
+        else incDisplay.innerText = formatRupiah(income);
+    }
     
     const expDisplay = document.getElementById('displaySpending'); 
-    if(expDisplay) expDisplay.innerText = formatRupiah(expense);
+    if(expDisplay) {
+        if (typeof window.animateCountUp === 'function') window.animateCountUp('displaySpending', expense);
+        else expDisplay.innerText = formatRupiah(expense);
+    }
 
     const total = (accounts || []).reduce((sum, acc) => sum + Number(acc.balance || 0), 0);
     const totalDisplay = document.getElementById('displayTotalBalance');
-    if (totalDisplay) totalDisplay.innerText = formatRupiah(total);
+    if (totalDisplay) {
+        if (typeof window.animateCountUp === 'function') window.animateCountUp('displayTotalBalance', total);
+        else totalDisplay.innerText = formatRupiah(total);
+    }
     
     // Update Chart & Budget Progress
     // (Pastikan fungsi renderChart sudah kosong/dihapus isinya jika tidak pakai chart donut lagi)
@@ -4635,49 +5211,61 @@ function updateDashboard() {
                     : "Transfer";
             }
 
-    // C. Cek Status Locked (Hanya class, ikon gembok sudah dihilangkan sesuai request sebelumnya)
-    const isSystemRefund = t.category === 'Adjustment' && (t.desc || "").toLowerCase().includes('refund');
-    const isGoalTransaction = t.category === 'Financial Goal';
-    const isDebtTransaction = t.category === 'Debt / Loan';
-    const isLocked = isSystemRefund || isGoalTransaction || isDebtTransaction;
-    let lockIconHTML = ""; // Kosongkan agar bersih
+            // C. Cek Status Locked
+            const isSystemRefund = t.category === 'Adjustment' && (t.desc || "").toLowerCase().includes('refund');
+            const isGoalTransaction = t.category === 'Financial Goal';
+            const isDebtTransaction = t.category === 'Debt / Loan';
+            const isLocked = isSystemRefund || isGoalTransaction || isDebtTransaction;
+            let lockIconHTML = "";
 
-    // D. Render HTML Item
-    // PERHATIKAN: onclick="openTransactionDetail('${t.id}')" ditambahkan di sini
-    listContainer.innerHTML += `
-    <div class="trans-item-row" onclick="openTransactionDetail('${t.id}')" style="cursor: pointer;">
-        <div class="ti-left">
-            <div class="ti-icon" style="background:${iconBg}; color:${iconColor};">
-                <i class="fa-solid ${iconClass}"></i>
-            </div>
-            <div class="ti-info">
-                <div class="ti-desc">
-                    ${lockIconHTML} ${t.desc}
+            // D. Render HTML Item dengan Swipe Support
+            listContainer.innerHTML += `
+            <div class="swipe-item-container" data-id="${t.id}" data-locked="${isLocked}">
+                <div class="swipe-action-reveal swipe-action-left">
+                    <button type="button" class="swipe-act-btn btn-swipe-edit" title="Edit" onclick="event.stopPropagation(); window.handleSwipeEdit('${t.id}')">
+                        <i class="fa-solid fa-pen"></i>
+                        <span>Edit</span>
+                    </button>
                 </div>
-                <div class="ti-sub">
-                    <span class="cat-badge-outline">${categoryLabel}</span>
-                    <span>•</span>
-                    <span>${accName}</span>
+                <div class="swipe-action-reveal swipe-action-right">
+                    <button type="button" class="swipe-act-btn btn-swipe-delete" title="Delete" onclick="event.stopPropagation(); window.handleSwipeDelete('${t.id}')">
+                        <i class="fa-solid fa-trash-can"></i>
+                        <span>Delete</span>
+                    </button>
                 </div>
-            </div>
-        </div>
+                <div class="swipe-item-content trans-item-row" onclick="window.handleSwipeItemClick(event, '${t.id}')" style="cursor: pointer;">
+                    <div class="ti-left">
+                        <div class="ti-icon" style="background:${iconBg}; color:${iconColor};">
+                            <i class="fa-solid ${iconClass}"></i>
+                        </div>
+                        <div class="ti-info">
+                            <div class="ti-desc">
+                                ${lockIconHTML} ${t.desc}
+                            </div>
+                            <div class="ti-sub">
+                                <span class="cat-badge-outline">${categoryLabel}</span>
+                                <span>•</span>
+                                <span>${accName}</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="ti-right">
+                        <div class="ti-amount ${amountClass}">
+                            ${amountSign} ${formatRupiah(t.amount)}
+                        </div>
+                    </div>
+                </div>
+            </div>`;
+        });
+
+        // 7. Update Kontrol Pagination & Realtime Growth Badge
+        updatePaginationControls(totalItems, totalPages);
         
-        <div class="ti-right">
-            <div class="ti-amount ${amountClass}">
-                ${amountSign} ${formatRupiah(t.amount)}
-            </div>
-        </div>
-    </div>`;
-});
-
-    // 7. Update Kontrol Pagination & Realtime Growth Badge
-    updatePaginationControls(totalItems, totalPages);
-    
-    // Pastikan fungsi ini ada (dari request sebelumnya) untuk update badge persentase
-    if(typeof calculateRealtimeGrowth === 'function') {
-        calculateRealtimeGrowth(selectedMonth, selectedYear);
+        if(typeof calculateRealtimeGrowth === 'function') {
+            calculateRealtimeGrowth(selectedMonth, selectedYear);
+        }
     }
-}
 }
 
 function renderDashboardRecentTransactions(data) {
@@ -4729,21 +5317,363 @@ function renderDashboardRecentTransactions(data) {
             shortDate = '-';
         }
 
+        const isSystemRefund = t.category === 'Adjustment' && (t.desc || "").toLowerCase().includes('refund');
+        const isGoalTransaction = t.category === 'Financial Goal';
+        const isDebtTransaction = t.category === 'Debt / Loan';
+        const isLocked = isSystemRefund || isGoalTransaction || isDebtTransaction;
+
         return `
-            <div class="retro-transaction-item" onclick="openTransactionDetail('${t.id}')" style="cursor: pointer;">
-                <div class="rti-left">
-                    <div class="rti-date">${shortDate}</div>
-                    <div class="rti-info">
-                        <h4>${escapeHTML(t.desc || '')}</h4>
-                        <span>${escapeHTML(categoryLabel)} • ${escapeHTML(accName)}</span>
-                    </div>
+            <div class="swipe-item-container" data-id="${t.id}" data-locked="${isLocked}">
+                <div class="swipe-action-reveal swipe-action-left">
+                    <button type="button" class="swipe-act-btn btn-swipe-edit" title="Edit" onclick="event.stopPropagation(); window.handleSwipeEdit('${t.id}')">
+                        <i class="fa-solid fa-pen"></i>
+                        <span>Edit</span>
+                    </button>
                 </div>
-                <div class="rti-right ${amountClass}">
-                    ${amountSign}${formatRupiah(t.amount)}
+                <div class="swipe-action-reveal swipe-action-right">
+                    <button type="button" class="swipe-act-btn btn-swipe-delete" title="Delete" onclick="event.stopPropagation(); window.handleSwipeDelete('${t.id}')">
+                        <i class="fa-solid fa-trash-can"></i>
+                        <span>Delete</span>
+                    </button>
+                </div>
+                <div class="swipe-item-content retro-transaction-item" onclick="window.handleSwipeItemClick(event, '${t.id}')" style="cursor: pointer;">
+                    <div class="rti-left">
+                        <div class="rti-date">${shortDate}</div>
+                        <div class="rti-info">
+                            <h4>${escapeHTML(t.desc || '')}</h4>
+                            <span>${escapeHTML(categoryLabel)} • ${escapeHTML(accName)}</span>
+                        </div>
+                    </div>
+                    <div class="rti-right ${amountClass}">
+                        ${amountSign}${formatRupiah(t.amount)}
+                    </div>
                 </div>
             </div>`;
     }).join('');
 }
+
+// ==========================================================================
+// INTERACTIVE ENGINE: ODOMETER, SKELETON, SWIPE GESTURES, PULL TO REFRESH
+// ==========================================================================
+
+// 1. Odometer Count-Up Animation
+window.animateCountUp = function(elementId, targetValue, duration = 650) {
+    const el = document.getElementById(elementId);
+    if (!el) return;
+
+    if (window.isPrivacyMode) {
+        el.innerText = formatRupiah(targetValue);
+        el.dataset.numericValue = targetValue;
+        return;
+    }
+
+    const startValue = parseFloat(el.dataset.numericValue) || 0;
+    if (Math.abs(startValue - targetValue) < 0.01) {
+        el.innerText = formatRupiah(targetValue);
+        el.dataset.numericValue = targetValue;
+        return;
+    }
+
+    el.dataset.numericValue = targetValue;
+    el.classList.remove('odometer-pulse');
+    void el.offsetWidth;
+    el.classList.add('odometer-pulse');
+
+    const startTime = performance.now();
+
+    function updateCounter(currentTime) {
+        const elapsed = currentTime - startTime;
+        const progress = Math.min(elapsed / duration, 1);
+        const ease = 1 - Math.pow(1 - progress, 3);
+        const current = startValue + (targetValue - startValue) * ease;
+
+        el.innerText = formatRupiah(current);
+
+        if (progress < 1) {
+            requestAnimationFrame(updateCounter);
+        } else {
+            el.innerText = formatRupiah(targetValue);
+            setTimeout(() => el.classList.remove('odometer-pulse'), 300);
+        }
+    }
+
+    requestAnimationFrame(updateCounter);
+};
+
+// 2. Skeleton Shimmer Generator
+window.showTransactionSkeleton = function(containerId, count = 3) {
+    const container = document.getElementById(containerId);
+    if (!container) return;
+    let html = '<div class="skeleton-shimmer-wrapper">';
+    for (let i = 0; i < count; i++) {
+        html += `
+            <div class="skeleton-row-card">
+                <div class="skeleton-shimmer-elem skeleton-icon-circle"></div>
+                <div class="skeleton-info-lines">
+                    <div class="skeleton-shimmer-elem skeleton-line-title"></div>
+                    <div class="skeleton-shimmer-elem skeleton-line-sub"></div>
+                </div>
+                <div class="skeleton-shimmer-elem skeleton-amount-block"></div>
+            </div>`;
+    }
+    html += '</div>';
+    container.innerHTML = html;
+};
+
+// 3. Swipe Gesture System
+window.closeAllSwipeItems = function(exceptContainer = null) {
+    document.querySelectorAll('.swipe-item-container.is-open').forEach(c => {
+        if (c !== exceptContainer) {
+            const content = c.querySelector('.swipe-item-content');
+            if (content) content.style.transform = '';
+            c.classList.remove('is-open', 'swiped-left', 'swiped-right');
+        }
+    });
+};
+
+window.handleSwipeItemClick = function(e, id) {
+    const container = e.currentTarget.closest('.swipe-item-container');
+    if (container && container.classList.contains('is-open')) {
+        e.stopPropagation();
+        const content = container.querySelector('.swipe-item-content');
+        if (content) content.style.transform = '';
+        container.classList.remove('is-open', 'swiped-left', 'swiped-right');
+        return;
+    }
+    if (typeof window.openTransactionDetail === 'function') {
+        window.openTransactionDetail(id);
+    }
+};
+
+window.handleSwipeDelete = function(id) {
+    window.closeAllSwipeItems();
+    if (typeof window.askDeleteTrans === 'function') {
+        window.askDeleteTrans(id);
+    }
+};
+
+window.handleSwipeEdit = function(id) {
+    window.closeAllSwipeItems();
+    const t = (rawTransactions || []).find(x => x.id === id);
+    if (!t) return;
+    const safeDesc = (t.desc || '').replace(/'/g, "\\'");
+    const safeCat = t.category ? t.category.replace(/'/g, "\\'") : "";
+    if (typeof window.openEditTrans === 'function') {
+        window.openEditTrans(t.id, safeDesc, t.amount, t.date, t.type, t.accountId, safeCat);
+    }
+};
+
+(function initSwipeGestures() {
+    let activeContainer = null;
+    let startX = 0;
+    let startY = 0;
+    let isHorizontalSwipe = false;
+    let initialTranslate = 0;
+
+    document.addEventListener('touchstart', (e) => {
+        const container = e.target.closest('.swipe-item-container');
+        if (!container) {
+            window.closeAllSwipeItems();
+            return;
+        }
+
+        window.closeAllSwipeItems(container);
+
+        const touch = e.touches[0];
+        startX = touch.clientX;
+        startY = touch.clientY;
+        isHorizontalSwipe = false;
+        activeContainer = container;
+
+        const content = container.querySelector('.swipe-item-content');
+        if (content) {
+            const matrix = window.getComputedStyle(content).transform;
+            if (matrix && matrix !== 'none') {
+                const match = matrix.match(/matrix.*\((.+)\)/);
+                if (match) {
+                    const values = match[1].split(', ');
+                    initialTranslate = parseFloat(values[4]) || 0;
+                } else {
+                    initialTranslate = 0;
+                }
+            } else {
+                initialTranslate = 0;
+            }
+        }
+    }, { passive: true });
+
+    document.addEventListener('touchmove', (e) => {
+        if (!activeContainer) return;
+        const touch = e.touches[0];
+        const dx = touch.clientX - startX;
+        const dy = touch.clientY - startY;
+
+        if (!isHorizontalSwipe) {
+            if (Math.abs(dx) > 10 && Math.abs(dx) > Math.abs(dy)) {
+                isHorizontalSwipe = true;
+                activeContainer.classList.add('is-swiping');
+            } else if (Math.abs(dy) > 10) {
+                activeContainer = null;
+                return;
+            }
+        }
+
+        if (isHorizontalSwipe) {
+            let targetX = initialTranslate + dx;
+            const isLocked = activeContainer.getAttribute('data-locked') === 'true';
+
+            if (isLocked) {
+                targetX = targetX * 0.15;
+            } else {
+                if (targetX < -95) targetX = -95 - (Math.abs(targetX + 95) * 0.2);
+                if (targetX > 95) targetX = 95 + ((targetX - 95) * 0.2);
+            }
+
+            const content = activeContainer.querySelector('.swipe-item-content');
+            if (content) {
+                content.style.transform = `translateX(${targetX}px)`;
+            }
+        }
+    }, { passive: false });
+
+    document.addEventListener('touchend', () => {
+        if (!activeContainer) return;
+        activeContainer.classList.remove('is-swiping');
+        const content = activeContainer.querySelector('.swipe-item-content');
+        if (!content) { activeContainer = null; return; }
+
+        const matrix = window.getComputedStyle(content).transform;
+        let currentTranslate = 0;
+        if (matrix && matrix !== 'none') {
+            const match = matrix.match(/matrix.*\((.+)\)/);
+            if (match) {
+                const values = match[1].split(', ');
+                currentTranslate = parseFloat(values[4]) || 0;
+            }
+        }
+
+        const isLocked = activeContainer.getAttribute('data-locked') === 'true';
+
+        if (!isLocked && currentTranslate < -42) {
+            content.style.transform = 'translateX(-74px)';
+            activeContainer.classList.add('is-open', 'swiped-left');
+            activeContainer.classList.remove('swiped-right');
+            if (window.PocketlyAudio) window.PocketlyAudio.playCardTap();
+        } else if (!isLocked && currentTranslate > 42) {
+            content.style.transform = 'translateX(74px)';
+            activeContainer.classList.add('is-open', 'swiped-right');
+            activeContainer.classList.remove('swiped-left');
+            if (window.PocketlyAudio) window.PocketlyAudio.playCardTap();
+        } else {
+            content.style.transform = '';
+            activeContainer.classList.remove('is-open', 'swiped-left', 'swiped-right');
+        }
+
+        activeContainer = null;
+    }, { passive: true });
+})();
+
+// 4. Pull to Refresh Gesture System
+(function initPullToRefresh() {
+    let startY = 0;
+    let isPulling = false;
+    let pullDistance = 0;
+    const threshold = 65;
+
+    window.addEventListener('DOMContentLoaded', () => {
+        const mainContent = document.querySelector('.main-content');
+        if (!mainContent) return;
+
+        const ptrIndicator = document.getElementById('ptrIndicator');
+        const ptrIcon = document.getElementById('ptrIcon');
+        const ptrLabel = document.getElementById('ptrLabel');
+
+        mainContent.addEventListener('touchstart', (e) => {
+            if (mainContent.scrollTop <= 0) {
+                startY = e.touches[0].clientY;
+                isPulling = false;
+                pullDistance = 0;
+            }
+        }, { passive: true });
+
+        mainContent.addEventListener('touchmove', (e) => {
+            if (mainContent.scrollTop > 0) return;
+            const currentY = e.touches[0].clientY;
+            const diff = currentY - startY;
+
+            if (diff > 12 && mainContent.scrollTop <= 0) {
+                isPulling = true;
+                pullDistance = Math.pow(diff, 0.85);
+
+                if (ptrIndicator) {
+                    ptrIndicator.style.height = `${Math.min(pullDistance, 72)}px`;
+                    ptrIndicator.style.opacity = `${Math.min(pullDistance / 35, 1)}`;
+                    ptrIndicator.classList.add('active');
+                }
+
+                if (ptrIcon) {
+                    const rotation = Math.min((pullDistance / threshold) * 180, 180);
+                    ptrIcon.style.transform = `rotate(${rotation}deg)`;
+                }
+
+                if (ptrLabel) {
+                    ptrLabel.innerText = pullDistance >= threshold ? "Release to refresh" : "Pull to refresh";
+                }
+            }
+        }, { passive: true });
+
+        mainContent.addEventListener('touchend', () => {
+            if (!isPulling) return;
+            isPulling = false;
+
+            if (pullDistance >= threshold) {
+                if (ptrIndicator) ptrIndicator.style.height = '50px';
+                if (ptrIcon) {
+                    ptrIcon.style.transform = '';
+                    ptrIcon.classList.add('is-spinning');
+                }
+                if (ptrLabel) ptrLabel.innerText = "Refreshing...";
+
+                if (window.PocketlyAudio) {
+                    window.PocketlyAudio.playCardTap();
+                }
+
+                if (typeof window.showTransactionSkeleton === 'function') {
+                    window.showTransactionSkeleton('dashRecentTransactionsList', 3);
+                }
+
+                setTimeout(() => {
+                    if (typeof updateDashboard === 'function') updateDashboard();
+                    if (typeof renderAccountsFromCache === 'function') renderAccountsFromCache();
+                    if (typeof calculateRealtimeGrowth === 'function') calculateRealtimeGrowth();
+
+                    setTimeout(() => {
+                        if (ptrIndicator) {
+                            ptrIndicator.style.height = '0px';
+                            ptrIndicator.style.opacity = '0';
+                            ptrIndicator.classList.remove('active');
+                        }
+                        if (ptrIcon) {
+                            ptrIcon.classList.remove('is-spinning');
+                            ptrIcon.style.transform = '';
+                        }
+                        if (ptrLabel) ptrLabel.innerText = "Pull to refresh";
+                    }, 350);
+                }, 600);
+            } else {
+                if (ptrIndicator) {
+                    ptrIndicator.style.height = '0px';
+                    ptrIndicator.style.opacity = '0';
+                    ptrIndicator.classList.remove('active');
+                }
+                if (ptrIcon) {
+                    ptrIcon.style.transform = '';
+                }
+            }
+            pullDistance = 0;
+        }, { passive: true });
+    });
+})();
 
 function renderDashboardActiveDebts() {
     const listContainer = document.getElementById('dashActiveDebtsList');
@@ -4892,12 +5822,22 @@ document.getElementById('transactionForm').addEventListener('submit', async (e) 
     
     // Ambil value dari form
     const type = document.getElementById('inputType').value;
-    const amount = Number(document.getElementById('inputAmount').value);
+    const rawInputAmount = Number(document.getElementById('inputAmount').value);
     const accId = document.getElementById('inputAccount').value;
     const desc = document.getElementById('inputDesc').value;
     const date = document.getElementById('inputDate').value;
     const btn = document.getElementById('btnSaveTrans');
     const editId = document.getElementById('editTransId').value;
+    const oldAmount = Number(document.getElementById('originalAmount').value);
+
+    if (isNaN(rawInputAmount) || rawInputAmount <= 0) {
+        showAlert("Please enter a valid amount!", true);
+        return;
+    }
+
+    const amount = (editId && oldAmount && rawInputAmount === convertFromIdrToBase(oldAmount))
+        ? oldAmount
+        : convertToIdrFromBase(rawInputAmount);
 
     if(!accId || accId === "NEW_ACCOUNT") { showAlert("Please select a source account!", true); return; }
     
@@ -4923,7 +5863,6 @@ document.getElementById('transactionForm').addEventListener('submit', async (e) 
 
         // --- LOGIKA EDIT TRANSAKSI ---
         if (editId) {
-             const oldAmount = Number(document.getElementById('originalAmount').value);
              const oldType = document.getElementById('originalType').value;
 
              // A. KEMBALIKAN SALDO KE POSISI SEBELUM TRANSAKSI (REVERT)
@@ -4953,7 +5892,9 @@ document.getElementById('transactionForm').addEventListener('submit', async (e) 
                  amount, 
                  desc, 
                  date, 
-                 accountId: accId 
+                 accountId: accId,
+                 inputCurrency: currentCurrency,
+                 originalInputAmount: rawInputAmount
              });
              
              showAlert("Transaction updated & balance adjusted correctly!", false);
@@ -4974,7 +5915,9 @@ document.getElementById('transactionForm').addEventListener('submit', async (e) 
                 
                 await addDoc(collection(db, "transactions"), { 
                     uid: currentUser.uid, type: 'transfer', amount, desc, date, 
-                    accountId: accId, targetAccountId: targetAccId 
+                    accountId: accId, targetAccountId: targetAccId,
+                    inputCurrency: currentCurrency,
+                    originalInputAmount: rawInputAmount
                 });
             } else {
                 const category = document.getElementById('inputCategory').value;
@@ -4988,7 +5931,9 @@ document.getElementById('transactionForm').addEventListener('submit', async (e) 
                 
                 await updateDoc(accRef, { balance: currentBal });
                 await addDoc(collection(db, "transactions"), { 
-                    uid: currentUser.uid, type, category, amount, desc, date, accountId: accId 
+                    uid: currentUser.uid, type, category, amount, desc, date, accountId: accId,
+                    inputCurrency: currentCurrency,
+                    originalInputAmount: rawInputAmount
                 });
             }
             showAlert("Transaction saved!", false);
@@ -5444,6 +6389,11 @@ window.addEventListener('click', function(e) {
 window.openCreateBudgetModal = (type, preselectedCategory = '') => { 
     document.getElementById('budgetForm').reset(); 
     document.getElementById('editBudgetId').value = ""; 
+    const targetInput = document.getElementById('budgetTarget');
+    if (targetInput) {
+        targetInput.value = '';
+        targetInput.dataset.originalIdr = '';
+    }
     
     const goalTitle = (window.PocketlyI18n && window.PocketlyI18n.t('budget_modal_goal_title')) || "New Savings Goal";
     const budgetTitle = (window.PocketlyI18n && window.PocketlyI18n.t('budget_modal_limit_title')) || "Set Budget Limit";
@@ -5473,6 +6423,7 @@ window.openCreateBudgetModal = (type, preselectedCategory = '') => {
     }
     // -----------------------------------------------------
 
+    if (typeof updateFormCurrencyIndicators === 'function') updateFormCurrencyIndicators();
     document.getElementById('budgetModal').classList.add('show'); 
 };
 
@@ -5498,7 +6449,11 @@ window.openEditBudget = async (id, name, target, current, type) => {
         document.getElementById('budgetCategorySelect').value = name; 
     } 
     
-    document.getElementById('budgetTarget').value = target; 
+    const targetInput = document.getElementById('budgetTarget');
+    if (targetInput) {
+        targetInput.value = convertFromIdrToBase(target);
+        targetInput.dataset.originalIdr = String(target);
+    }
 
     // --- LOGIKA PENGAMANAN VISIBILITY ---
     const visSelect = document.getElementById('goalVisibility');
@@ -5532,6 +6487,7 @@ window.openEditBudget = async (id, name, target, current, type) => {
     if (partnerGroup) partnerGroup.style.display = 'none';
     // ------------------------------------
 
+    if (typeof updateFormCurrencyIndicators === 'function') updateFormCurrencyIndicators();
     document.getElementById('budgetModal').classList.add('show'); 
     setTimeout(initCustomSelects, 100); 
 };
@@ -5543,7 +6499,17 @@ document.getElementById('budgetForm').addEventListener('submit', async (e) => {
     const visibility = document.getElementById('goalVisibility').value; // Ambil status visibility
     
     let name = (type === 'goal') ? document.getElementById('budgetName').value : document.getElementById('budgetCategorySelect').value;
-    const target = Number(document.getElementById('budgetTarget').value);
+    const rawTarget = Number(document.getElementById('budgetTarget').value);
+    const origIdr = Number(document.getElementById('budgetTarget').dataset.originalIdr || 0);
+
+    if (isNaN(rawTarget) || rawTarget <= 0) {
+        showAlert("Target / Limit amount must be greater than 0.", true);
+        return;
+    }
+
+    const target = (id && origIdr && rawTarget === convertFromIdrToBase(origIdr))
+        ? origIdr
+        : convertToIdrFromBase(rawTarget);
     
     // Ambil teman yang dicentang
     const selectedPartners = Array.from(document.querySelectorAll('input[name="goalPartners"]:checked')).map(cb => cb.value);
@@ -5946,11 +6912,12 @@ document.getElementById('topupBudgetForm').addEventListener('submit', async (e) 
     
     const id = document.getElementById('topupBudgetId').value;
     const action = document.getElementById('topupActionType').value; 
-    const amount = Number(document.getElementById('topupAmount').value);
+    const rawAmount = Number(document.getElementById('topupAmount').value);
+    const amount = convertToIdrFromBase(rawAmount);
     const accId = document.getElementById('topupAccount').value;
     const type = document.getElementById('topupType').value;
 
-    if (amount <= 0) {
+    if (isNaN(rawAmount) || rawAmount <= 0 || amount <= 0) {
         showAlert("Amount must be greater than 0.", true);
         return;
     }
@@ -6117,7 +7084,8 @@ document.getElementById('accountForm').addEventListener('submit', async (e) => {
 
         } else {
             // --- LOGIC ADD ACCOUNT (Tidak berubah) ---
-            const balanceInput = Number(document.getElementById('accBalance').value);
+            const rawBalanceInput = Number(document.getElementById('accBalance').value);
+            const balanceInput = convertToIdrFromBase(rawBalanceInput);
             const existingAcc = accounts.find(a => a.name.toLowerCase() === nameInput.toLowerCase());
             
             if (existingAcc) {
@@ -6305,7 +7273,7 @@ window.openEditTrans = (id, desc, amount, date, type, accId, category) => {
     const inputDate = document.getElementById('inputDate');
 
     inputDesc.value = desc; 
-    inputAmount.value = amount; 
+    inputAmount.value = convertFromIdrToBase(amount); 
     inputDate.value = date; 
     
     // 4. Ambil Elemen Dropdown
@@ -6321,6 +7289,7 @@ window.openEditTrans = (id, desc, amount, date, type, accId, category) => {
     // Simpan nilai asli untuk keperluan backend (Revert Saldo)
     document.getElementById('originalAmount').value = amount; 
     document.getElementById('originalType').value = type; 
+    if (typeof updateFormCurrencyIndicators === 'function') updateFormCurrencyIndicators(); 
 
     // --- 5. LOGIKA PENGAMANAN (LOCKING) ---
     // Pastikan string 'Adjustment' sama persis dengan value di database kamu
@@ -7103,6 +8072,7 @@ if (btnOpenTransFix) {
         document.getElementById('transModalTitle').innerText = (window.PocketlyI18n && window.PocketlyI18n.t('btn_add_record')) || "Add Record";
         document.getElementById('btnSaveTrans').innerText = (window.PocketlyI18n && window.PocketlyI18n.t('btn_save')) || "Save";
         document.getElementById('editTransId').value = "";
+        document.getElementById('originalAmount').value = "";
         document.getElementById('transactionForm').reset();
         document.getElementById('inputType').disabled = false;      
         document.getElementById('inputCategory').disabled = false;  
@@ -7110,6 +8080,7 @@ if (btnOpenTransFix) {
         document.getElementById('inputDate').disabled = false;      
         document.getElementById('inputAmount').disabled = false;
         document.getElementById('inputDesc').disabled = false;
+        if (typeof updateFormCurrencyIndicators === 'function') updateFormCurrencyIndicators();
         document.getElementById('transactionModal').classList.add('show');
         setTimeout(initCustomSelects, 100);
     });
@@ -7126,6 +8097,7 @@ if(btnOpenAccFix) {
         document.getElementById('accountForm').reset();
         document.getElementById('balanceGroup').style.display = 'block'; 
         document.getElementById('accBalance').setAttribute('required', 'true'); // Nyalakan validasi
+        if (typeof updateFormCurrencyIndicators === 'function') updateFormCurrencyIndicators();
         const modal = document.getElementById('accountModal');
         if(modal) modal.classList.add('show');
     });
@@ -7663,33 +8635,68 @@ if (btnVoiceRecord && voiceRecordModal) {
 }
 
 if (btnStartListening) {
-    btnStartListening.addEventListener('click', () => {
+    btnStartListening.addEventListener('click', async () => {
+        // Ensure Microphone permission is granted on Android / Browser
+        if (window.PocketlyAudioHelper && typeof window.PocketlyAudioHelper.ensureMicrophonePermission === 'function') {
+            const hasMic = await window.PocketlyAudioHelper.ensureMicrophonePermission();
+            if (!hasMic) {
+                if (voiceStatusText) voiceStatusText.innerText = "Permission needed";
+                showAlert("Microphone permission is required. Please enable it in Settings.", true);
+                return;
+            }
+        } else if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                stream.getTracks().forEach(track => track.stop());
+            } catch (permErr) {
+                console.warn('[Voice Record] Microphone permission denied:', permErr);
+                if (voiceStatusText) voiceStatusText.innerText = "Permission needed";
+                showAlert("Microphone permission is required. Please allow access.", true);
+                return;
+            }
+        }
+
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
         if (!SpeechRecognition) {
-            showAlert("Your browser does not support voice input.", true);
+            showAlert("Your device does not support voice input.", true);
             return;
         }
 
-        const recognition = new SpeechRecognition();
-        recognition.lang = 'id-ID';
-        recognition.start();
+        try {
+            const recognition = new SpeechRecognition();
+            recognition.lang = 'id-ID';
+            recognition.start();
 
-        btnStartListening.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
-        if (voiceStatusText) voiceStatusText.innerText = "Listening...";
+            btnStartListening.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
+            if (voiceStatusText) voiceStatusText.innerText = "Listening...";
 
-        recognition.onresult = (event) => {
-            const transcript = event.results[0][0].transcript.toLowerCase();
-            if (voiceStatusText) voiceStatusText.innerText = "Processing...";
-            processSmartInput(transcript);
-            voiceRecordModal.classList.remove('show');
-            btnStartListening.innerHTML = '<i class="fa-solid fa-microphone"></i>';
-        };
+            recognition.onresult = (event) => {
+                const transcript = event.results[0][0].transcript.toLowerCase();
+                if (voiceStatusText) voiceStatusText.innerText = "Processing...";
+                processSmartInput(transcript);
+                voiceRecordModal.classList.remove('show');
+                btnStartListening.innerHTML = '<i class="fa-solid fa-microphone"></i>';
+            };
 
-        recognition.onerror = () => {
+            recognition.onerror = (err) => {
+                console.warn('[SpeechRecognition] Error:', err);
+                btnStartListening.innerHTML = '<i class="fa-solid fa-microphone"></i>';
+                if (voiceStatusText) voiceStatusText.innerText = "Failed. Try again.";
+                if (err && err.error === 'not-allowed') {
+                    if (window.AndroidNative && typeof window.AndroidNative.requestMicrophonePermission === 'function') {
+                        window.AndroidNative.requestMicrophonePermission();
+                    }
+                    showAlert("Microphone permission is not granted. Please allow microphone in settings.", true);
+                } else {
+                    showAlert("Failed to detect voice. Please try speaking again.", true);
+                }
+            };
+        } catch (recErr) {
+            console.error('[SpeechRecognition] Start failed:', recErr);
             btnStartListening.innerHTML = '<i class="fa-solid fa-microphone"></i>';
             if (voiceStatusText) voiceStatusText.innerText = "Failed. Try again.";
-            showAlert("Failed to detect voice. Please make sure microphone permission is granted.", true);
-        };
+            showAlert("Failed to start voice recognition: " + (recErr.message || "Unknown error"), true);
+        }
     });
 }
 
@@ -7810,7 +8817,7 @@ function processSmartInput(text) {
     setTimeout(() => {
         // Isi Data
         document.getElementById('inputType').value = type;
-        document.getElementById('inputAmount').value = amount || "";
+        document.getElementById('inputAmount').value = (typeof convertFromIdrToBase === 'function' ? convertFromIdrToBase(amount) : amount) || "";
         document.getElementById('inputDesc').value = finalDesc;
         
         // Set Tanggal ke Hari Ini
@@ -8012,7 +9019,7 @@ if (btnScanReceipt) {
             
             setTimeout(() => {
                 document.getElementById('inputType').value = type;
-                document.getElementById('inputAmount').value = amount || "";
+                document.getElementById('inputAmount').value = (typeof convertFromIdrToBase === 'function' ? convertFromIdrToBase(amount) : amount) || "";
                 document.getElementById('inputDesc').value = finalDesc;
                 document.getElementById('inputDate').value = new Date().toISOString().split('T')[0];
                 
@@ -9029,13 +10036,12 @@ window.openCategoryColorPicker = function(target) {
     };
     colorPickerDraftHex = activeHex;
 
-    renderColorPickerSwatches(activeHex);
     updateColorPickerPreview(activeHex, activeIcon);
+    syncStudioSlidersToHex(activeHex);
+    renderVibrantTones(activeHex);
 
-    const nativeInput = document.getElementById('customColorNativePicker');
-    if (nativeInput) nativeInput.value = (activeHex.startsWith('#') && activeHex.length === 7) ? activeHex : '#2563eb';
     const hexInput = document.getElementById('customColorHexInput');
-    if (hexInput) hexInput.value = activeHex.replace('#', '');
+    if (hexInput) hexInput.value = activeHex.replace('#', '').toUpperCase();
 
     modal.classList.add('show');
 };
@@ -9053,27 +10059,170 @@ function updateColorPickerPreview(hex, iconClass) {
 }
 
 function renderColorPickerSwatches(activeHex) {
-    const container = document.getElementById('colorPickerSwatchesGrid');
-    if (!container) return;
+    // Top curated swatches removed in favor of Custom Color Studio and Vibrant Spectrum
+}
 
-    const normActive = (activeHex || '').toLowerCase();
-    container.innerHTML = CURATED_CATEGORY_COLORS.map(c => {
-        const isSelected = c.hex.toLowerCase() === normActive;
+const VIBRANT_SPECTRUM_COLORS = [
+    { hex: '#ef4444', name: 'Crimson Red' },
+    { hex: '#f97316', name: 'Sunset Orange' },
+    { hex: '#f59e0b', name: 'Amber Gold' },
+    { hex: '#84cc16', name: 'Lime Zest' },
+    { hex: '#10b981', name: 'Emerald Green' },
+    { hex: '#14b8a6', name: 'Teal Gem' },
+    { hex: '#06b6d4', name: 'Electric Cyan' },
+    { hex: '#0284c7', name: 'Sky Blue' },
+    { hex: '#2563eb', name: 'Sapphire Blue' },
+    { hex: '#6366f1', name: 'Indigo Dream' },
+    { hex: '#8b5cf6', name: 'Royal Violet' },
+    { hex: '#d946ef', name: 'Fuchsia Neon' },
+    { hex: '#ec4899', name: 'Hot Pink' },
+    { hex: '#64748b', name: 'Slate Gray' },
+    { hex: '#1e293b', name: 'Obsidian' },
+    { hex: '#78350f', name: 'Bronze Wood' }
+];
+
+let currentPickerHue = 220;
+let currentPickerLightness = 53;
+
+function hslToHex(h, s, l) {
+    l /= 100;
+    const a = s * Math.min(l, 1 - l) / 100;
+    const f = n => {
+        const k = (n + h / 30) % 12;
+        const color = l - a * Math.max(Math.min(k - 3, 9 - k, 1), -1);
+        return Math.round(255 * color).toString(16).padStart(2, '0');
+    };
+    return `#${f(0)}${f(8)}${f(4)}`;
+}
+
+function hexToHsl(hex) {
+    let c = (hex || '').replace('#', '');
+    if (c.length === 3) c = c.split('').map(x => x + x).join('');
+    if (c.length !== 6) return { h: 220, s: 80, l: 53 };
+    const r = parseInt(c.substring(0, 2), 16) / 255;
+    const g = parseInt(c.substring(2, 4), 16) / 255;
+    const b = parseInt(c.substring(4, 6), 16) / 255;
+    const max = Math.max(r, g, b), min = Math.min(r, g, b);
+    let h, s, l = (max + min) / 2;
+    if (max === min) {
+        h = s = 0;
+    } else {
+        const d = max - min;
+        s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+        switch (max) {
+            case r: h = (g - b) / d + (g < b ? 6 : 0); break;
+            case g: h = (b - r) / d + 2; break;
+            case b: h = (r - g) / d + 4; break;
+        }
+        h = Math.round(h * 60);
+    }
+    s = Math.round(s * 100);
+    l = Math.round(l * 100);
+    return { h: (h + 360) % 360, s, l };
+}
+
+window.handleHueSliderChange = function(hueVal) {
+    currentPickerHue = parseInt(hueVal, 10) || 0;
+    const hueDisplay = document.getElementById('hueValueDisplay');
+    if (hueDisplay) hueDisplay.innerText = `${currentPickerHue}°`;
+    updateStudioSlidersBackground();
+    applyStudioColorFromSliders();
+};
+
+window.handleLightnessSliderChange = function(lightVal) {
+    currentPickerLightness = parseInt(lightVal, 10) || 50;
+    const lightDisplay = document.getElementById('lightnessValueDisplay');
+    if (lightDisplay) lightDisplay.innerText = `${currentPickerLightness}%`;
+    applyStudioColorFromSliders();
+};
+
+function updateStudioSlidersBackground() {
+    const lightSlider = document.getElementById('customLightnessSlider');
+    if (lightSlider) {
+        lightSlider.style.background = `linear-gradient(to right, #0b0f19, hsl(${currentPickerHue}, 85%, 50%), #ffffff)`;
+    }
+}
+
+function applyStudioColorFromSliders() {
+    const hex = hslToHex(currentPickerHue, 85, currentPickerLightness);
+    const hexInput = document.getElementById('customColorHexInput');
+    if (hexInput && document.activeElement !== hexInput) {
+        hexInput.value = hex.replace('#', '').toUpperCase();
+    }
+    window.setCategoryColorDraft(hex, getCategoryColorName(hex), false);
+    highlightVibrantTone(hex);
+}
+
+window.handleCustomColorHexInput = function(val) {
+    const clean = val.replace(/[^0-9A-Fa-f]/g, '').toUpperCase();
+    const hexInput = document.getElementById('customColorHexInput');
+    if (hexInput && hexInput.value !== clean) {
+        hexInput.value = clean;
+    }
+    if (clean.length === 6) {
+        const hex = '#' + clean;
+        syncStudioSlidersToHex(hex);
+        window.setCategoryColorDraft(hex, getCategoryColorName(hex), false);
+        highlightVibrantTone(hex);
+    }
+};
+
+function syncStudioSlidersToHex(hex) {
+    const { h, l } = hexToHsl(hex);
+    currentPickerHue = h;
+    currentPickerLightness = Math.min(85, Math.max(15, l));
+
+    const hueSlider = document.getElementById('customHueSlider');
+    const lightSlider = document.getElementById('customLightnessSlider');
+    const hueDisplay = document.getElementById('hueValueDisplay');
+    const lightDisplay = document.getElementById('lightnessValueDisplay');
+
+    if (hueSlider) hueSlider.value = String(currentPickerHue);
+    if (lightSlider) lightSlider.value = String(currentPickerLightness);
+    if (hueDisplay) hueDisplay.innerText = `${currentPickerHue}°`;
+    if (lightDisplay) lightDisplay.innerText = `${currentPickerLightness}%`;
+
+    updateStudioSlidersBackground();
+}
+
+function renderVibrantTones(activeHex) {
+    const container = document.getElementById('vibrantTonesGrid');
+    if (!container) return;
+    const norm = (activeHex || '').toLowerCase();
+    container.innerHTML = VIBRANT_SPECTRUM_COLORS.map(c => {
+        const isSelected = c.hex.toLowerCase() === norm;
         return `
-            <button type="button" 
-                class="color-swatch-btn ${isSelected ? 'selected' : ''}" 
-                style="background: ${c.hex};" 
-                onclick="setCategoryColorDraft('${c.hex}', '${escapeHTML(c.name)}')" 
-                title="${escapeHTML(c.name)} (${c.hex})"
-                aria-label="${escapeHTML(c.name)}">
-                ${isSelected ? '<i class="fa-solid fa-check swatch-check-icon"></i>' : ''}
+            <button type="button" class="vibrant-tone-btn ${isSelected ? 'active' : ''}"
+                data-hex="${c.hex.toLowerCase()}"
+                style="background: ${c.hex};"
+                onclick="selectVibrantTone('${c.hex}', '${escapeHTML(c.name)}')"
+                title="${escapeHTML(c.name)}" aria-label="${escapeHTML(c.name)}">
             </button>
         `;
     }).join('');
 }
 
+window.selectVibrantTone = function(hex, name) {
+    if (window.PocketlyAudio && typeof window.PocketlyAudio.playCardTap === 'function') {
+        window.PocketlyAudio.playCardTap();
+    }
+    syncStudioSlidersToHex(hex);
+    const hexInput = document.getElementById('customColorHexInput');
+    if (hexInput) hexInput.value = hex.replace('#', '').toUpperCase();
+    window.setCategoryColorDraft(hex, name || getCategoryColorName(hex), false);
+    highlightVibrantTone(hex);
+};
+
+function highlightVibrantTone(hex) {
+    const norm = (hex || '').toLowerCase();
+    document.querySelectorAll('.vibrant-tone-btn').forEach(btn => {
+        const btnHex = (btn.getAttribute('data-hex') || '').toLowerCase();
+        btn.classList.toggle('active', btnHex === norm);
+    });
+}
+
 // Update the draft color selection and live UI preview, WITHOUT committing to database
-window.setCategoryColorDraft = function(hex, name) {
+window.setCategoryColorDraft = function(hex, name, updateSliders = true) {
     if (!hex) return;
     if (!hex.startsWith('#')) hex = '#' + hex;
     colorPickerDraftHex = hex;
@@ -9101,45 +10250,30 @@ window.setCategoryColorDraft = function(hex, name) {
     }
 
     updateColorPickerPreview(hex, activeIcon);
-    renderColorPickerSwatches(hex);
 
-    const nativeInput = document.getElementById('customColorNativePicker');
-    if (nativeInput && nativeInput.value.toLowerCase() !== hex.toLowerCase()) {
-        nativeInput.value = (hex.length === 7) ? hex : '#2563eb';
+    if (updateSliders) {
+        syncStudioSlidersToHex(hex);
+        highlightVibrantTone(hex);
     }
+
     const hexInput = document.getElementById('customColorHexInput');
     if (hexInput && document.activeElement !== hexInput) {
-        hexInput.value = hex.replace('#', '');
+        hexInput.value = hex.replace('#', '').toUpperCase();
     }
 };
 
-// Backwards-compatibility alias
+// Backwards-compatibility aliases
 window.selectCategoryColor = function(hex, name) {
-    window.setCategoryColorDraft(hex, name);
+    window.setCategoryColorDraft(hex, name, true);
 };
-
 window.handleCustomColorNative = function(hex) {
-    if (!hex) return;
-    const hexInput = document.getElementById('customColorHexInput');
-    if (hexInput && document.activeElement !== hexInput) {
-        hexInput.value = hex.replace('#', '');
-    }
-    window.setCategoryColorDraft(hex, getCategoryColorName(hex));
+    window.setCategoryColorDraft(hex, getCategoryColorName(hex), true);
 };
-
 window.handleCustomColorCommit = function(hex) {
-    if (!hex) return;
-    window.setCategoryColorDraft(hex, getCategoryColorName(hex));
+    window.setCategoryColorDraft(hex, getCategoryColorName(hex), true);
 };
-
 window.handleCustomColorHex = function(val) {
-    const clean = val.replace(/[^0-9A-Fa-f]/g, '');
-    if (clean.length === 6) {
-        const hex = '#' + clean;
-        const nativeInput = document.getElementById('customColorNativePicker');
-        if (nativeInput) nativeInput.value = hex;
-        window.setCategoryColorDraft(hex, getCategoryColorName(hex));
-    }
+    window.handleCustomColorHexInput(val);
 };
 
 // CONFIRM & SAVE: Only saves when user explicitly clicks "Done"
@@ -9387,6 +10521,10 @@ function updateCurrencyText() {
         const code = item.dataset.currency;
         item.classList.toggle('active-currency', code === currentCurrency);
     });
+
+    if (typeof updateFormCurrencyIndicators === 'function') {
+        updateFormCurrencyIndicators();
+    }
 }
 
 function formatCurrencySample(code, amountInIdr = 100000) {
@@ -9527,6 +10665,71 @@ function formatRupiah(num) {
     }).format(convertedValue);
 }
 
+function convertFromIdrToBase(amountInIdr) {
+    const num = Number(amountInIdr || 0);
+    if (!num || isNaN(num)) return 0;
+    if (currentCurrency === 'IDR') return Math.round(num);
+    const meta = CURRENCY_META[currentCurrency] || CURRENCY_META.IDR || { decimals: 2 };
+    const rate = Number(exchangeRates[currentCurrency]) || Number(FALLBACK_RATES[currentCurrency]) || 1;
+    const decimals = typeof meta.decimals === 'number' ? meta.decimals : 2;
+    const converted = num * rate;
+    return Number(converted.toFixed(decimals));
+}
+
+function convertToIdrFromBase(amountInCurrent) {
+    const num = Number(amountInCurrent || 0);
+    if (!num || isNaN(num)) return 0;
+    if (currentCurrency === 'IDR') return Math.round(num);
+    const rate = Number(exchangeRates[currentCurrency]) || Number(FALLBACK_RATES[currentCurrency]) || 1;
+    if (rate <= 0) return Math.round(num);
+    return Math.round(num / rate);
+}
+
+function updateFormCurrencyIndicators() {
+    const meta = CURRENCY_META[currentCurrency] || CURRENCY_META.IDR || { symbol: 'Rp', decimals: 0 };
+    const symbol = meta.symbol || currentCurrency;
+    const badgeText = `${currentCurrency} (${symbol})`;
+    const isDecimal = (meta.decimals || 0) > 0;
+    const stepVal = isDecimal ? "any" : "1";
+    const minVal = isDecimal ? "0.01" : "1";
+    const placeholderVal = isDecimal ? "0.00" : "0";
+
+    const badgeIds = [
+        'transAmountCurrency',
+        'accBalanceCurrency',
+        'budgetCurrency',
+        'topupCurrency',
+        'debtPrincipalCurrency',
+        'debtPaymentCurrency'
+    ];
+    badgeIds.forEach((id) => {
+        const el = document.getElementById(id);
+        if (el) el.textContent = badgeText;
+    });
+
+    const inputIds = [
+        'inputAmount',
+        'accBalance',
+        'budgetTarget',
+        'topupAmount',
+        'debtPrincipal',
+        'debtPaymentAmount'
+    ];
+    inputIds.forEach((id) => {
+        const input = document.getElementById(id);
+        if (input) {
+            input.setAttribute('step', stepVal);
+            input.setAttribute('min', minVal);
+            input.setAttribute('placeholder', placeholderVal);
+        }
+    });
+}
+
+window.convertFromIdrToBase = convertFromIdrToBase;
+window.convertToIdrFromBase = convertToIdrFromBase;
+window.updateFormCurrencyIndicators = updateFormCurrencyIndicators;
+window.formatCurrency = formatRupiah;
+
 window.updateCurrencyConverter = function() {
     const inputEl = document.getElementById('convertAmount');
     const resultEl = document.getElementById('convertResult');
@@ -9648,6 +10851,9 @@ function listenToDebts() {
         snapshot.docs.forEach((docSnap) => rawDebts.push({ id: docSnap.id, ...docSnap.data() }));
         renderDebtTracker();
         renderCalendar();
+        if (window.PocketlyNotification && typeof window.PocketlyNotification.updateCenter === 'function') {
+            window.PocketlyNotification.updateCenter();
+        }
     }, (error) => {
         console.error('Debt listener error:', error);
         rawDebts = [];
@@ -9836,6 +11042,10 @@ window.openDebtModal = function() {
     if (affectRow) affectRow.style.display = 'flex';
     const startDate = document.getElementById('debtStartDate');
     if (startDate) startDate.value = todayISO();
+    if (document.getElementById('debtPrincipal')) {
+        document.getElementById('debtPrincipal').dataset.originalIdr = '';
+    }
+    if (typeof updateFormCurrencyIndicators === 'function') updateFormCurrencyIndicators();
     populateDebtAccountSelects();
     if (modal) modal.classList.add('show');
     setTimeout(initCustomSelects, 100);
@@ -9851,12 +11061,15 @@ window.openEditDebt = function(id) {
     document.getElementById('editDebtId').value = id;
     document.getElementById('debtKind').value = debt.kind || 'lent';
     document.getElementById('debtPartyName').value = debt.partyName || '';
-    document.getElementById('debtPrincipal').value = Number(debt.principal || 0);
+    const pVal = Number(debt.principal || 0);
+    document.getElementById('debtPrincipal').value = convertFromIdrToBase(pVal);
+    document.getElementById('debtPrincipal').dataset.originalIdr = String(pVal);
     document.getElementById('debtStartDate').value = debt.startDate || todayISO();
     document.getElementById('debtDueDate').value = debt.dueDate || '';
     document.getElementById('debtNotes').value = debt.notes || '';
     const affectRow = document.getElementById('debtAffectBalanceRow');
     if (affectRow) affectRow.style.display = 'none';
+    if (typeof updateFormCurrencyIndicators === 'function') updateFormCurrencyIndicators();
     populateDebtAccountSelects(debt.accountId || '');
     const accountSelect = document.getElementById('debtAccount');
     if (accountSelect && debt.accountId) accountSelect.value = debt.accountId;
@@ -9890,7 +11103,16 @@ if (debtForm) {
         const editId = document.getElementById('editDebtId').value;
         const kind = document.getElementById('debtKind').value;
         const partyName = document.getElementById('debtPartyName').value.trim();
-        const principal = Number(document.getElementById('debtPrincipal').value);
+        const rawPrincipal = Number(document.getElementById('debtPrincipal').value);
+        const origIdr = Number(document.getElementById('debtPrincipal').dataset.originalIdr || 0);
+
+        if (!partyName) return showAlert('Please enter a person or institution name.', true);
+        if (isNaN(rawPrincipal) || rawPrincipal <= 0) return showAlert('Principal amount must be greater than 0.', true);
+
+        const principal = (editId && origIdr && rawPrincipal === convertFromIdrToBase(origIdr))
+            ? origIdr
+            : convertToIdrFromBase(rawPrincipal);
+
         const accountId = document.getElementById('debtAccount').value;
         const startDate = document.getElementById('debtStartDate').value;
         const dueDate = document.getElementById('debtDueDate').value;
@@ -9899,8 +11121,6 @@ if (debtForm) {
         const btn = document.getElementById('btnSaveDebt');
         const originalText = btn.innerText;
 
-        if (!partyName) return showAlert('Please enter a person or institution name.', true);
-        if (!principal || principal <= 0) return showAlert('Principal amount must be greater than 0.', true);
         if (!startDate) return showAlert('Please choose a start date.', true);
         if (!editId && affectBalance && !accountId) return showAlert('Please select an account or disable account balance update.', true);
 
@@ -9991,7 +11211,9 @@ window.openDebtPayment = function(id) {
     const remaining = Math.max(0, Number(debt.remaining ?? debt.principal ?? 0));
     if (remaining <= 0) return showAlert('This debt is already paid.', false);
     document.getElementById('paymentDebtId').value = id;
-    document.getElementById('debtPaymentAmount').value = remaining;
+    document.getElementById('debtPaymentAmount').value = convertFromIdrToBase(remaining);
+    document.getElementById('debtPaymentAmount').dataset.remainingIdr = String(remaining);
+    if (typeof updateFormCurrencyIndicators === 'function') updateFormCurrencyIndicators();
     document.getElementById('debtPaymentDate').value = todayISO();
     document.getElementById('debtPaymentNote').value = '';
     const collTitle = (window.PocketlyI18n && window.PocketlyI18n.t('record_collection_title')) || 'Record Collection';
@@ -10026,7 +11248,8 @@ if (debtPaymentForm) {
         if (!debt) return showAlert('Debt record not found.', true);
 
         const accountId = document.getElementById('debtPaymentAccount').value;
-        const amount = Number(document.getElementById('debtPaymentAmount').value);
+        const rawAmount = Number(document.getElementById('debtPaymentAmount').value);
+        const remainingIdr = Number(document.getElementById('debtPaymentAmount').dataset.remainingIdr || remaining);
         const date = document.getElementById('debtPaymentDate').value;
         const note = document.getElementById('debtPaymentNote').value.trim();
         const remaining = Math.max(0, Number(debt.remaining ?? debt.principal ?? 0));
@@ -10034,7 +11257,12 @@ if (debtPaymentForm) {
         const originalText = btn.innerText;
 
         if (!accountId) return showAlert('Please select a payment account.', true);
-        if (!amount || amount <= 0) return showAlert('Payment amount must be greater than 0.', true);
+        if (isNaN(rawAmount) || rawAmount <= 0) return showAlert('Payment amount must be greater than 0.', true);
+
+        const amount = (rawAmount === convertFromIdrToBase(remainingIdr))
+            ? remainingIdr
+            : convertToIdrFromBase(rawAmount);
+
         if (amount > remaining) return showAlert('Payment cannot exceed remaining balance.', true);
         if (!date) return showAlert('Please select a payment date.', true);
 
@@ -10264,15 +11492,20 @@ async function collectDocsForBackup(collectionName, customQuery = null) {
 }
 
 function downloadJSON(filename, data) {
-    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = filename;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
+    const jsonString = JSON.stringify(data, null, 2);
+    if (window.PocketlyDownloader) {
+        window.PocketlyDownloader.saveText(jsonString, filename, 'application/json');
+    } else {
+        const blob = new Blob([jsonString], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = filename;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+    }
 }
 
 async function exportBackupJSON() {
@@ -10587,13 +11820,15 @@ window.switchPage = function(targetId, addToHistory = true) {
                 debts: 'Debts & Loans',
                 currencySettings: 'Currency',
                 categorySettings: 'Categories',
-                themeSettings: 'Theme Accent'
+                themeSettings: 'Theme Accent',
+                languageSettings: 'Language',
+                notifications: 'Notifications'
             };
             if (extendedTitles[targetId]) pageTitle.innerText = extendedTitles[targetId];
         }
     }
 
-    const settingsSubpages = ['account', 'connections', 'currencySettings', 'themeSettings', 'categorySettings'];
+    const settingsSubpages = ['account', 'connections', 'currencySettings', 'themeSettings', 'categorySettings', 'languageSettings', 'notifications'];
     const isSettings = settingsSubpages.includes(targetId);
     document.body.classList.toggle('is-settings-view', isSettings);
     const topAppHeader = document.querySelector('header');
@@ -10610,6 +11845,14 @@ window.switchPage = function(targetId, addToHistory = true) {
     }
     if (targetId === 'categorySettings') setTimeout(renderManageCategories, 50);
     if (targetId === 'themeSettings') setTimeout(renderThemeSettingsPage, 50);
+    if (targetId === 'notifications') {
+        setTimeout(() => {
+            if (window.PocketlyNotification && typeof window.PocketlyNotification.updateCenter === 'function') {
+                window.PocketlyNotification.updateCenter();
+                window.PocketlyNotification.syncSettingsUI();
+            }
+        }, 50);
+    }
 };
 
 // Keep custom category colors visible in transaction lists by extending the old dashboard renderer after it runs.
@@ -10625,6 +11868,9 @@ updateDashboard = function() {
             iconEl.style.background = hexToRgba(color, 0.12);
         }
     });
+    if (window.PocketlyNotification && typeof window.PocketlyNotification.updateCenter === 'function') {
+        window.PocketlyNotification.updateCenter();
+    }
 };
 
 loadEnhancedPreferences();
@@ -10645,6 +11891,10 @@ onAuthStateChanged(auth, (user) => {
             populateCategorySelects();
             renderDebtTracker();
             renderCalendar();
+            if (window.PocketlyNotification && typeof window.PocketlyNotification.updateCenter === 'function') {
+                window.PocketlyNotification.updateCenter();
+                window.PocketlyNotification.syncSettingsUI();
+            }
         }, 400);
     } else {
         rawDebts = [];
@@ -11235,5 +12485,883 @@ window.initCustomSelects = initCustomSelects;
 window.addEventListener('DOMContentLoaded', () => {
     setTimeout(initCustomSelects, 150);
 });
+
+// ============================================================================
+// POCKETLY NOTIFICATION ENGINE & CENTRAL NOTIFICATION CENTER
+// ============================================================================
+window.PocketlyNotification = {
+    rawGoalInvites: [],
+    currentFilter: 'all', // 'all' | 'unread'
+    activeNotifications: [],
+    sentSystemNotifIds: new Set(),
+
+    getPreferences() {
+        try {
+            const raw = localStorage.getItem('pocketly_notif_prefs');
+            if (raw) return JSON.parse(raw);
+        } catch (e) {}
+        return {
+            systemNotif: false,
+            budgetAlerts: true,
+            debtAlerts: true,
+            goalAlerts: true,
+            inviteAlerts: true,
+            dailyReminder: true
+        };
+    },
+
+    savePreference(key, value) {
+        const prefs = this.getPreferences();
+        prefs[key] = value;
+        localStorage.setItem('pocketly_notif_prefs', JSON.stringify(prefs));
+        this.updateCenter();
+        this.syncSettingsUI();
+    },
+
+    getReadIds() {
+        try {
+            const raw = localStorage.getItem('pocketly_read_notif_ids');
+            if (raw) return JSON.parse(raw);
+        } catch (e) {}
+        return [];
+    },
+
+    isRead(id) {
+        return this.getReadIds().includes(id);
+    },
+
+    markRead(id) {
+        const ids = this.getReadIds();
+        if (!ids.includes(id)) {
+            ids.push(id);
+            localStorage.setItem('pocketly_read_notif_ids', JSON.stringify(ids));
+        }
+        if (window.PocketlyAudio && typeof window.PocketlyAudio.play === 'function') {
+            window.PocketlyAudio.play('click');
+        }
+        this.updateCenter();
+    },
+
+    markAllRead() {
+        const all = this.generateNotifications();
+        const ids = Array.from(new Set([...this.getReadIds(), ...all.map(n => n.id)]));
+        localStorage.setItem('pocketly_read_notif_ids', JSON.stringify(ids));
+        if (window.PocketlyAudio && typeof window.PocketlyAudio.play === 'function') {
+            window.PocketlyAudio.play('success');
+        }
+        this.updateCenter();
+    },
+
+    setFilter(filter) {
+        this.currentFilter = filter;
+        const filterPills = {
+            'all': 'pillFilterAll',
+            'unread': 'pillFilterUnread',
+            'budget': 'pillFilterBudget',
+            'debt': 'pillFilterDebt',
+            'goal': 'pillFilterGoal',
+            'reminder': 'pillFilterReminder'
+        };
+        Object.entries(filterPills).forEach(([key, pillId]) => {
+            const el = document.getElementById(pillId);
+            if (el) el.classList.toggle('active', filter === key);
+        });
+        if (window.PocketlyAudio && typeof window.PocketlyAudio.play === 'function') {
+            window.PocketlyAudio.play('click');
+        }
+        this.render();
+    },
+
+    getFilteredNotifications() {
+        const list = this.activeNotifications || [];
+        switch (this.currentFilter) {
+            case 'unread':
+                return list.filter(n => !this.isRead(n.id));
+            case 'budget':
+                return list.filter(n => n.id.startsWith('budget_') || n.categoryKey === 'notif_cat_budget' || n.category === 'Batas Anggaran' || n.category === 'Budget Limit');
+            case 'debt':
+                return list.filter(n => n.id.startsWith('debt_') || n.categoryKey === 'notif_cat_debt' || n.category === 'Hutang & Piutang' || n.category === 'Debts & Loans');
+            case 'goal':
+                return list.filter(n => n.id.startsWith('goal_') || n.id.startsWith('invite_') || n.categoryKey === 'notif_cat_goal' || n.categoryKey === 'notif_cat_collab' || n.category === 'Target Tabungan' || n.category === 'Kolaborasi');
+            case 'reminder':
+                return list.filter(n => n.id.startsWith('daily_') || n.id.startsWith('security_') || n.categoryKey === 'notif_cat_daily' || n.categoryKey === 'notif_cat_security' || n.category === 'Pengingat Harian' || n.category === 'Keamanan Akun');
+            case 'all':
+            default:
+                return list;
+        }
+    },
+
+    openCenter() {
+        if (typeof window.navigateToNotifications === 'function') {
+            window.navigateToNotifications();
+        } else if (typeof switchPage === 'function') {
+            switchPage('notifications');
+        }
+    },
+
+    closeCenter() {
+        if (typeof window.navigateBackFromNotifications === 'function') {
+            window.navigateBackFromNotifications();
+        } else if (typeof switchPage === 'function') {
+            switchPage(window.lastVisitedPage || 'dashboard');
+        }
+    },
+
+    openSettings() {
+        if (typeof window.navigateToNotifications === 'function') {
+            window.navigateToNotifications();
+        }
+        const drawer = document.getElementById('notifPreferencesDrawer');
+        if (drawer) drawer.style.display = 'block';
+    },
+
+    closeSettings() {
+        const drawer = document.getElementById('notifPreferencesDrawer');
+        if (drawer) drawer.style.display = 'none';
+    },
+
+    async requestSystemPermission() {
+        const lang = (window.PocketlyI18n && typeof window.PocketlyI18n.getCurrentLanguage === 'function')
+            ? window.PocketlyI18n.getCurrentLanguage()
+            : 'id';
+        const isZh = lang === 'zh';
+        const isId = lang === 'id';
+
+        if (!('Notification' in window)) {
+            if (typeof showAlert === 'function') {
+                const unsupportedMsg = isZh
+                    ? '当前浏览器不支持 Web Notifications API。'
+                    : (isId ? 'Browser ini tidak mendukung Web Notifications API.' : 'This browser does not support the Web Notifications API.');
+                showAlert(unsupportedMsg, true);
+            }
+            return false;
+        }
+        try {
+            const permission = await Notification.requestPermission();
+            this.syncSettingsUI();
+            if (permission === 'granted') {
+                this.savePreference('systemNotif', true);
+                if (typeof showAlert === 'function') {
+                    const grantedMsg = isZh
+                        ? '浏览器通知权限已开启！'
+                        : (isId ? 'Notifikasi browser berhasil diaktifkan!' : 'Browser notifications enabled successfully!');
+                    showAlert(grantedMsg, false);
+                }
+                const welcomeBody = isZh
+                    ? '系统通知已激活。当预算达到上限或款项到期时，您将收到实时提醒。'
+                    : (isId
+                        ? 'Notifikasi sistem aktif. Anda akan menerima peringatan penting batas anggaran dan hutang secara real-time.'
+                        : 'System notifications active. You will receive real-time alerts for budget limits and debt due dates.');
+                this.sendPushNotification('Pocketly Finance', {
+                    body: welcomeBody,
+                    tag: 'welcome_notif'
+                });
+                return true;
+            } else {
+                this.savePreference('systemNotif', false);
+                if (typeof showAlert === 'function') {
+                    const deniedMsg = isZh
+                        ? '浏览器未授予通知权限。'
+                        : (isId ? 'Izin notifikasi tidak diberikan oleh browser.' : 'Notification permission was denied by the browser.');
+                    showAlert(deniedMsg, true);
+                }
+                return false;
+            }
+        } catch (err) {
+            console.error('Request notification permission error:', err);
+            return false;
+        }
+    },
+
+    sendPushNotification(title, options = {}) {
+        if (!('Notification' in window)) return;
+        if (Notification.permission !== 'granted') return;
+        const prefs = this.getPreferences();
+        if (!prefs.systemNotif) return;
+
+        try {
+            const n = new Notification(title, {
+                icon: options.icon || 'icons/icon-192.png',
+                badge: options.badge || 'icons/icon-192.png',
+                tag: options.tag || ('pocketly_' + Date.now()),
+                ...options
+            });
+            n.onclick = () => {
+                window.focus();
+                n.close();
+                if (typeof window.navigateToNotifications === 'function') {
+                    window.navigateToNotifications();
+                } else if (typeof switchPage === 'function') {
+                    switchPage('notifications');
+                }
+            };
+        } catch (e) {
+            console.warn('[Notification] Push display warning:', e);
+        }
+    },
+
+    sendTestNotification() {
+        const lang = (window.PocketlyI18n && typeof window.PocketlyI18n.getCurrentLanguage === 'function')
+            ? window.PocketlyI18n.getCurrentLanguage()
+            : 'id';
+        const isZh = lang === 'zh';
+        const isId = lang === 'id';
+        const testTitle = isZh ? 'Pocketly 测试通知' : (isId ? 'Uji Coba Notifikasi Pocketly' : 'Pocketly Test Notification');
+        const testBody = isZh
+            ? 'Pocketly 通知系统运行正常，随时准备为您提供财务提醒！'
+            : (isId
+                ? 'Sistem notifikasi Pocketly berfungsi dengan baik dan siap memberikan peringatan finansial!'
+                : 'Pocketly notification system is working smoothly and ready for alerts!');
+        const toastMsg = isZh ? '测试通知已发送。' : (isId ? 'Notifikasi uji coba telah dikirim.' : 'Test notification sent.');
+
+        this.sendPushNotification(testTitle, {
+            body: testBody,
+            tag: 'test_notification_' + Date.now()
+        });
+        if (typeof showAlert === 'function') {
+            showAlert(toastMsg, false);
+        }
+    },
+
+    _t(key, fallback) {
+        return (window.PocketlyI18n && typeof window.PocketlyI18n.t === 'function')
+            ? window.PocketlyI18n.t(key, fallback)
+            : fallback;
+    },
+
+    generateNotifications() {
+        const list = [];
+        const prefs = this.getPreferences();
+        const now = new Date();
+        const currentYear = String(now.getFullYear());
+        const currentMonth = String(now.getMonth() + 1).padStart(2, '0');
+        const monthKey = `${currentYear}-${currentMonth}`;
+        const todayStr = `${currentYear}-${currentMonth}-${String(now.getDate()).padStart(2, '0')}`;
+        const lang = (window.PocketlyI18n && typeof window.PocketlyI18n.getCurrentLanguage === 'function')
+            ? window.PocketlyI18n.getCurrentLanguage()
+            : 'id';
+        const isZh = lang === 'zh';
+        const isId = lang === 'id';
+
+        // 1. Budget Alerts
+        if (prefs.budgetAlerts && Array.isArray(rawBudgets) && Array.isArray(rawTransactions)) {
+            const categoryBudgets = rawBudgets.filter(b => b.type === 'budget');
+            categoryBudgets.forEach(b => {
+                const limit = Number(b.target || 0);
+                if (limit <= 0) return;
+                const catExpenses = rawTransactions.filter(t => {
+                    if (t.category !== b.name || t.type !== 'expense') return false;
+                    return t.date && t.date.startsWith(monthKey);
+                });
+                const spent = catExpenses.reduce((sum, t) => sum + Number(t.amount || 0), 0);
+                const percent = Math.round((spent / limit) * 100);
+
+                if (percent >= 100) {
+                    list.push({
+                        id: `budget_over_${b.id}_${monthKey}`,
+                        categoryKey: 'notif_cat_budget',
+                        category: isZh ? '预算上限' : (isId ? 'Batas Anggaran' : 'Budget Limit'),
+                        priority: 'danger',
+                        icon: 'fa-solid fa-triangle-exclamation',
+                        title: isZh ? `预算超支: ${b.name}` : (isId ? `Limit Anggaran Terlampaui: ${b.name}` : `Budget Limit Exceeded: ${b.name}`),
+                        message: isZh
+                            ? `支出 ${b.name} 已超出月度限额 ${percent}% (已用 ${formatRupiah(spent)} / 限额 ${formatRupiah(limit)})。建议控制该分类支出。`
+                            : (isId
+                                ? `Pengeluaran ${b.name} telah melebihi batas bulanan sebesar ${percent}% (${formatRupiah(spent)} dari target ${formatRupiah(limit)}). Batasi pengeluaran untuk kategori ini.`
+                                : `Spending for ${b.name} has exceeded your monthly limit by ${percent}% (${formatRupiah(spent)} of ${formatRupiah(limit)}). Consider limiting further expenses.`),
+                        time: isZh ? '本月' : (isId ? 'Bulan ini' : 'This month'),
+                        actionTextKey: 'notif_act_view_budget',
+                        actionText: isZh ? '查看预算' : (isId ? 'Lihat Anggaran' : 'View Budget'),
+                        action: () => {
+                            switchPage('budget');
+                            PocketlyNotification.closeCenter();
+                        }
+                    });
+                } else if (percent >= 80) {
+                    list.push({
+                        id: `budget_warn_${b.id}_${monthKey}`,
+                        categoryKey: 'notif_cat_budget',
+                        category: isZh ? '预算上限' : (isId ? 'Batas Anggaran' : 'Budget Limit'),
+                        priority: 'warning',
+                        icon: 'fa-solid fa-circle-exclamation',
+                        title: isZh ? `接近预算上限: ${b.name}` : (isId ? `Mendekati Limit: ${b.name}` : `Approaching Limit: ${b.name}`),
+                        message: isZh
+                            ? `支出 ${b.name} 已达到月度限额的 ${percent}% (已用 ${formatRupiah(spent)} / 限额 ${formatRupiah(limit)})。请注意合理规划支出。`
+                            : (isId
+                                ? `Pengeluaran ${b.name} sudah mencapai ${percent}% (${formatRupiah(spent)} dari target ${formatRupiah(limit)}). Tetap waspada sebelum batas terlewati.`
+                                : `Spending for ${b.name} has reached ${percent}% (${formatRupiah(spent)} of ${formatRupiah(limit)}). Stay mindful before the limit is exceeded.`),
+                        time: isZh ? '本月' : (isId ? 'Bulan ini' : 'This month'),
+                        actionTextKey: 'notif_act_view_budget',
+                        actionText: isZh ? '查看预算' : (isId ? 'Lihat Anggaran' : 'View Budget'),
+                        action: () => {
+                            switchPage('budget');
+                            PocketlyNotification.closeCenter();
+                        }
+                    });
+                }
+            });
+        }
+
+        // 2. Debt & Loan Alerts
+        if (prefs.debtAlerts && Array.isArray(rawDebts)) {
+            const activeDebts = rawDebts.filter(d => (typeof getDebtStatus === 'function' ? getDebtStatus(d) : d.status) === 'active');
+            activeDebts.forEach(d => {
+                if (!d.dueDate) return;
+                const due = new Date(d.dueDate + 'T00:00:00');
+                const todayMidnight = new Date();
+                todayMidnight.setHours(0, 0, 0, 0);
+                due.setHours(0, 0, 0, 0);
+                const diffDays = Math.round((due - todayMidnight) / 86400000);
+                const remaining = Number(d.remaining ?? d.principal ?? 0);
+                const party = d.partyName || d.name || (isZh ? '相关联系人' : (isId ? 'Pihak Terkait' : 'Contact'));
+                const kindText = isZh
+                    ? (d.kind === 'borrowed' ? '您应付给' : '您应收自')
+                    : (isId
+                        ? (d.kind === 'borrowed' ? 'Hutang Anda kepada' : 'Piutang Anda dari')
+                        : (d.kind === 'borrowed' ? 'Your debt to' : 'Your receivable from'));
+
+                if (diffDays < 0) {
+                    list.push({
+                        id: `debt_overdue_${d.id}`,
+                        categoryKey: 'notif_cat_debt',
+                        category: isZh ? '债务与借贷' : (isId ? 'Hutang & Piutang' : 'Debts & Loans'),
+                        priority: 'danger',
+                        icon: 'fa-solid fa-clock-rotate-left',
+                        title: isZh ? `已逾期: ${party}` : (isId ? `Lewat Jatuh Tempo: ${party}` : `Overdue: ${party}`),
+                        message: isZh
+                            ? `${kindText} ${party} 的款项 ${formatRupiah(remaining)} 已逾期 ${Math.abs(diffDays)} 天。请尽快处理。`
+                            : (isId
+                                ? `${kindText} ${party} sebesar ${formatRupiah(remaining)} telah melewati jatuh tempo ${Math.abs(diffDays)} hari. Segera selesaikan pembayaran.`
+                                : `${kindText} ${party} of ${formatRupiah(remaining)} is overdue by ${Math.abs(diffDays)} days. Please settle payment promptly.`),
+                        time: isZh ? `逾期 ${Math.abs(diffDays)} 天` : (isId ? `${Math.abs(diffDays)} hari lewat` : `${Math.abs(diffDays)}d overdue`),
+                        actionTextKey: 'notif_act_view_details',
+                        actionText: isZh ? '查看详情' : (isId ? 'Lihat Rincian' : 'View Details'),
+                        action: () => {
+                            switchPage('dashboard');
+                            PocketlyNotification.closeCenter();
+                            setTimeout(() => {
+                                const widget = document.getElementById('debtTrackerWidget');
+                                if (widget) widget.scrollIntoView({ behavior: 'smooth' });
+                            }, 250);
+                        }
+                    });
+                } else if (diffDays === 0) {
+                    list.push({
+                        id: `debt_today_${d.id}`,
+                        categoryKey: 'notif_cat_debt',
+                        category: isZh ? '债务与借贷' : (isId ? 'Hutang & Piutang' : 'Debts & Loans'),
+                        priority: 'warning',
+                        icon: 'fa-solid fa-calendar-day',
+                        title: isZh ? `今日到期: ${party}` : (isId ? `Jatuh Tempo Hari Ini: ${party}` : `Due Today: ${party}`),
+                        message: isZh
+                            ? `${kindText} ${party} 的款项 ${formatRupiah(remaining)} 今日到期！`
+                            : (isId
+                                ? `${kindText} ${party} sebesar ${formatRupiah(remaining)} jatuh tempo hari ini!`
+                                : `${kindText} ${party} of ${formatRupiah(remaining)} is due today!`),
+                        time: isZh ? '今天' : (isId ? 'Hari ini' : 'Today'),
+                        actionTextKey: 'notif_act_view_details',
+                        actionText: isZh ? '查看详情' : (isId ? 'Lihat Rincian' : 'View Details'),
+                        action: () => {
+                            switchPage('dashboard');
+                            PocketlyNotification.closeCenter();
+                        }
+                    });
+                } else if (diffDays <= 3) {
+                    list.push({
+                        id: `debt_soon_${d.id}`,
+                        categoryKey: 'notif_cat_debt',
+                        category: isZh ? '债务与借贷' : (isId ? 'Hutang & Piutang' : 'Debts & Loans'),
+                        priority: 'warning',
+                        icon: 'fa-solid fa-hourglass-half',
+                        title: isZh ? `即将到期: ${party}` : (isId ? `Jatuh Tempo Segera: ${party}` : `Due Soon: ${party}`),
+                        message: isZh
+                            ? `${kindText} ${party} 的款项 ${formatRupiah(remaining)} 将在 ${diffDays} 天后 (${d.dueDate}) 到期。`
+                            : (isId
+                                ? `${kindText} ${party} sebesar ${formatRupiah(remaining)} akan jatuh tempo dalam ${diffDays} hari (${d.dueDate}).`
+                                : `${kindText} ${party} of ${formatRupiah(remaining)} is due in ${diffDays} days (${d.dueDate}).`),
+                        time: isZh ? `${diffDays}天后到期` : (isId ? `H-${diffDays}` : `In ${diffDays}d`),
+                        actionTextKey: 'notif_act_view_details',
+                        actionText: isZh ? '查看详情' : (isId ? 'Lihat Rincian' : 'View Details'),
+                        action: () => {
+                            switchPage('dashboard');
+                            PocketlyNotification.closeCenter();
+                        }
+                    });
+                }
+            });
+        }
+
+        // 3. Savings Goal Milestones
+        if (prefs.goalAlerts && Array.isArray(rawBudgets)) {
+            const goals = rawBudgets.filter(b => b.type === 'goal');
+            goals.forEach(b => {
+                const target = Number(b.target || 0);
+                const current = Number(b.current || 0);
+                if (target <= 0) return;
+                const percent = Math.round((current / target) * 100);
+
+                if (percent >= 100) {
+                    list.push({
+                        id: `goal_100_${b.id}`,
+                        categoryKey: 'notif_cat_goal',
+                        category: isZh ? '储蓄目标' : (isId ? 'Target Tabungan' : 'Savings Goal'),
+                        priority: 'success',
+                        icon: 'fa-solid fa-trophy',
+                        title: isZh ? `目标达成: ${b.name}! 🎉` : (isId ? `Target Tercapai: ${b.name}! 🎉` : `Goal Reached: ${b.name}! 🎉`),
+                        message: isZh
+                            ? `太棒了！储蓄目标“${b.name}”已达成100% (${formatRupiah(current)})。恭喜您达成财务目标！`
+                            : (isId
+                                ? `Luar biasa! Target tabungan "${b.name}" telah terkumpul 100% (${formatRupiah(current)}). Sasaran finansial Anda telah tercapai!`
+                                : `Incredible! Your savings goal "${b.name}" has reached 100% (${formatRupiah(current)}). Target achieved!`),
+                        time: isZh ? '已达成' : (isId ? 'Pencapaian' : 'Completed'),
+                        actionTextKey: 'notif_act_open_savings',
+                        actionText: isZh ? '前往储蓄' : (isId ? 'Buka Tabungan' : 'Open Savings'),
+                        action: () => {
+                            switchPage('budget');
+                            PocketlyNotification.closeCenter();
+                        }
+                    });
+                } else if (percent >= 75) {
+                    list.push({
+                        id: `goal_75_${b.id}`,
+                        categoryKey: 'notif_cat_goal',
+                        category: isZh ? '储蓄目标' : (isId ? 'Target Tabungan' : 'Savings Goal'),
+                        priority: 'primary',
+                        icon: 'fa-solid fa-rocket',
+                        title: isZh ? `75% 里程碑: ${b.name}` : (isId ? `Milestone 75%: ${b.name}` : `75% Milestone: ${b.name}`),
+                        message: isZh
+                            ? `“${b.name}”储蓄进度已达到 ${percent}% (${formatRupiah(current)} / ${formatRupiah(target)})。距离最终目标仅一步之遥！`
+                            : (isId
+                                ? `Tabungan "${b.name}" sudah mencapai ${percent}% (${formatRupiah(current)} dari ${formatRupiah(target)}). Sedikit lagi menuju target lengkap!`
+                                : `Savings for "${b.name}" reached ${percent}% (${formatRupiah(current)} of ${formatRupiah(target)}). Almost there!`),
+                        time: isZh ? '里程碑' : 'Milestone',
+                        actionTextKey: 'notif_act_view_savings',
+                        actionText: isZh ? '查看储蓄' : (isId ? 'Lihat Tabungan' : 'View Savings'),
+                        action: () => {
+                            switchPage('budget');
+                            PocketlyNotification.closeCenter();
+                        }
+                    });
+                } else if (percent >= 50) {
+                    list.push({
+                        id: `goal_50_${b.id}`,
+                        categoryKey: 'notif_cat_goal',
+                        category: isZh ? '储蓄目标' : (isId ? 'Target Tabungan' : 'Savings Goal'),
+                        priority: 'primary',
+                        icon: 'fa-solid fa-flag-checkered',
+                        title: isZh ? `进度过半 (50%): ${b.name}` : (isId ? `Setengah Jalan (50%): ${b.name}` : `Halfway There (50%): ${b.name}`),
+                        message: isZh
+                            ? `“${b.name}”储蓄已达成一半 (${formatRupiah(current)})。请继续保持良好的储蓄习惯！`
+                            : (isId
+                                ? `Tabungan "${b.name}" telah mencapai separuh target (${formatRupiah(current)}). Pertahankan kedisiplinan menabung Anda!`
+                                : `Savings for "${b.name}" reached half of your target (${formatRupiah(current)}). Keep up the great discipline!`),
+                        time: isZh ? '里程碑' : 'Milestone',
+                        actionTextKey: 'notif_act_view_savings',
+                        actionText: isZh ? '查看储蓄' : (isId ? 'Lihat Tabungan' : 'View Savings'),
+                        action: () => {
+                            switchPage('budget');
+                            PocketlyNotification.closeCenter();
+                        }
+                    });
+                }
+            });
+        }
+
+        // 4. Shared Goal Invitations
+        if (prefs.inviteAlerts && Array.isArray(this.rawGoalInvites) && this.rawGoalInvites.length > 0) {
+            this.rawGoalInvites.forEach(inv => {
+                list.push({
+                    id: `invite_${inv.id}`,
+                    categoryKey: 'notif_cat_collab',
+                    category: isZh ? '协同合作' : (isId ? 'Kolaborasi' : 'Collaboration'),
+                    priority: 'purple',
+                    icon: 'fa-solid fa-user-group',
+                    title: isZh ? `共同储蓄邀请: ${inv.budgetName || '共同目标'}` : (isId ? `Undangan Tabungan: ${inv.budgetName || 'Target Bersama'}` : `Savings Invite: ${inv.budgetName || 'Shared Target'}`),
+                    message: isZh
+                        ? `${inv.fromName || '好友'} 邀请您共同参与“${inv.budgetName || '目标'}”储蓄计划。`
+                        : (isId
+                            ? `${inv.fromName || 'Seorang teman'} mengundang Anda untuk berkolaborasi menabung dalam target "${inv.budgetName || 'Target'}".`
+                            : `${inv.fromName || 'A friend'} invited you to save together in target "${inv.budgetName || 'Target'}".`),
+                    time: isZh ? '新邀请' : (isId ? 'Undangan Baru' : 'New Invite'),
+                    actionTextKey: 'notif_act_review_invite',
+                    actionText: isZh ? '查看邀请' : (isId ? 'Tinjau Undangan' : 'Review Invite'),
+                    action: () => {
+                        PocketlyNotification.closeCenter();
+                        if (typeof openGoalInvitesModal === 'function') openGoalInvitesModal();
+                    }
+                });
+            });
+        }
+
+        // 5. Daily Expense Log Reminder
+        if (prefs.dailyReminder && Array.isArray(rawTransactions)) {
+            const hasExpenseToday = rawTransactions.some(t => t.type === 'expense' && t.date === todayStr);
+            if (!hasExpenseToday) {
+                list.push({
+                    id: `daily_reminder_${todayStr}`,
+                    categoryKey: 'notif_cat_daily',
+                    category: isZh ? '每日提醒' : (isId ? 'Pengingat Harian' : 'Daily Reminder'),
+                    priority: 'info',
+                    icon: 'fa-solid fa-receipt',
+                    title: isZh ? '记录今日支出' : (isId ? 'Catat Pengeluaran Hari Ini' : "Log Today's Spending"),
+                    message: isZh
+                        ? '今天还没有记录任何支出。及时记账可以让您的财务状况井井有条。'
+                        : (isId
+                            ? 'Belum ada transaksi pengeluaran yang dicatat hari ini. Catat pengeluaran Anda agar cash flow tetap terdata dengan rapi.'
+                            : 'No expenses recorded yet today. Track your transactions so your cash flow stays organized.'),
+                    time: isZh ? '今天' : (isId ? 'Hari ini' : 'Today'),
+                    actionTextKey: 'notif_act_add_trans',
+                    actionText: isZh ? '记一笔' : (isId ? 'Tambah Transaksi' : 'Add Transaction'),
+                    action: () => {
+                        PocketlyNotification.closeCenter();
+                        const fab = document.getElementById('openTransModalBtn') || document.getElementById('mobileAddFab');
+                        if (fab) fab.click();
+                        else {
+                            const modal = document.getElementById('transactionModal');
+                            if (modal) modal.classList.add('show');
+                        }
+                    }
+                });
+            }
+        }
+
+        // 6. Security Suggestion Tip
+        const isPinEnabled = localStorage.getItem('pocketly_pin_enabled') === 'true';
+        if (!isPinEnabled) {
+            list.push({
+                id: 'security_pin_tip',
+                categoryKey: 'notif_cat_security',
+                category: isZh ? '账户安全' : (isId ? 'Keamanan Akun' : 'Account Security'),
+                priority: 'info',
+                icon: 'fa-solid fa-shield-halved',
+                title: isZh ? '保护您的财务数据' : (isId ? 'Lindungi Data Finansial Anda' : 'Protect Your Financial Data'),
+                message: isZh
+                    ? '在设置中开启应用锁 (4位PIN码)，守护您的账户余额与私密财务记录。'
+                    : (isId
+                        ? 'Aktifkan App Lock (PIN 4-Digit) di Pengaturan untuk melindungi privasi saldo serta seluruh catatan finansial Anda.'
+                        : 'Enable App Lock (4-Digit PIN) in Settings to safeguard your balances and private records.'),
+                time: isZh ? '推荐' : (isId ? 'Rekomendasi' : 'Recommended'),
+                actionTextKey: 'notif_act_open_settings',
+                actionText: isZh ? '前往设置' : (isId ? 'Buka Pengaturan' : 'Open Settings'),
+                action: () => {
+                    PocketlyNotification.closeCenter();
+                    switchPage('account');
+                }
+            });
+        }
+
+        return list;
+    },
+
+    updatePushStatusBadge() {
+        const badge = document.getElementById('statNotifPushStatus');
+        const dot = document.getElementById('statPushDot');
+        const quickBtn = document.getElementById('btnQuickPermRequest');
+        const iconBox = document.getElementById('statPushIconBox');
+        const statusSub = document.getElementById('statNotifPushSub');
+
+        if (!('Notification' in window)) {
+            if (badge) badge.innerText = this._t('notif_push_unsupported', 'Push: N/A');
+            if (dot) dot.className = 'metric-dot red';
+            if (quickBtn) quickBtn.style.display = 'none';
+            if (statusSub) statusSub.innerText = this._t('notif_status_inapp_only', 'Hanya in-app alert');
+            return;
+        }
+
+        const perm = Notification.permission;
+        if (perm === 'granted') {
+            if (badge) badge.innerText = this._t('notif_push_active', 'Push: Aktif');
+            if (dot) dot.className = 'metric-dot green';
+            if (quickBtn) quickBtn.style.display = 'none';
+            if (statusSub) statusSub.innerText = this._t('notif_status_active_inapp', 'Browser & in-app');
+            if (iconBox) iconBox.className = 'notif-ov-icon-box bg-green';
+        } else if (perm === 'denied') {
+            if (badge) badge.innerText = this._t('notif_push_disabled', 'Push: Mati');
+            if (dot) dot.className = 'metric-dot red';
+            if (quickBtn) quickBtn.style.display = 'none';
+            if (statusSub) statusSub.innerText = this._t('notif_status_inapp_only', 'Izin browser ditolak');
+            if (iconBox) iconBox.className = 'notif-ov-icon-box bg-red';
+        } else {
+            if (badge) badge.innerText = this._t('notif_push_enable', 'Aktifkan Push');
+            if (dot) dot.className = 'metric-dot yellow';
+            if (quickBtn) quickBtn.style.display = 'inline-flex';
+            if (statusSub) statusSub.innerText = this._t('notif_push_enable', 'Ketuk untuk mengaktifkan');
+            if (iconBox) iconBox.className = 'notif-ov-icon-box bg-yellow';
+        }
+    },
+
+    updateCenter() {
+        this.activeNotifications = this.generateNotifications();
+        const unreadList = this.activeNotifications.filter(n => !this.isRead(n.id));
+        const unreadCount = unreadList.length;
+
+        // Update header bell badge
+        const badge = document.getElementById('notifCenterBadge');
+        if (badge) {
+            if (unreadCount > 0) {
+                badge.innerText = unreadCount > 99 ? '99+' : unreadCount;
+                badge.style.display = 'inline-flex';
+            } else {
+                badge.style.display = 'none';
+            }
+        }
+
+        // Update settings page row badge
+        const settingBadge = document.getElementById('settingNotifBadge');
+        if (settingBadge) {
+            if (unreadCount > 0) {
+                settingBadge.innerText = unreadCount;
+                settingBadge.style.display = 'inline-block';
+            } else {
+                settingBadge.style.display = 'none';
+            }
+        }
+
+        // Update page unread pill in header banner
+        const pageUnreadPill = document.getElementById('notifPageUnreadPill');
+        if (pageUnreadPill) {
+            if (unreadCount > 0) {
+                pageUnreadPill.innerText = `${unreadCount} ${this._t('notif_mini_new', 'Baru')}`;
+                pageUnreadPill.style.display = 'inline-flex';
+            } else {
+                pageUnreadPill.style.display = 'none';
+            }
+        }
+
+        // Update Overview Metric strip
+        const statTotal = document.getElementById('statNotifTotal');
+        const statUnread = document.getElementById('statNotifUnread');
+        const statUnreadSub = document.getElementById('statNotifUnreadSub');
+        if (statTotal) statTotal.innerText = this.activeNotifications.length;
+        if (statUnread) statUnread.innerText = unreadCount;
+        if (statUnreadSub) {
+            statUnreadSub.innerText = unreadCount > 0 ? `${unreadCount} ${this._t('notif_unreviewed_count', 'belum dibaca')}` : this._t('notif_all_reviewed', 'Semua telah ditinjau');
+        }
+
+        // Update push status badge
+        this.updatePushStatusBadge();
+
+        // Update filter counters
+        const countAll = document.getElementById('pageCountAll') || document.getElementById('notifCountAll');
+        const countUnread = document.getElementById('pageCountUnread') || document.getElementById('notifCountUnread');
+        const countBudget = document.getElementById('pageCountBudget');
+        const countDebt = document.getElementById('pageCountDebt');
+        const countGoal = document.getElementById('pageCountGoal');
+        const countReminder = document.getElementById('pageCountReminder');
+
+        if (countAll) countAll.innerText = this.activeNotifications.length;
+        if (countUnread) countUnread.innerText = unreadCount;
+        if (countBudget) countBudget.innerText = this.activeNotifications.filter(n => n.id.startsWith('budget_') || n.categoryKey === 'notif_cat_budget' || n.category === 'Batas Anggaran' || n.category === 'Budget Limit').length;
+        if (countDebt) countDebt.innerText = this.activeNotifications.filter(n => n.id.startsWith('debt_') || n.categoryKey === 'notif_cat_debt' || n.category === 'Hutang & Piutang' || n.category === 'Debts & Loans').length;
+        if (countGoal) countGoal.innerText = this.activeNotifications.filter(n => n.id.startsWith('goal_') || n.id.startsWith('invite_') || n.categoryKey === 'notif_cat_goal' || n.categoryKey === 'notif_cat_collab' || n.category === 'Target Tabungan' || n.category === 'Kolaborasi').length;
+        if (countReminder) countReminder.innerText = this.activeNotifications.filter(n => n.id.startsWith('daily_') || n.id.startsWith('security_') || n.categoryKey === 'notif_cat_daily' || n.categoryKey === 'notif_cat_security' || n.category === 'Pengingat Harian' || n.category === 'Keamanan Akun').length;
+
+        // Trigger push notification for unread high priority items not yet sent in session
+        const prefs = this.getPreferences();
+        if (prefs.systemNotif && 'Notification' in window && Notification.permission === 'granted') {
+            unreadList.forEach(item => {
+                if ((item.priority === 'danger' || item.priority === 'warning') && !this.sentSystemNotifIds.has(item.id)) {
+                    this.sentSystemNotifIds.add(item.id);
+                    this.sendPushNotification(item.title, {
+                        body: item.message,
+                        tag: item.id
+                    });
+                }
+            });
+        }
+
+        this.render();
+    },
+
+    render() {
+        const container = document.getElementById('notificationsPageList') || document.getElementById('notificationListContainer');
+        if (!container) return;
+
+        const escapeStr = (str) => {
+            if (!str) return '';
+            return String(str).replace(/[&<>"']/g, m => ({
+                '&': '&amp;',
+                '<': '&lt;',
+                '>': '&gt;',
+                '"': '&quot;',
+                "'": '&#039;'
+            }[m]));
+        };
+
+        const displayed = this.getFilteredNotifications();
+
+        if (displayed.length === 0) {
+            let emptyHeading = this._t('notif_empty_all_title', 'Tidak Ada Notifikasi');
+            let emptyDesc = this._t('notif_empty_all_desc', 'Semua pemberitahuan dan peringatan finansial telah ditinjau.');
+
+            if (this.currentFilter === 'unread') {
+                emptyHeading = this._t('notif_empty_unread_title', 'Semua Sudah Ditinjau');
+                emptyDesc = this._t('notif_empty_unread_desc', 'Tidak ada notifikasi baru yang belum dibaca.');
+            } else if (this.currentFilter === 'budget') {
+                emptyHeading = this._t('notif_empty_budget_title', 'Anggaran Berjalan Aman');
+                emptyDesc = this._t('notif_empty_budget_desc', 'Tidak ada kategori pengeluaran yang mendekati batas limit.');
+            } else if (this.currentFilter === 'debt') {
+                emptyHeading = this._t('notif_empty_debt_title', 'Tidak Ada Jatuh Tempo');
+                emptyDesc = this._t('notif_empty_debt_desc', 'Semua catatan hutang dan piutang dalam kondisi aman.');
+            } else if (this.currentFilter === 'goal') {
+                emptyHeading = this._t('notif_empty_goal_title', 'Belum Ada Milestone Baru');
+                emptyDesc = this._t('notif_empty_goal_desc', 'Terus tingkatkan tabungan untuk mencapai target finansial.');
+            } else if (this.currentFilter === 'reminder') {
+                emptyHeading = this._t('notif_empty_reminder_title', 'Catatan Hari Ini Lengkap');
+                emptyDesc = this._t('notif_empty_reminder_desc', 'Tidak ada pengingat catatan transaksi yang tertunda.');
+            }
+
+            container.innerHTML = `
+                <div class="notif-empty-box">
+                    <div class="notif-empty-icon-wrap">
+                        <i class="fa-regular fa-bell-slash"></i>
+                    </div>
+                    <h4>${escapeStr(emptyHeading)}</h4>
+                    <p>${escapeStr(emptyDesc)}</p>
+                </div>
+            `;
+            return;
+        }
+
+        container.innerHTML = displayed.map((item, index) => {
+            const isUnread = !this.isRead(item.id);
+            const priorityClass = item.priority || 'primary';
+            const actionId = `notif_act_${item.id.replace(/[^a-zA-Z0-9_]/g, '_')}`;
+            const categoryLabel = item.categoryKey ? this._t(item.categoryKey, item.category) : (item.category || '');
+            const actionLabel = item.actionTextKey ? this._t(item.actionTextKey, item.actionText) : (item.actionText || '');
+            const markReadTitle = this._t('notif_btn_mark_read', 'Tandai sudah dibaca');
+
+            return `
+                <div class="notif-card-item ${isUnread ? 'is-unread ' + priorityClass : ''}" style="--item-idx: ${index};">
+                    <div class="notif-avatar-sq ${priorityClass}">
+                        <i class="${item.icon}"></i>
+                    </div>
+                    <div class="notif-body-col">
+                        <div class="notif-row-top">
+                            <span class="notif-cat-chip">${escapeStr(categoryLabel)}</span>
+                            <span class="notif-time-text">${escapeStr(item.time)}</span>
+                            ${isUnread ? '<span class="notif-unread-glow-dot" title="Belum dibaca"></span>' : ''}
+                        </div>
+                        <h4 class="notif-item-title">${escapeStr(item.title)}</h4>
+                        <p class="notif-item-desc">${escapeStr(item.message)}</p>
+                        <div class="notif-item-footer">
+                            ${actionLabel ? `
+                                <button type="button" class="notif-action-chip" id="${actionId}">
+                                    <span>${escapeStr(actionLabel)}</span>
+                                    <i class="fa-solid fa-arrow-right"></i>
+                                </button>
+                            ` : '<span></span>'}
+                            ${isUnread ? `
+                                <button type="button" class="notif-dismiss-icon-btn" onclick="PocketlyNotification.markRead('${item.id}')" title="${escapeStr(markReadTitle)}" aria-label="${escapeStr(markReadTitle)}">
+                                    <i class="fa-solid fa-check"></i>
+                                </button>
+                            ` : ''}
+                        </div>
+                    </div>
+                </div>
+            `;
+        }).join('');
+
+        // Wire action handlers cleanly
+        displayed.forEach(item => {
+            if (item.actionText && typeof item.action === 'function') {
+                const actionId = `notif_act_${item.id.replace(/[^a-zA-Z0-9_]/g, '_')}`;
+                const btn = document.getElementById(actionId);
+                if (btn) {
+                    btn.addEventListener('click', () => {
+                        PocketlyNotification.markRead(item.id);
+                        item.action();
+                    });
+                }
+            }
+        });
+    },
+
+    syncSettingsUI() {
+        const prefs = this.getPreferences();
+        const toggleBudget = document.getElementById('pageToggleNotifBudget') || document.getElementById('toggleNotifBudget');
+        const toggleDebt = document.getElementById('pageToggleNotifDebt') || document.getElementById('toggleNotifDebt');
+        const toggleGoal = document.getElementById('pageToggleNotifGoal') || document.getElementById('toggleNotifGoal');
+        const toggleInvite = document.getElementById('pageToggleNotifInvite') || document.getElementById('toggleNotifInvite');
+        const toggleDaily = document.getElementById('pageToggleNotifDaily') || document.getElementById('toggleNotifDaily');
+
+        if (toggleBudget) toggleBudget.checked = prefs.budgetAlerts !== false;
+        if (toggleDebt) toggleDebt.checked = prefs.debtAlerts !== false;
+        if (toggleGoal) toggleGoal.checked = prefs.goalAlerts !== false;
+        if (toggleInvite) toggleInvite.checked = prefs.inviteAlerts !== false;
+        if (toggleDaily) toggleDaily.checked = prefs.dailyReminder !== false;
+
+        this.updatePushStatusBadge();
+
+        const statusText = document.getElementById('settingsNotifStatusText');
+        if (statusText) {
+            if ('Notification' in window && Notification.permission === 'granted') {
+                statusText.innerText = this._t('notif_status_active_inapp', 'Aktif (Browser & In-App)');
+            } else if ('Notification' in window && Notification.permission === 'denied') {
+                statusText.innerText = this._t('notif_status_inapp_only', 'Hanya In-App (Browser diblokir)');
+            } else {
+                statusText.innerText = this._t('notif_status_inapp_active', 'In-App aktif');
+            }
+        }
+    }
+};
+
+// Global navigation and drawer triggers
+window.navigateToNotifications = () => {
+    if (window.PocketlyAudio && typeof window.PocketlyAudio.play === 'function') {
+        window.PocketlyAudio.play('click');
+    }
+    window.switchPage('notifications');
+};
+
+window.navigateBackFromNotifications = () => {
+    if (window.PocketlyAudio && typeof window.PocketlyAudio.play === 'function') {
+        window.PocketlyAudio.play('click');
+    }
+    const fallback = (window.lastVisitedPage && window.lastVisitedPage !== 'notifications')
+        ? window.lastVisitedPage
+        : 'dashboard';
+    window.switchPage(fallback);
+};
+
+window.toggleNotificationPreferencesDrawer = () => {
+    const drawer = document.getElementById('notifPreferencesDrawer');
+    if (!drawer) return;
+    const isHidden = drawer.style.display === 'none' || getComputedStyle(drawer).display === 'none';
+    drawer.style.display = isHidden ? 'block' : 'none';
+    if (window.PocketlyAudio && typeof window.PocketlyAudio.play === 'function') {
+        window.PocketlyAudio.play('click');
+    }
+    if (isHidden && window.PocketlyNotification && typeof window.PocketlyNotification.syncSettingsUI === 'function') {
+        window.PocketlyNotification.syncSettingsUI();
+    }
+};
+
+window.openNotificationCenterModal = () => window.navigateToNotifications();
+window.closeNotificationCenterModal = () => window.navigateBackFromNotifications();
+window.openNotificationSettingsModal = () => window.PocketlyNotification.openSettings();
+window.closeNotificationSettingsModal = () => window.PocketlyNotification.closeSettings();
+window.markAllNotificationsRead = () => window.PocketlyNotification.markAllRead();
+window.markNotificationRead = (id) => window.PocketlyNotification.markRead(id);
+window.setNotificationFilter = (filter) => window.PocketlyNotification.setFilter(filter);
+window.saveNotificationPref = (key, val) => window.PocketlyNotification.savePreference(key, val);
+window.requestSystemNotificationPermission = () => window.PocketlyNotification.requestSystemPermission();
+window.sendTestNotification = () => window.PocketlyNotification.sendTestNotification();
+
+// Initial boot check
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', () => {
+        setTimeout(() => {
+            window.PocketlyNotification.updateCenter();
+            window.PocketlyNotification.syncSettingsUI();
+        }, 300);
+    });
+} else {
+    setTimeout(() => {
+        window.PocketlyNotification.updateCenter();
+        window.PocketlyNotification.syncSettingsUI();
+    }, 300);
+}
+
 
 

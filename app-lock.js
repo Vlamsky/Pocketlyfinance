@@ -14,6 +14,8 @@
     let firstEnteredSetupPin = '';
     let currentSetupPin = '';
     let isChangingPin = false;
+    let lastBackgroundTimestamp = 0;
+    let bypassLockOnce = false;
 
     // Retrieve active user ID
     function getUid() {
@@ -38,6 +40,27 @@
 
     function getBioCredKey(uid = getUid()) {
         return uid ? `pocketly_app_lock_bio_cred_${uid}` : 'pocketly_bio_cred_id';
+    }
+
+    function getTimeoutKey(uid = getUid()) {
+        return uid ? `pocketly_app_lock_timeout_${uid}` : 'pocketly_app_lock_timeout';
+    }
+
+    function getAutoLockTimeout() {
+        const uid = getUid();
+        const stored = uid ? localStorage.getItem(getTimeoutKey(uid)) : localStorage.getItem('pocketly_app_lock_timeout');
+        if (stored !== null && !isNaN(parseInt(stored, 10))) {
+            return parseInt(stored, 10);
+        }
+        return 60; // Default: 60 seconds (1 minute grace period)
+    }
+
+    function setAutoLockTimeout(seconds) {
+        const uid = getUid();
+        const sec = parseInt(seconds, 10);
+        const val = isNaN(sec) ? 60 : sec;
+        if (uid) localStorage.setItem(getTimeoutKey(uid), String(val));
+        localStorage.setItem('pocketly_app_lock_timeout', String(val));
     }
 
     // Migrate any legacy un-namespaced keys to active user
@@ -113,11 +136,13 @@
             localStorage.removeItem(getEnabledKey(uid));
             localStorage.removeItem(getBioKey(uid));
             localStorage.removeItem(getBioCredKey(uid));
+            localStorage.removeItem(getTimeoutKey(uid));
         }
         localStorage.removeItem('pocketly_app_lock_pin_hash');
         localStorage.removeItem('pocketly_app_lock_enabled');
         localStorage.removeItem('pocketly_app_lock_biometric');
         localStorage.removeItem('pocketly_bio_cred_id');
+        localStorage.removeItem('pocketly_app_lock_timeout');
     }
 
     // Update PIN indicator dots on lock screen
@@ -149,6 +174,7 @@
         }
         isCurrentlyLocked = false;
         currentEnteredPin = '';
+        lastBackgroundTimestamp = 0;
         updateLockDots();
     }
 
@@ -204,6 +230,7 @@
             overlay.classList.remove('unlocking');
             isCurrentlyLocked = false;
             currentEnteredPin = '';
+            lastBackgroundTimestamp = 0;
             updateLockDots();
         }, 280);
     }
@@ -268,10 +295,41 @@
         }
     }
 
-    // WebAuthn Biometric Authentication
+    // Helper: Prompt Native Android Biometric (Fingerprint / Face ID)
+    function promptNativeBiometric(title, subtitle) {
+        return new Promise((resolve) => {
+            if (!window.AndroidNative || typeof window.AndroidNative.authenticateBiometric !== 'function') {
+                resolve(false);
+                return;
+            }
+            window.__pocketlyBioCallback = function(success, errorMsg) {
+                delete window.__pocketlyBioCallback;
+                resolve(Boolean(success));
+            };
+            window.AndroidNative.authenticateBiometric(
+                title || 'Buka Pocketly',
+                subtitle || 'Sentuh sensor sidik jari atau gunakan pengenalan wajah'
+            );
+        });
+    }
+
+    // WebAuthn / Android Biometric Authentication
     async function triggerBiometricAuth() {
         if (!isBiometricEnabled()) return;
 
+        // 1. Android Native Biometric (Fingerprint / Face ID)
+        if (window.AndroidNative && typeof window.AndroidNative.authenticateBiometric === 'function') {
+            const success = await promptNativeBiometric(
+                'Buka Pocketly',
+                'Sentuh sensor sidik jari atau gunakan pengenalan wajah'
+            );
+            if (success) {
+                unlockApp();
+            }
+            return;
+        }
+
+        // 2. WebAuthn Fallback (Browser)
         try {
             const challenge = new Uint8Array(32);
             window.crypto.getRandomValues(challenge);
@@ -306,6 +364,23 @@
 
     // Biometric Credential Registration
     async function registerBiometrics() {
+        // 1. Android Native Biometric (Fingerprint / Face ID)
+        if (window.AndroidNative && typeof window.AndroidNative.authenticateBiometric === 'function') {
+            const success = await promptNativeBiometric(
+                'Verifikasi Biometrik',
+                'Sentuh sensor sidik jari atau gunakan pengenalan wajah untuk mengaktifkan'
+            );
+            if (success) {
+                const uid = getUid();
+                if (uid) {
+                    localStorage.setItem(getBioKey(uid), 'true');
+                }
+                return true;
+            }
+            return false;
+        }
+
+        // 2. WebAuthn Fallback (Browser)
         if (!window.PublicKeyCredential) {
             if (window.showAlert) showAlert('Biometrics are not supported on this device/browser.', true);
             return false;
@@ -593,9 +668,54 @@
         if (toggle) toggle.checked = enabled;
         if (rowChangePin) rowChangePin.style.display = enabled ? 'flex' : 'none';
 
+        const hasNative = Boolean(window.AndroidNative);
+        const hasNativeBio = Boolean(
+            window.AndroidNative &&
+            (typeof window.AndroidNative.isBiometricAvailable !== 'function' ||
+             window.AndroidNative.isBiometricAvailable())
+        );
         const hasWebAuthn = Boolean(window.PublicKeyCredential);
-        if (rowBio) rowBio.style.display = (enabled && hasWebAuthn) ? 'flex' : 'none';
-        if (bioToggle) bioToggle.checked = enabled && isBiometricEnabled();
+        const hasBiometricSupport = hasNative || hasNativeBio || hasWebAuthn;
+
+        // Biometric Row in Settings: Always visible so user can discover and toggle it
+        if (rowBio) rowBio.style.display = 'flex';
+        if (bioToggle) bioToggle.checked = isBiometricEnabled();
+
+        const rowTimeout = document.getElementById('rowAutoLockTimeout');
+        const textTimeout = document.getElementById('currentAutoLockTimeoutText');
+        if (rowTimeout) rowTimeout.style.display = enabled ? 'flex' : 'none';
+        if (textTimeout) {
+            textTimeout.innerText = getTimeoutLabel(getAutoLockTimeout());
+        }
+    }
+
+    function getTimeoutLabel(seconds) {
+        const sec = parseInt(seconds, 10);
+        const t = (key, fallback) => (window.PocketlyI18n && typeof window.PocketlyI18n.t === 'function') ? window.PocketlyI18n.t(key, fallback) : fallback;
+        switch (sec) {
+            case 0: return t('timeout_immediately', 'Immediately');
+            case 60: return t('timeout_1min', 'After 1 minute');
+            case 300: return t('timeout_5min', 'After 5 minutes');
+            case 900: return t('timeout_15min', 'After 15 minutes');
+            case 1800: return t('timeout_30min', 'After 30 minutes');
+            default: return `${sec}s`;
+        }
+    }
+
+    function openAutoLockModal() {
+        const modal = document.getElementById('autoLockTimeoutModal');
+        if (!modal) return;
+        const currentSec = getAutoLockTimeout();
+        modal.querySelectorAll('.timeout-option-card').forEach(card => {
+            const cardSec = parseInt(card.dataset.seconds, 10);
+            card.classList.toggle('active', cardSec === currentSec);
+        });
+        modal.classList.add('show');
+    }
+
+    function closeAutoLockModal() {
+        const modal = document.getElementById('autoLockTimeoutModal');
+        if (modal) modal.classList.remove('show');
     }
 
     // External hooks for Firebase Auth state changes
@@ -607,6 +727,13 @@
         currentUserId = user.uid;
         migrateLegacyKeys(currentUserId);
         syncSettingsUI();
+
+        // If biometric login already validated identity, skip PIN lock
+        if (bypassLockOnce) {
+            bypassLockOnce = false;
+            hideLockScreenImmediately();
+            return;
+        }
 
         // If App Lock is enabled for this account, present the PIN lock now
         if (isLockEnabled()) {
@@ -744,27 +871,130 @@
         if (bioToggle) {
             bioToggle.addEventListener('change', async () => {
                 if (bioToggle.checked) {
+                    if (!isLockEnabled()) {
+                        bioToggle.checked = false;
+                        if (window.showAlert) {
+                            showAlert(
+                                (window.currentLocale === 'id-ID')
+                                    ? 'Silakan aktifkan App Lock PIN terlebih dahulu sebelum mengaktifkan Biometrik.'
+                                    : 'Please enable App Lock PIN first before enabling Biometrics.',
+                                true
+                            );
+                        }
+                        openPinSetup('Set 4-Digit PIN');
+                        return;
+                    }
                     const success = await registerBiometrics();
                     bioToggle.checked = success;
-                    if (success && window.showAlert) {
-                        showAlert('Biometric Unlock (Face ID / Fingerprint) enabled!', false);
+                    if (success) {
+                        const uid = getUid();
+                        if (uid) {
+                            localStorage.setItem(getBioKey(uid), 'true');
+                            localStorage.setItem('pocketly_biometric_enabled', 'true');
+                        }
+                        if (window.showAlert) {
+                            showAlert(
+                                (window.currentLocale === 'id-ID')
+                                    ? 'Kunci Biometrik (Sidik Jari / Face ID) berhasil diaktifkan!'
+                                    : 'Biometric Unlock (Face ID / Fingerprint) enabled!',
+                                false
+                            );
+                        }
+                        syncSettingsUI();
                     }
                 } else {
                     const uid = getUid();
-                    if (uid) localStorage.setItem(getBioKey(uid), 'false');
-                    if (window.showAlert) showAlert('Biometric Unlock disabled.', false);
+                    if (uid) {
+                        localStorage.setItem(getBioKey(uid), 'false');
+                        localStorage.setItem('pocketly_biometric_enabled', 'false');
+                    }
+                    if (window.showAlert) {
+                        showAlert(
+                            (window.currentLocale === 'id-ID')
+                                ? 'Kunci Biometrik dinonaktifkan.'
+                                : 'Biometric Unlock disabled.',
+                            false
+                        );
+                    }
+                    syncSettingsUI();
                 }
             });
         }
 
-        // Auto-lock when user leaves the tab or minimizes browser
-        document.addEventListener('visibilitychange', () => {
-            if (document.visibilityState === 'hidden') {
-                if (isLockEnabled() && isUserLoggedIn()) {
+        // Settings: Auto-Lock Delay Sheet Trigger
+        const rowTimeout = document.getElementById('rowAutoLockTimeout');
+        if (rowTimeout) {
+            rowTimeout.addEventListener('click', openAutoLockModal);
+        }
+
+        const btnCloseTimeout = document.getElementById('btnCloseAutoLockModal');
+        if (btnCloseTimeout) {
+            btnCloseTimeout.addEventListener('click', closeAutoLockModal);
+        }
+
+        const timeoutModal = document.getElementById('autoLockTimeoutModal');
+        if (timeoutModal) {
+            timeoutModal.addEventListener('click', (e) => {
+                if (e.target === timeoutModal) closeAutoLockModal();
+            });
+
+            timeoutModal.querySelectorAll('.timeout-option-card').forEach(card => {
+                const onSelect = () => {
+                    if (window.PocketlyAudio && typeof window.PocketlyAudio.playCardTap === 'function') {
+                        window.PocketlyAudio.playCardTap();
+                    }
+                    const sec = parseInt(card.dataset.seconds, 10);
+                    setAutoLockTimeout(sec);
+                    syncSettingsUI();
+
+                    timeoutModal.querySelectorAll('.timeout-option-card').forEach(c => c.classList.remove('active'));
+                    card.classList.add('active');
+
+                    setTimeout(closeAutoLockModal, 180);
+                };
+
+                card.addEventListener('click', onSelect);
+                card.addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        onSelect();
+                    }
+                });
+            });
+        }
+
+        // Auto-lock with Grace Period Timeout
+        function recordBackgroundTime() {
+            if (isLockEnabled() && isUserLoggedIn() && !isCurrentlyLocked) {
+                lastBackgroundTimestamp = Date.now();
+            }
+        }
+
+        function evaluateAutoLock() {
+            if (!isLockEnabled() || !isUserLoggedIn() || isCurrentlyLocked) return;
+
+            const timeoutSeconds = getAutoLockTimeout();
+            if (timeoutSeconds === 0) {
+                // Immediately relock
+                showLockScreen();
+            } else if (lastBackgroundTimestamp > 0) {
+                const elapsedSeconds = (Date.now() - lastBackgroundTimestamp) / 1000;
+                if (elapsedSeconds >= timeoutSeconds) {
                     showLockScreen();
                 }
             }
+        }
+
+        document.addEventListener('visibilitychange', () => {
+            if (document.visibilityState === 'hidden') {
+                recordBackgroundTime();
+            } else if (document.visibilityState === 'visible') {
+                evaluateAutoLock();
+            }
         });
+
+        window.addEventListener('blur', recordBackgroundTime);
+        window.addEventListener('focus', evaluateAutoLock);
 
         // Ensure lock screen starts hidden by default on boot until auth resolves
         hideLockScreenImmediately();
@@ -787,7 +1017,14 @@
         closeForgotModal: closeForgotPinModal,
         isEnabled: isLockEnabled,
         clearLock: clearAllLockData,
+        getTimeout: getAutoLockTimeout,
+        setTimeout: setAutoLockTimeout,
+        openTimeoutModal: openAutoLockModal,
+        closeTimeoutModal: closeAutoLockModal,
         onUserAuth: onUserAuth,
-        onSignOut: onSignOut
+        onSignOut: onSignOut,
+        syncSettingsUI: syncSettingsUI,
+        bypassNextLock: function() { bypassLockOnce = true; },
+        unlockApp: unlockApp
     };
 })();

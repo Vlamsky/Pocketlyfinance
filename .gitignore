@@ -3,6 +3,7 @@
 .claude/
 .gemini/
 .vscode/
+.idea/
 AGENTS.md
 CLAUDE.md
 GEMINI.md
@@ -10,3 +11,10 @@ GEMINI.md
 # OS files
 .DS_Store
 Thumbs.db
+
+# Dependencies & Build
+node_modules/
+.gradle/
+build/
+www/
+scratch/
