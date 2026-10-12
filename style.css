@@ -11057,47 +11057,47 @@ body.dark-mode .notif-empty-box {
     pointer-events: auto;
 }
 
-/* 3. Compact Individual Arc Petal Button - sits snug right above + button */
+/* 3. Individual Arc Petal Button - spacious, non-overlapping polar translation */
 .arc-dial-petal {
     position: absolute;
     left: 50%;
-    bottom: 34px; /* Only 10px above the top rim of 48px FAB */
-    width: 58px;
-    height: 54px;
-    margin-left: -29px;
+    bottom: 24px; /* Center of 48px FAB */
+    width: 46px;
+    height: 50px;
+    margin-left: -23px;
+    margin-bottom: -25px;
     background: transparent;
     border: none;
     padding: 0;
     cursor: pointer;
     -webkit-tap-highlight-color: transparent;
     outline: none;
-    transform-origin: 50% calc(100% + 34px);
     opacity: 0;
     pointer-events: none;
-    transform: rotate(0deg) scale(0.15);
-    transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1),
+    transform: translate(0, 0) scale(0.15);
+    transition: transform 0.38s cubic-bezier(0.34, 1.56, 0.64, 1),
                 opacity 0.2s ease-out;
 }
 
-/* 4. Active fanned-out canopy angles (Tight ~2px hairline seam between petals) */
+/* 4. Active fanned-out canopy angles (Spacious, balanced 7px-10px gap between all cards, clean 25px clearance above + button) */
 .fab-speed-dial-menu.arc-dial-canopy.active .arc-dial-petal {
     opacity: 1;
     pointer-events: auto;
 }
 .fab-speed-dial-menu.arc-dial-canopy.active .petal-expense {
-    transform: rotate(-55.5deg) scale(1);
+    transform: translate(-56.5px, -51px) rotate(-48deg) scale(1);
     transition-delay: 0.05s;
 }
 .fab-speed-dial-menu.arc-dial-canopy.active .petal-income {
-    transform: rotate(-18.5deg) scale(1);
+    transform: translate(-21px, -73px) rotate(-16deg) scale(1);
     transition-delay: 0.02s;
 }
 .fab-speed-dial-menu.arc-dial-canopy.active .petal-debt {
-    transform: rotate(18.5deg) scale(1);
+    transform: translate(21px, -73px) rotate(16deg) scale(1);
     transition-delay: 0.02s;
 }
 .fab-speed-dial-menu.arc-dial-canopy.active .petal-scan {
-    transform: rotate(55.5deg) scale(1);
+    transform: translate(56.5px, -51px) rotate(48deg) scale(1);
     transition-delay: 0.05s;
 }
 
@@ -11106,17 +11106,17 @@ body.dark-mode .notif-empty-box {
     position: relative;
     width: 100%;
     height: 100%;
-    filter: drop-shadow(0 8px 18px rgba(0, 0, 0, 0.18));
+    filter: drop-shadow(0 6px 14px rgba(0, 0, 0, 0.16));
     transition: transform 0.22s cubic-bezier(0.16, 1, 0.3, 1),
                 filter 0.22s ease;
 }
 .arc-dial-petal:hover .petal-wedge-card,
 .arc-dial-petal:focus-visible .petal-wedge-card {
-    transform: scale(1.08);
-    filter: drop-shadow(0 12px 26px rgba(0, 0, 0, 0.28));
+    transform: scale(1.1);
+    filter: drop-shadow(0 10px 22px rgba(0, 0, 0, 0.26));
 }
 .arc-dial-petal:active .petal-wedge-card {
-    transform: scale(0.95);
+    transform: scale(0.94);
 }
 
 /* SVG Wedge Shape Background */
@@ -11126,72 +11126,72 @@ body.dark-mode .notif-empty-box {
     width: 100%;
     height: 100%;
     fill: #ffffff;
-    stroke: rgba(0, 0, 0, 0.04);
-    stroke-width: 1;
+    stroke: rgba(0, 0, 0, 0.05);
+    stroke-width: 0.8;
 }
 
 /* 5. Icon Badge DEAD-CENTER in the Geometric Wedge */
 .petal-icon-badge {
     position: absolute;
-    top: 50%;
+    top: 48%;
     left: 50%;
     transform: translate(-50%, -50%);
-    width: 38px;
-    height: 38px;
+    width: 33px;
+    height: 33px;
     border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
     color: #ffffff;
-    font-size: 1.05rem;
+    font-size: 0.95rem;
     z-index: 2;
     transition: transform 0.25s ease, box-shadow 0.25s ease;
 }
 .petal-icon-badge.rose {
     background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
-    box-shadow: 0 6px 16px rgba(239, 68, 68, 0.42);
+    box-shadow: 0 4px 12px rgba(239, 68, 68, 0.42);
 }
 .petal-icon-badge.emerald {
     background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-    box-shadow: 0 6px 16px rgba(16, 185, 129, 0.42);
+    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.42);
 }
 .petal-icon-badge.purple {
     background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
-    box-shadow: 0 6px 16px rgba(139, 92, 246, 0.42);
+    box-shadow: 0 4px 12px rgba(139, 92, 246, 0.42);
 }
 .petal-icon-badge.amber {
     background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
-    box-shadow: 0 6px 16px rgba(245, 158, 11, 0.42);
+    box-shadow: 0 4px 12px rgba(245, 158, 11, 0.42);
 }
 
 /* Counter-rotate icon glyphs so they stay perfectly upright */
 .petal-expense .petal-icon-badge i {
-    transform: rotate(55.5deg);
+    transform: rotate(48deg);
 }
 .petal-income .petal-icon-badge i {
-    transform: rotate(18.5deg);
+    transform: rotate(16deg);
 }
 .petal-debt .petal-icon-badge i {
-    transform: rotate(-18.5deg);
+    transform: rotate(-16deg);
 }
 .petal-scan .petal-icon-badge i {
-    transform: rotate(-55.5deg);
+    transform: rotate(-48deg);
 }
 
 .arc-dial-petal:hover .petal-icon-badge {
     transform: translate(-50%, -50%) scale(1.08);
 }
 .arc-dial-petal:hover .petal-icon-badge.rose {
-    box-shadow: 0 8px 22px rgba(239, 68, 68, 0.6);
+    box-shadow: 0 6px 18px rgba(239, 68, 68, 0.6);
 }
 .arc-dial-petal:hover .petal-icon-badge.emerald {
-    box-shadow: 0 8px 22px rgba(16, 185, 129, 0.6);
+    box-shadow: 0 6px 18px rgba(16, 185, 129, 0.6);
 }
 .arc-dial-petal:hover .petal-icon-badge.purple {
-    box-shadow: 0 8px 22px rgba(139, 92, 246, 0.6);
+    box-shadow: 0 6px 18px rgba(139, 92, 246, 0.6);
 }
 .arc-dial-petal:hover .petal-icon-badge.amber {
-    box-shadow: 0 8px 22px rgba(245, 158, 11, 0.6);
+    box-shadow: 0 6px 18px rgba(245, 158, 11, 0.6);
 }
 
 /* C. RECEIPT SCANNER MODAL & LASER ANIMATION */
