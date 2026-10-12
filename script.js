@@ -13500,7 +13500,7 @@ if (document.readyState === 'loading') {
    21. SMART SPEED DIAL FAB, SCANNER OCR LASER, OFFLINE & SHORTCUT ENGINES
    ========================================================================== */
 
-// 1. SMART SPEED DIAL FAB
+// 1. SMART SPEED DIAL FAB (RADIAL ARC CANOPY)
 window.toggleFabSpeedDial = function(force) {
     const menu = document.getElementById('fabSpeedDialMenu');
     const backdrop = document.getElementById('fabBackdrop');
@@ -13512,20 +13512,26 @@ window.toggleFabSpeedDial = function(force) {
         menu.classList.add('active');
         if (backdrop) backdrop.classList.add('active');
         fabBtn.classList.add('is-open');
-        if (window.PocketlyAudio && typeof window.PocketlyAudio.playCardTap === 'function') {
-            window.PocketlyAudio.playCardTap();
+        if (window.PocketlyAudio) {
+            if (typeof window.PocketlyAudio.playHapticTick === 'function') window.PocketlyAudio.playHapticTick();
+            if (typeof window.PocketlyAudio.playHover === 'function') window.PocketlyAudio.playHover();
+            if (typeof window.PocketlyAudio.playCardTap === 'function') window.PocketlyAudio.playCardTap();
         }
     } else {
         menu.classList.remove('active');
         if (backdrop) backdrop.classList.remove('active');
         fabBtn.classList.remove('is-open');
+        if (window.PocketlyAudio && typeof window.PocketlyAudio.playHapticTick === 'function') {
+            window.PocketlyAudio.playHapticTick();
+        }
     }
 };
 
 window.triggerSpeedDialAction = function(action) {
     window.toggleFabSpeedDial(false);
-    if (window.PocketlyAudio && typeof window.PocketlyAudio.playCardTap === 'function') {
-        window.PocketlyAudio.playCardTap();
+    if (window.PocketlyAudio) {
+        if (typeof window.PocketlyAudio.playHapticFeedback === 'function') window.PocketlyAudio.playHapticFeedback('medium');
+        if (typeof window.PocketlyAudio.play === 'function') window.PocketlyAudio.play('click');
     }
 
     if (action === 'expense' || action === 'income') {

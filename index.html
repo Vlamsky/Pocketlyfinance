@@ -1741,30 +1741,57 @@
                 <i class="fa-solid fa-receipt"></i>
             </a>
             <div class="b-nav-fab-wrapper">
-                <!-- Smart Speed Dial Radial Menu -->
-                <div class="fab-speed-dial-menu" id="fabSpeedDialMenu">
-                    <button type="button" class="fab-dial-item item-scan" onclick="triggerSpeedDialAction('scan')" title="Pindai Struk (OCR)">
-                        <span class="fab-dial-label">Scan Struk</span>
-                        <div class="fab-dial-icon amber">
-                            <i class="fa-solid fa-camera"></i>
+                <!-- Radial Arc Speed Dial Canopy Menu -->
+                <div class="fab-speed-dial-menu arc-dial-canopy" id="fabSpeedDialMenu">
+                    <!-- 1. Pengeluaran (Leftmost) -->
+                    <button type="button" class="arc-dial-petal petal-expense" onclick="triggerSpeedDialAction('expense')" title="Catat Pengeluaran" aria-label="Catat Pengeluaran">
+                        <div class="petal-wedge-card">
+                            <svg class="petal-wedge-shape" viewBox="0 0 100 95" preserveAspectRatio="none">
+                                <path d="M 13.1 14 A 172 172 0 0 1 86.9 14 Q 97.4 16.7 94.1 28.2 L 81.4 72.4 Q 78.1 84 68.4 81.7 A 102 102 0 0 0 31.6 81.7 Q 21.9 84 18.6 72.4 L 5.9 28.2 Q 2.6 16.7 13.1 14 Z" />
+                            </svg>
+                            <div class="petal-icon-badge rose">
+                                <i class="fa-solid fa-arrow-up"></i>
+                            </div>
+                            <span class="petal-label">Pengeluaran</span>
                         </div>
                     </button>
-                    <button type="button" class="fab-dial-item item-debt" onclick="triggerSpeedDialAction('debt')" title="Catat Hutang/Piutang">
-                        <span class="fab-dial-label">Hutang/Piutang</span>
-                        <div class="fab-dial-icon purple">
-                            <i class="fa-solid fa-hand-holding-dollar"></i>
+
+                    <!-- 2. Pemasukan (Mid-Left) -->
+                    <button type="button" class="arc-dial-petal petal-income" onclick="triggerSpeedDialAction('income')" title="Catat Pemasukan" aria-label="Catat Pemasukan">
+                        <div class="petal-wedge-card">
+                            <svg class="petal-wedge-shape" viewBox="0 0 100 95" preserveAspectRatio="none">
+                                <path d="M 13.1 14 A 172 172 0 0 1 86.9 14 Q 97.4 16.7 94.1 28.2 L 81.4 72.4 Q 78.1 84 68.4 81.7 A 102 102 0 0 0 31.6 81.7 Q 21.9 84 18.6 72.4 L 5.9 28.2 Q 2.6 16.7 13.1 14 Z" />
+                            </svg>
+                            <div class="petal-icon-badge emerald">
+                                <i class="fa-solid fa-arrow-down"></i>
+                            </div>
+                            <span class="petal-label">Pemasukan</span>
                         </div>
                     </button>
-                    <button type="button" class="fab-dial-item item-income" onclick="triggerSpeedDialAction('income')" title="Catat Pemasukan">
-                        <span class="fab-dial-label">Pemasukan</span>
-                        <div class="fab-dial-icon emerald">
-                            <i class="fa-solid fa-arrow-down"></i>
+
+                    <!-- 3. Hutang/Piutang (Mid-Right) -->
+                    <button type="button" class="arc-dial-petal petal-debt" onclick="triggerSpeedDialAction('debt')" title="Catat Hutang/Piutang" aria-label="Catat Hutang/Piutang">
+                        <div class="petal-wedge-card">
+                            <svg class="petal-wedge-shape" viewBox="0 0 100 95" preserveAspectRatio="none">
+                                <path d="M 13.1 14 A 172 172 0 0 1 86.9 14 Q 97.4 16.7 94.1 28.2 L 81.4 72.4 Q 78.1 84 68.4 81.7 A 102 102 0 0 0 31.6 81.7 Q 21.9 84 18.6 72.4 L 5.9 28.2 Q 2.6 16.7 13.1 14 Z" />
+                            </svg>
+                            <div class="petal-icon-badge purple">
+                                <i class="fa-solid fa-hand-holding-dollar"></i>
+                            </div>
+                            <span class="petal-label">Hutang/Piutang</span>
                         </div>
                     </button>
-                    <button type="button" class="fab-dial-item item-expense" onclick="triggerSpeedDialAction('expense')" title="Catat Pengeluaran">
-                        <span class="fab-dial-label">Pengeluaran</span>
-                        <div class="fab-dial-icon rose">
-                            <i class="fa-solid fa-arrow-up"></i>
+
+                    <!-- 4. Scan Struk (Rightmost) -->
+                    <button type="button" class="arc-dial-petal petal-scan" onclick="triggerSpeedDialAction('scan')" title="Pindai Struk Belanja" aria-label="Pindai Struk Belanja">
+                        <div class="petal-wedge-card">
+                            <svg class="petal-wedge-shape" viewBox="0 0 100 95" preserveAspectRatio="none">
+                                <path d="M 13.1 14 A 172 172 0 0 1 86.9 14 Q 97.4 16.7 94.1 28.2 L 81.4 72.4 Q 78.1 84 68.4 81.7 A 102 102 0 0 0 31.6 81.7 Q 21.9 84 18.6 72.4 L 5.9 28.2 Q 2.6 16.7 13.1 14 Z" />
+                            </svg>
+                            <div class="petal-icon-badge amber">
+                                <i class="fa-solid fa-camera"></i>
+                            </div>
+                            <span class="petal-label">Scan Struk</span>
                         </div>
                     </button>
                 </div>
