@@ -11009,7 +11009,7 @@ body.dark-mode .notif-empty-box {
     gap: 8px;
 }
 
-/* B. RADIAL ARC FAN SPEED DIAL (PREMIUM FINTECH CANOPY) */
+/* B. FLOATING RADIAL GLASSMORPHISM SPEED DIAL WITH DOTTED ARC */
 .b-nav-fab-wrapper {
     position: relative;
     top: -14px;
@@ -11017,54 +11017,85 @@ body.dark-mode .notif-empty-box {
 .btn-hero-fab {
     transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1),
                 background 0.25s ease,
-                box-shadow 0.25s ease !important;
+                box-shadow 0.25s ease,
+                border-color 0.25s ease !important;
 }
 .btn-hero-fab.is-open {
-    transform: rotate(45deg) scale(1.08) !important;
-    background: #ef4444 !important;
-    box-shadow: 0 10px 28px rgba(239, 68, 68, 0.48) !important;
+    transform: rotate(45deg) scale(1.1) !important;
+    background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%) !important;
+    box-shadow: 0 0 0 6px rgba(239, 68, 68, 0.22), 0 10px 28px rgba(239, 68, 68, 0.52) !important;
+    border-color: rgba(255, 255, 255, 0.45) !important;
 }
 .btn-hero-fab.is-open i {
     transform: none !important;
 }
 
-/* 1. Invisible click-outside backdrop (NO black blur, completely transparent) */
+/* 1. Subtle dark overlay with gentle blur over background cards */
 .fab-speed-dial-backdrop {
     position: fixed;
     inset: 0;
-    background: transparent !important;
-    backdrop-filter: none !important;
-    -webkit-backdrop-filter: none !important;
+    background: rgba(15, 23, 42, 0.38);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
     z-index: 996;
+    opacity: 0;
     pointer-events: none;
+    transition: opacity 0.28s cubic-bezier(0.16, 1, 0.3, 1);
 }
 .fab-speed-dial-backdrop.active {
+    opacity: 1;
     pointer-events: auto;
 }
 
-/* 2. Arc Canopy Menu Container - anchored at center of 48px FAB */
-.fab-speed-dial-menu.arc-dial-canopy {
+/* 2. Menu Container anchored at FAB center */
+.fab-speed-dial-menu.arc-radial-glass-menu {
     position: absolute;
     left: 50%;
     bottom: 24px;
     width: 0;
     height: 0;
-    z-index: 997;
+    z-index: 998;
     pointer-events: none;
     display: block;
 }
-.fab-speed-dial-menu.arc-dial-canopy.active {
+.fab-speed-dial-menu.arc-radial-glass-menu.active {
     pointer-events: auto;
 }
 
-/* 3. Individual Arc Petal Button - spacious, non-overlapping polar translation */
-.arc-dial-petal {
+/* 3. Dotted Arc Trajectory SVG Guide Line */
+.arc-trajectory-svg {
     position: absolute;
     left: 50%;
-    bottom: 24px; /* Center of 48px FAB */
-    width: 46px;
+    bottom: 24px;
+    transform: translateX(-50%);
+    width: 240px;
+    height: 120px;
+    pointer-events: none;
+    z-index: 997;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+.fab-speed-dial-menu.active .arc-trajectory-svg {
+    opacity: 1;
+}
+.arc-trajectory-path {
+    stroke: rgba(255, 255, 255, 0.55);
+    stroke-dasharray: 2.5 5.5;
+    stroke-width: 1.5;
+    stroke-linecap: round;
+}
+body.dark-mode .arc-trajectory-path {
+    stroke: rgba(255, 255, 255, 0.35);
+}
+
+/* 4. Floating Circular Glassmorphism Orb Button */
+.arc-glass-orb {
+    position: absolute;
+    left: 50%;
+    bottom: 24px;
+    width: 50px;
     height: 50px;
-    margin-left: -23px;
+    margin-left: -25px;
     margin-bottom: -25px;
     background: transparent;
     border: none;
@@ -11075,123 +11106,101 @@ body.dark-mode .notif-empty-box {
     opacity: 0;
     pointer-events: none;
     transform: translate(0, 0) scale(0.15);
-    transition: transform 0.38s cubic-bezier(0.34, 1.56, 0.64, 1),
-                opacity 0.2s ease-out;
+    transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1),
+                opacity 0.22s ease-out;
 }
-
-/* 4. Active fanned-out canopy angles (Spacious, balanced 7px-10px gap between all cards, clean 25px clearance above + button) */
-.fab-speed-dial-menu.arc-dial-canopy.active .arc-dial-petal {
+.fab-speed-dial-menu.active .arc-glass-orb {
     opacity: 1;
     pointer-events: auto;
 }
-.fab-speed-dial-menu.arc-dial-canopy.active .petal-expense {
-    transform: translate(-56.5px, -51px) rotate(-48deg) scale(1);
-    transition-delay: 0.05s;
+
+/* 5. Precise Positions along the Trajectory Arc */
+.fab-speed-dial-menu.active .orb-expense {
+    transform: translate(-76px, -51px) scale(1);
+    transition-delay: 0.06s;
 }
-.fab-speed-dial-menu.arc-dial-canopy.active .petal-income {
-    transform: translate(-21px, -73px) rotate(-16deg) scale(1);
+.fab-speed-dial-menu.active .orb-income {
+    transform: translate(-30px, -87px) scale(1);
     transition-delay: 0.02s;
 }
-.fab-speed-dial-menu.arc-dial-canopy.active .petal-debt {
-    transform: translate(21px, -73px) rotate(16deg) scale(1);
+.fab-speed-dial-menu.active .orb-debt {
+    transform: translate(30px, -87px) scale(1);
     transition-delay: 0.02s;
 }
-.fab-speed-dial-menu.arc-dial-canopy.active .petal-scan {
-    transform: translate(56.5px, -51px) rotate(48deg) scale(1);
-    transition-delay: 0.05s;
+.fab-speed-dial-menu.active .orb-scan {
+    transform: translate(76px, -51px) scale(1);
+    transition-delay: 0.06s;
 }
 
-/* Petal Card Structure & Hover Elevation */
-.petal-wedge-card {
-    position: relative;
+/* 6. Frosted Glassmorphism Outer Ring */
+.orb-glass-ring {
     width: 100%;
     height: 100%;
-    filter: drop-shadow(0 6px 14px rgba(0, 0, 0, 0.16));
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.38);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    border: 1.5px solid rgba(255, 255, 255, 0.68);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12), inset 0 1px 1.5px rgba(255, 255, 255, 0.85);
+    display: flex;
+    align-items: center;
+    justify-content: center;
     transition: transform 0.22s cubic-bezier(0.16, 1, 0.3, 1),
-                filter 0.22s ease;
+                box-shadow 0.22s ease;
 }
-.arc-dial-petal:hover .petal-wedge-card,
-.arc-dial-petal:focus-visible .petal-wedge-card {
-    transform: scale(1.1);
-    filter: drop-shadow(0 10px 22px rgba(0, 0, 0, 0.26));
+body.dark-mode .orb-glass-ring {
+    background: rgba(255, 255, 255, 0.2);
+    border-color: rgba(255, 255, 255, 0.38);
+    box-shadow: 0 10px 28px rgba(0, 0, 0, 0.36), inset 0 1px 1px rgba(255, 255, 255, 0.5);
 }
-.arc-dial-petal:active .petal-wedge-card {
+.arc-glass-orb:hover .orb-glass-ring,
+.arc-glass-orb:focus-visible .orb-glass-ring {
+    transform: scale(1.12);
+    box-shadow: 0 12px 28px rgba(0, 0, 0, 0.22);
+}
+.arc-glass-orb:active .orb-glass-ring {
     transform: scale(0.94);
 }
 
-/* SVG Wedge Shape Background */
-.petal-wedge-shape {
-    position: absolute;
-    inset: 0;
-    width: 100%;
-    height: 100%;
-    fill: #ffffff;
-    stroke: rgba(0, 0, 0, 0.05);
-    stroke-width: 0.8;
-}
-
-/* 5. Icon Badge DEAD-CENTER in the Geometric Wedge */
-.petal-icon-badge {
-    position: absolute;
-    top: 48%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    width: 33px;
-    height: 33px;
+/* 7. Inner Vibrant Glowing Circular Badge */
+.orb-inner-badge {
+    width: 36px;
+    height: 36px;
     border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
     color: #ffffff;
-    font-size: 0.95rem;
-    z-index: 2;
-    transition: transform 0.25s ease, box-shadow 0.25s ease;
+    font-size: 1.05rem;
+    transition: transform 0.22s ease, box-shadow 0.22s ease;
 }
-.petal-icon-badge.rose {
+.orb-inner-badge.rose {
     background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
-    box-shadow: 0 4px 12px rgba(239, 68, 68, 0.42);
+    box-shadow: 0 4px 14px rgba(239, 68, 68, 0.5);
 }
-.petal-icon-badge.emerald {
+.orb-inner-badge.emerald {
     background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.42);
+    box-shadow: 0 4px 14px rgba(16, 185, 129, 0.5);
 }
-.petal-icon-badge.purple {
+.orb-inner-badge.purple {
     background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
-    box-shadow: 0 4px 12px rgba(139, 92, 246, 0.42);
+    box-shadow: 0 4px 14px rgba(139, 92, 246, 0.5);
 }
-.petal-icon-badge.amber {
+.orb-inner-badge.amber {
     background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
-    box-shadow: 0 4px 12px rgba(245, 158, 11, 0.42);
+    box-shadow: 0 4px 14px rgba(245, 158, 11, 0.5);
 }
-
-/* Counter-rotate icon glyphs so they stay perfectly upright */
-.petal-expense .petal-icon-badge i {
-    transform: rotate(48deg);
+.arc-glass-orb:hover .orb-inner-badge.rose {
+    box-shadow: 0 6px 20px rgba(239, 68, 68, 0.7);
 }
-.petal-income .petal-icon-badge i {
-    transform: rotate(16deg);
+.arc-glass-orb:hover .orb-inner-badge.emerald {
+    box-shadow: 0 6px 20px rgba(16, 185, 129, 0.7);
 }
-.petal-debt .petal-icon-badge i {
-    transform: rotate(-16deg);
+.arc-glass-orb:hover .orb-inner-badge.purple {
+    box-shadow: 0 6px 20px rgba(139, 92, 246, 0.7);
 }
-.petal-scan .petal-icon-badge i {
-    transform: rotate(-48deg);
-}
-
-.arc-dial-petal:hover .petal-icon-badge {
-    transform: translate(-50%, -50%) scale(1.08);
-}
-.arc-dial-petal:hover .petal-icon-badge.rose {
-    box-shadow: 0 6px 18px rgba(239, 68, 68, 0.6);
-}
-.arc-dial-petal:hover .petal-icon-badge.emerald {
-    box-shadow: 0 6px 18px rgba(16, 185, 129, 0.6);
-}
-.arc-dial-petal:hover .petal-icon-badge.purple {
-    box-shadow: 0 6px 18px rgba(139, 92, 246, 0.6);
-}
-.arc-dial-petal:hover .petal-icon-badge.amber {
-    box-shadow: 0 6px 18px rgba(245, 158, 11, 0.6);
+.arc-glass-orb:hover .orb-inner-badge.amber {
+    box-shadow: 0 6px 20px rgba(245, 158, 11, 0.7);
 }
 
 /* C. RECEIPT SCANNER MODAL & LASER ANIMATION */

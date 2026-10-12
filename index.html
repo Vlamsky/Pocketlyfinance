@@ -1741,57 +1741,51 @@
                 <i class="fa-solid fa-receipt"></i>
             </a>
             <div class="b-nav-fab-wrapper">
-                <!-- Radial Arc Speed Dial Canopy Menu -->
-                <div class="fab-speed-dial-menu arc-dial-canopy" id="fabSpeedDialMenu">
-                    <!-- 1. Pengeluaran (Leftmost) -->
-                    <button type="button" class="arc-dial-petal petal-expense" onclick="triggerSpeedDialAction('expense')" title="Catat Pengeluaran" aria-label="Catat Pengeluaran">
-                        <div class="petal-wedge-card">
-                            <svg class="petal-wedge-shape" viewBox="0 0 46 50" preserveAspectRatio="none">
-                                <path d="M 10 3 Q 23 1 36 3 Q 44 4 43 12 L 34 40 Q 32 48 24 48 Q 16 48 12 40 L 3 12 Q 2 4 10 3 Z" />
-                            </svg>
-                            <div class="petal-icon-badge rose">
+                <!-- Floating Radial Glassmorphism Menu with Dotted Arc Trajectory -->
+                <div class="fab-speed-dial-menu arc-radial-glass-menu" id="fabSpeedDialMenu">
+                    <!-- Smooth Dotted Arc Trajectory Line -->
+                    <svg class="arc-trajectory-svg" viewBox="-120 -120 240 120" fill="none">
+                        <path class="arc-trajectory-path" d="M -84 -37.4 A 92 92 0 0 1 84 -37.4" />
+                    </svg>
+
+                    <!-- 1. Red Floating Button with Up-Arrow (Leftmost) -->
+                    <button type="button" class="arc-glass-orb orb-expense" onclick="triggerSpeedDialAction('expense')" title="Catat Pengeluaran" aria-label="Catat Pengeluaran">
+                        <div class="orb-glass-ring">
+                            <div class="orb-inner-badge rose">
                                 <i class="fa-solid fa-arrow-up"></i>
                             </div>
                         </div>
                     </button>
 
-                    <!-- 2. Pemasukan (Mid-Left) -->
-                    <button type="button" class="arc-dial-petal petal-income" onclick="triggerSpeedDialAction('income')" title="Catat Pemasukan" aria-label="Catat Pemasukan">
-                        <div class="petal-wedge-card">
-                            <svg class="petal-wedge-shape" viewBox="0 0 46 50" preserveAspectRatio="none">
-                                <path d="M 10 3 Q 23 1 36 3 Q 44 4 43 12 L 34 40 Q 32 48 24 48 Q 16 48 12 40 L 3 12 Q 2 4 10 3 Z" />
-                            </svg>
-                            <div class="petal-icon-badge emerald">
+                    <!-- 2. Green Floating Button with Down-Arrow (Mid-Left) -->
+                    <button type="button" class="arc-glass-orb orb-income" onclick="triggerSpeedDialAction('income')" title="Catat Pemasukan" aria-label="Catat Pemasukan">
+                        <div class="orb-glass-ring">
+                            <div class="orb-inner-badge emerald">
                                 <i class="fa-solid fa-arrow-down"></i>
                             </div>
                         </div>
                     </button>
 
-                    <!-- 3. Hutang/Piutang (Mid-Right) -->
-                    <button type="button" class="arc-dial-petal petal-debt" onclick="triggerSpeedDialAction('debt')" title="Catat Hutang/Piutang" aria-label="Catat Hutang/Piutang">
-                        <div class="petal-wedge-card">
-                            <svg class="petal-wedge-shape" viewBox="0 0 46 50" preserveAspectRatio="none">
-                                <path d="M 10 3 Q 23 1 36 3 Q 44 4 43 12 L 34 40 Q 32 48 24 48 Q 16 48 12 40 L 3 12 Q 2 4 10 3 Z" />
-                            </svg>
-                            <div class="petal-icon-badge purple">
+                    <!-- 3. Purple Floating Button with Hand Holding Coin (Mid-Right) -->
+                    <button type="button" class="arc-glass-orb orb-debt" onclick="triggerSpeedDialAction('debt')" title="Catat Hutang/Piutang" aria-label="Catat Hutang/Piutang">
+                        <div class="orb-glass-ring">
+                            <div class="orb-inner-badge purple">
                                 <i class="fa-solid fa-hand-holding-dollar"></i>
                             </div>
                         </div>
                     </button>
 
-                    <!-- 4. Scan Struk (Rightmost) -->
-                    <button type="button" class="arc-dial-petal petal-scan" onclick="triggerSpeedDialAction('scan')" title="Pindai Struk Belanja" aria-label="Pindai Struk Belanja">
-                        <div class="petal-wedge-card">
-                            <svg class="petal-wedge-shape" viewBox="0 0 46 50" preserveAspectRatio="none">
-                                <path d="M 10 3 Q 23 1 36 3 Q 44 4 43 12 L 34 40 Q 32 48 24 48 Q 16 48 12 40 L 3 12 Q 2 4 10 3 Z" />
-                            </svg>
-                            <div class="petal-icon-badge amber">
+                    <!-- 4. Orange Floating Button with Camera (Rightmost) -->
+                    <button type="button" class="arc-glass-orb orb-scan" onclick="triggerSpeedDialAction('scan')" title="Pindai Struk Belanja" aria-label="Pindai Struk Belanja">
+                        <div class="orb-glass-ring">
+                            <div class="orb-inner-badge amber">
                                 <i class="fa-solid fa-camera"></i>
                             </div>
                         </div>
                     </button>
                 </div>
-                <!-- Invisible Click-Outside Backdrop -->
+
+                <!-- Subtle Dark Overlay Backdrop over blurred background -->
                 <div class="fab-speed-dial-backdrop" id="fabBackdrop" onclick="toggleFabSpeedDial(false)"></div>
 
                 <button class="btn-hero-fab" id="mobileAddFab" type="button"
