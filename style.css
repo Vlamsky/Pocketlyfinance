@@ -87,7 +87,7 @@
     --radius-lg: 18px;
     --radius-xl: 24px;
     --radius-pill: 9999px;
-    --status-bar-height: env(safe-area-inset-top, 38px);
+    --status-bar-height: env(safe-area-inset-top, 0px);
 
     --transition-fast: 0.15s cubic-bezier(0.16, 1, 0.3, 1);
     --transition-base: 0.25s cubic-bezier(0.16, 1, 0.3, 1);
@@ -994,7 +994,7 @@ input:checked + .slider:before { transform: translateX(20px); }
     position: relative;
     width: 100%;
     background: linear-gradient(145deg, #1d4ed8 0%, #2563eb 48%, #3b82f6 100%);
-    padding-top: calc(var(--status-bar-height, 38px) + 12px);
+    padding-top: calc(var(--status-bar-height, 0px) + 12px);
     padding-bottom: 64px;
     padding-left: 20px;
     padding-right: 20px;
@@ -7550,7 +7550,7 @@ body.dark-mode .btn-delete-cat:hover {
         top: 0;
         left: 0;
         right: 0;
-        height: var(--status-bar-height, 38px);
+        height: var(--status-bar-height, 0px);
         background: rgba(248, 250, 252, 0.65);
         backdrop-filter: blur(10px);
         -webkit-backdrop-filter: blur(10px);
@@ -7726,7 +7726,7 @@ body.dark-mode .b-nav-item.active::after {
     }
     .close-sidebar-btn { display: none !important; }
     .mobile-menu-btn { display: none !important; }
-    .main-content { padding: calc(var(--status-bar-height, 38px) + 14px) 16px calc(85px + env(safe-area-inset-bottom, 0px)) 16px; margin: 0; width: 100%; box-sizing: border-box; overflow-x: hidden; }
+    .main-content { padding: calc(var(--status-bar-height, 0px) + 8px) 16px calc(85px + env(safe-area-inset-bottom, 0px)) 16px; margin: 0; width: 100%; box-sizing: border-box; overflow-x: hidden; }
     .bottom-glass-dock { display: flex; }
     .dashboard-unified-hero {
         flex-direction: column;
@@ -9948,7 +9948,7 @@ body.dark-mode .lang-status-pill {
 
 /* 2. PULL-TO-REFRESH COMPONENT */
 .ptr-indicator {
-    display: flex;
+    display: none;
     align-items: center;
     justify-content: center;
     gap: 10px;
@@ -9962,6 +9962,7 @@ body.dark-mode .lang-status-pill {
 }
 
 .ptr-indicator.active {
+    display: flex;
     opacity: 1;
 }
 
